@@ -56,22 +56,21 @@ func NewEtcdStore(endpoints []string, timeout time.Duration) (*Store, error) {
 	return &Store{client: cli}, nil
 }
 
+
 func (s *Store) Get(key string) ([]ListRes, error) {
 	response, err := s.client.Get(context.TODO(), key)
 	if err != nil {
-		return []ListRes{}, err
+		return nil, err
 	}
 	if len(response.Kvs) == 0 {
-		return []ListRes{}, nil
-	} else {
-		listRes := ListRes{
-			ResourceVersion: response.Kvs[0].ModRevision,
-			CreateVersion:   response.Kvs[0].CreateRevision,
-			Key:             string(response.Kvs[0].Key),
-			ValueBytes:      response.Kvs[0].Value,
-		}
-		return []ListRes{listRes}, nil
+		return nil, nil
 	}
+	return []ListRes {ListRes{
+		ResourceVersion: response.Kvs[0].ModRevision,
+		CreateVersion: response.Kvs[0].CreateRevision,
+		Key: string(response.Kvs[0].Key),
+		ValueBytes: response.Kvs[0].Value,
+	}}, nil
 }
 
 func (s *Store) Put(key string, val []byte) error {
@@ -84,39 +83,37 @@ func (s *Store) Del(key string) error {
 	return err
 }
 
+func convertEventToWatchRes(event *etcd.Event) WatchRes {  // 根据event的类型转换为不同的WatchRes
+	res := WatchRes{
+		ResourceVersion: event.Kv.ModRevision,
+		CreateVersion:   event.Kv.CreateRevision,
+		IsCreate:        event.IsCreate(),
+		IsModify:        event.IsModify(),
+		Key:             string(event.Kv.Key),
+	}
+	switch event.Type {
+	case etcd.EventTypePut:
+		res.ResType = PUT
+		res.ValueBytes = event.Kv.Value
+		break
+	case etcd.EventTypeDelete:
+		res.ResType = DELETE
+	}
+	return res
+}
+
 func (s *Store) Watch(key string) (context.CancelFunc, <-chan WatchRes) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	watchResChan := make(chan WatchRes)
-	watch := func(c chan<- WatchRes) {
-		watchChan := s.client.Watch(ctx, key)
-		for watchResponse := range watchChan {
+	go func(c chan<- WatchRes) { // 匿名函数
+		for watchResponse := range s.client.Watch(ctx, key) {
 			for _, event := range watchResponse.Events {
-				var res WatchRes
-				switch event.Type {
-				case etcd.EventTypePut:
-					res.ResType = PUT
-					res.ResourceVersion = event.Kv.ModRevision
-					res.CreateVersion = event.Kv.CreateRevision
-					res.IsCreate = event.IsCreate()
-					res.IsModify = event.IsModify()
-					res.Key = string(event.Kv.Key)
-					res.ValueBytes = event.Kv.Value
-					break
-				case etcd.EventTypeDelete:
-					res.ResType = DELETE
-					res.ResourceVersion = event.Kv.ModRevision
-					res.CreateVersion = event.Kv.CreateRevision
-					res.IsCreate = event.IsCreate()
-					res.IsModify = event.IsModify()
-					res.Key = string(event.Kv.Key)
-					break
-				}
+				res := convertEventToWatchRes(event)
 				c <- res
 			}
 		}
 		close(c)
-	}
-	go watch(watchResChan)
+	}(watchResChan)
 
 	return cancel, watchResChan
 }
@@ -124,37 +121,15 @@ func (s *Store) Watch(key string) (context.CancelFunc, <-chan WatchRes) {
 func (s *Store) PrefixWatch(key string) (context.CancelFunc, <-chan WatchRes) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	watchResChan := make(chan WatchRes)
-	watch := func(c chan<- WatchRes) {
-		watchChan := s.client.Watch(ctx, key, etcd.WithPrefix())
-		for watchResponse := range watchChan {
+	go func(c chan<- WatchRes) {   
+		for watchResponse := range s.client.Watch(ctx, key, etcd.WithPrefix()) {
 			for _, event := range watchResponse.Events {
-				var res WatchRes
-				switch event.Type {
-				case etcd.EventTypePut:
-					res.ResType = PUT
-					res.ResourceVersion = event.Kv.ModRevision
-					res.CreateVersion = event.Kv.CreateRevision
-					res.IsCreate = event.IsCreate()
-					res.IsModify = event.IsModify()
-					res.Key = string(event.Kv.Key)
-					res.ValueBytes = event.Kv.Value
-					break
-				case etcd.EventTypeDelete:
-					res.ResType = DELETE
-					res.ResourceVersion = event.Kv.ModRevision
-					res.CreateVersion = event.Kv.CreateRevision
-					res.IsCreate = event.IsCreate()
-					res.IsModify = event.IsModify()
-					res.Key = string(event.Kv.Key)
-					res.ValueBytes = event.Kv.Value
-					break
-				}
+				res := convertEventToWatchRes(event)
 				c <- res
 			}
 		}
 		close(c)
-	}
-	go watch(watchResChan)
+	}(watchResChan)
 	return cancel, watchResChan
 }
 
@@ -164,14 +139,13 @@ func (s *Store) PrefixGet(key string) ([]ListRes, error) {
 		return []ListRes{}, err
 	}
 	var ret []ListRes
-	for _, kv := range response.Kvs {
-		res := ListRes{
+	for i, kv := range response.Kvs {
+		ret[i] = ListRes{
 			ResourceVersion: kv.ModRevision,
 			CreateVersion:   kv.CreateRevision,
 			Key:             string(kv.Key),
 			ValueBytes:      kv.Value,
 		}
-		ret = append(ret, res)
 	}
 	return ret, nil
 }

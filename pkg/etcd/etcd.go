@@ -1,9 +1,9 @@
-package etcdstore
+package etcd
 
 import (
 	"context"
 	// "fmt"
-	etcd "go.etcd.io/etcd/clientv3"
+	etcd "go.etcd.io/etcd/client/v3"
 	// "minik8s/pkg/klog"
 	"time"
 )
@@ -56,7 +56,6 @@ func NewEtcdStore(endpoints []string, timeout time.Duration) (*Store, error) {
 	return &Store{client: cli}, nil
 }
 
-
 func (s *Store) Get(key string) ([]ListRes, error) {
 	response, err := s.client.Get(context.TODO(), key)
 	if err != nil {
@@ -65,11 +64,11 @@ func (s *Store) Get(key string) ([]ListRes, error) {
 	if len(response.Kvs) == 0 {
 		return nil, nil
 	}
-	return []ListRes {ListRes{
+	return []ListRes{ListRes{
 		ResourceVersion: response.Kvs[0].ModRevision,
-		CreateVersion: response.Kvs[0].CreateRevision,
-		Key: string(response.Kvs[0].Key),
-		ValueBytes: response.Kvs[0].Value,
+		CreateVersion:   response.Kvs[0].CreateRevision,
+		Key:             string(response.Kvs[0].Key),
+		ValueBytes:      response.Kvs[0].Value,
 	}}, nil
 }
 
@@ -83,7 +82,7 @@ func (s *Store) Del(key string) error {
 	return err
 }
 
-func convertEventToWatchRes(event *etcd.Event) WatchRes {  // 根据event的类型转换为不同的WatchRes
+func convertEventToWatchRes(event *etcd.Event) WatchRes { // 根据event的类型转换为不同的WatchRes
 	res := WatchRes{
 		ResourceVersion: event.Kv.ModRevision,
 		CreateVersion:   event.Kv.CreateRevision,
@@ -121,7 +120,7 @@ func (s *Store) Watch(key string) (context.CancelFunc, <-chan WatchRes) {
 func (s *Store) PrefixWatch(key string) (context.CancelFunc, <-chan WatchRes) {
 	ctx, cancel := context.WithCancel(context.TODO())
 	watchResChan := make(chan WatchRes)
-	go func(c chan<- WatchRes) {   
+	go func(c chan<- WatchRes) {
 		for watchResponse := range s.client.Watch(ctx, key, etcd.WithPrefix()) {
 			for _, event := range watchResponse.Events {
 				res := convertEventToWatchRes(event)

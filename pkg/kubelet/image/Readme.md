@@ -31,3 +31,4 @@ var TestImageURLs = []string{
 
 ### 测试逻辑Todo
 1. 后续可能需要根据条件筛选镜像，届时根据开发的情况而定
+2. Push可能需要权限认证

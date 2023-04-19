@@ -14,7 +14,7 @@ func TestGetUUID(t *testing.T) {
 	uuidMap := make(map[string]int)
 
 	// 循环生成若干次UUID
-	for i := 0; i < 1000; i++ {
+	for i := 0; i < 10240; i++ {
 		uuid := NewUUID()
 		// 判断是否为空
 		if uuid == "" {

@@ -9,12 +9,12 @@ import (
 )
 
 func TestNewServer(t *testing.T) {
-	cli, err := etcd.NewEtcdStore([]string{"localhost:2379"},5 * time.Second)
+	store, err := etcd.NewEtcdStore([]string{"localhost:2379"},5 * time.Second)
 	assert.Nil(t, err)
-	err = cli.Put("my_key1", []byte("my_value1"))
+	err = store.Put("my_key1", []byte("my_value1"))
 	assert.Nil(t, err)
-	val, _ := cli.Get("my_key1")
+	val, _ := store.Get("my_key1")
 	assert.Equal(t, "my_value1", string(val[0].ValueBytes))
-	err = cli.Del("my_key1")
+	err = store.Del("my_key1")
 	assert.Nil(t, err)
 }

@@ -2,9 +2,7 @@ package etcd
 
 import (
 	"context"
-	// "fmt"
 	etcd "go.etcd.io/etcd/client/v3"
-	// "minik8s/pkg/klog"
 	"time"
 )
 
@@ -29,14 +27,14 @@ type WatchRes struct {
 	IsCreate        bool // true when ResType == PUT and the key is new
 	IsModify        bool // true when ResType == PUT and the key is old
 	Key             string
-	ValueBytes      []byte
+	Value      		string
 }
 
 type ListRes struct {
 	ResourceVersion int64
 	CreateVersion   int64
 	Key             string
-	ValueBytes      []byte
+	Value      		string
 }
 
 func NewEtcdStore(endpoints []string, timeout time.Duration) (*Store, error) {
@@ -68,7 +66,7 @@ func (s *Store) Get(key string) ([]ListRes, error) {
 		ResourceVersion: response.Kvs[0].ModRevision,
 		CreateVersion:   response.Kvs[0].CreateRevision,
 		Key:             string(response.Kvs[0].Key),
-		ValueBytes:      response.Kvs[0].Value,
+		Value:      	 string(response.Kvs[0].Value),
 	}}, nil
 }
 
@@ -93,7 +91,7 @@ func convertEventToWatchRes(event *etcd.Event) WatchRes { // 根据event的类�
 	switch event.Type {
 	case etcd.EventTypePut:
 		res.ResType = PUT
-		res.ValueBytes = event.Kv.Value
+		res.Value = string(event.Kv.Value)
 		break
 	case etcd.EventTypeDelete:
 		res.ResType = DELETE
@@ -143,7 +141,7 @@ func (s *Store) PrefixGet(key string) ([]ListRes, error) {
 			ResourceVersion: kv.ModRevision,
 			CreateVersion:   kv.CreateRevision,
 			Key:             string(kv.Key),
-			ValueBytes:      kv.Value,
+			Value:      	 string(kv.Value),
 		}
 	}
 	return ret, nil

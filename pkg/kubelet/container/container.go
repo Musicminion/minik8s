@@ -1,7 +1,18 @@
 package container
 
 import (
+	"miniK8s/pkg/kubelet/containerdClient"
 	"time"
+)
+
+type ContainerImagePullPolicy string
+
+const (
+	ContainerImagePullPolicyAlways       ContainerImagePullPolicy = "Always"
+	ContainerImagePullPolicyIfNotPresent ContainerImagePullPolicy = "IfNotPresent"
+	ContainerImagePullPolicyNever        ContainerImagePullPolicy = "Never"
+	// ContainerImagePullPolicyNever 代表从不拉取镜像，哪怕本地没有镜像
+	// 这个时候如果本地没有镜像，而又强制创建容器，就会报错
 )
 
 // 定义容器的状态
@@ -62,4 +73,21 @@ type Container struct {
 	Labels map[string]string
 	// 容器的注释，以键值对形式存储
 	Annotations map[string]string
+}
+
+func (c *Container) CreateContainer(name string) (string, error) {
+	client, err := containerdClient.NewContainerdClient()
+
+	if err != nil {
+		return "", err
+	}
+
+	defer client.Close()
+
+	// 创建容器
+	// container, err := client.NewContainer(context.Background(), name,
+	// 	containerd.WithImage("docker.io/library/busybox:latest"),
+	// )
+
+	return "", nil
 }

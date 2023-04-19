@@ -11,11 +11,21 @@ package image
 
 import (
 	"context"
+	"errors"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/images"
 
 	containerdClient "miniK8s/pkg/kubelet/containerdClient"
+)
+
+// 定义一个拉取镜像的策略
+type ImagePullPolicy string
+
+const (
+	ImagePullPolicyAlways       ImagePullPolicy = "Always"
+	ImagePullPolicyNever        ImagePullPolicy = "Never"
+	ImagePullPolicyIfNotPresent ImagePullPolicy = "IfNotPresent"
 )
 
 // 定义一个镜像管理者的结构体
@@ -44,6 +54,55 @@ func (im *ImageManager) PullImage(imageStr string) (containerd.Image, error) {
 
 	// 返回镜像和错误信息
 	return image, nil
+}
+
+// 通过策略拉取镜像
+func (im *ImageManager) PullImageWithPolicy(imageStr string, policy ImagePullPolicy) (containerd.Image, error) {
+	client, err := containerdClient.NewContainerdClient()
+	if err != nil {
+		return nil, err
+	}
+
+	defer client.Close()
+
+	switch policy {
+	case ImagePullPolicyAlways:
+		// 拉取镜像
+		image, err := client.Pull(context.Background(), imageStr)
+		if err != nil {
+			return nil, err
+		}
+		return image, nil
+	case ImagePullPolicyNever:
+		// 查找镜像
+		image, err := client.GetImage(context.Background(), imageStr)
+		if err != nil {
+			return nil, err
+		}
+		if image == nil {
+			// 设置err为image not found
+			err := errors.New("image not found")
+			return nil, err
+		}
+		return image, nil
+	case ImagePullPolicyIfNotPresent:
+		// 查找镜像
+		image, err := client.GetImage(context.Background(), imageStr)
+		if err != nil {
+			return nil, err
+		}
+		if image == nil {
+			// 拉取镜像
+			image, err := client.Pull(context.Background(), imageStr)
+			if err != nil {
+				return nil, err
+			}
+			return image, nil
+		}
+		return image, nil
+	}
+	err = errors.New("policy not found or not supported")
+	return nil, err
 }
 
 // 获取镜像实例，镜像的实体

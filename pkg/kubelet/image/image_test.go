@@ -118,3 +118,97 @@ func TestRemoveImage(t *testing.T) {
 		t.Errorf("ListAllImages() failed: images is not empty")
 	}
 }
+
+func TestPullImageWithPolicy(t *testing.T) {
+	// 创建一个ImageManager
+	im := &ImageManager{}
+
+	// 遍历imageURLs
+	for _, imageURL := range TestImageURLs {
+		// 调用PullImage函数
+		image, err := im.PullImageWithPolicy(imageURL, ImagePullPolicyAlways)
+
+		if err != nil {
+			t.Errorf("PullImage() failed: %s\n", err)
+		}
+		if image == nil {
+			t.Errorf("PullImage() failed: %s\n", image)
+		}
+	}
+
+	// 遍历imageURLs, 这次的策略是ImagePullPolicyIfNotPresent
+	for _, imageURL := range TestImageURLs {
+		// 调用PullImage函数
+		image, err := im.PullImageWithPolicy(imageURL, ImagePullPolicyIfNotPresent)
+
+		if err != nil {
+			t.Errorf("PullImage() failed: %s\n", err)
+		}
+		if image == nil {
+			t.Errorf("PullImage() failed: %s\n", image)
+		}
+	}
+
+	// 遍历imageURLs,然后删除镜像
+	for _, imageURL := range TestImageURLs {
+		// 调用RemoveImage函数
+		err := im.RemoveImage(imageURL)
+
+		if err != nil {
+			t.Errorf("RemoveImage() failed: %s\n", err)
+		}
+	}
+
+	// 遍历imageURLs, 这次的策略是ImagePullPolicyIfNotPresent
+	for _, imageURL := range TestImageURLs {
+		// 调用PullImage函数
+		image, err := im.PullImageWithPolicy(imageURL, ImagePullPolicyIfNotPresent)
+
+		if err != nil {
+			t.Errorf("PullImage() failed: %s\n", err)
+		}
+		if image == nil {
+			t.Errorf("PullImage() failed: %s\n", image)
+		}
+	}
+
+	// 遍历imageURLs, 这次的策略是ImagePullPolicyNever
+	for _, imageURL := range TestImageURLs {
+		// 调用PullImage函数
+		image, err := im.PullImageWithPolicy(imageURL, ImagePullPolicyNever)
+
+		// 理论上这次应该是正常的
+		if err != nil {
+			t.Errorf("PullImage() failed: %s\n", err)
+		}
+		if image == nil {
+			t.Errorf("PullImage() failed: %s\n", image)
+		}
+	}
+
+	// 遍历imageURLs,然后删除镜像
+	for _, imageURL := range TestImageURLs {
+		// 调用RemoveImage函数
+		err := im.RemoveImage(imageURL)
+
+		if err != nil {
+			t.Errorf("RemoveImage() failed: %s\n", err)
+		}
+	}
+
+	// 遍历imageURLs, 这次的策略是ImagePullPolicyNever
+	for _, imageURL := range TestImageURLs {
+		// 调用PullImage函数
+		image, err := im.PullImageWithPolicy(imageURL, ImagePullPolicyNever)
+
+		// 理论上这次的error应该是"image not found"
+		if err == nil || err.Error() != "image not found" {
+			t.Errorf("PullImage() failed: %s\n", err)
+		}
+
+		if image != nil {
+			t.Errorf("PullImage() failed: %s\n", image)
+		}
+	}
+
+}

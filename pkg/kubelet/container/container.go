@@ -1,5 +1,130 @@
 package container
 
+import (
+	"context"
+	dockerclient "miniK8s/pkg/kubelet/dockerClient"
+	"miniK8s/pkg/kubelet/image"
+	minik8stypes "miniK8s/pkg/minik8sTypes"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+)
+
+type ContainerManager struct {
+}
+
+// 创建容器的方法,返回容器的ID和错误
+func (c *ContainerManager) CreateContainer(name string, option *minik8stypes.ContainerConfig) (string, error) {
+	// 获取docker的client
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// 处理镜像的拉取，创建一个ImageManager
+	imageManager := &image.ImageManager{}
+	// 拉取镜像，根据拉取镜像的策略
+	_, err = imageManager.PullImageWithPolicy(option.Image, option.ImagePullPolicy)
+	if err != nil {
+		return "", err
+	}
+
+	// 创建容器的时候需要指定容器的配置、主机配置、网络配置、存储卷配置、容器名
+	result, err := client.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image:      option.Image,
+			Cmd:        option.Cmd,
+			Env:        option.Env,
+			Tty:        option.Tty,
+			Labels:     option.Labels,
+			Entrypoint: option.Entrypoint,
+			Volumes:    option.Volumes,
+		},
+		nil,
+		nil,
+		nil,
+		name,
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	return result.ID, nil
+	// return nil
+}
+
+// 启动一个容器，返回容器的ID和错误
+func (c *ContainerManager) StartContainer(containerID string) (string, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	err = client.ContainerStart(ctx, containerID, types.ContainerStartOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return containerID, nil
+}
+
+// 停止一个容器，返回容器的ID和错误
+func (c *ContainerManager) StopContainer(containerID string) (string, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	err = client.ContainerStop(ctx, containerID, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return containerID, nil
+}
+
+// 删除一个容器，返回容器的ID和错误
+func (c *ContainerManager) RemoveContainer(containerID string) (string, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	err = client.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	return containerID, nil
+}
+
+// 列出所有的容器，返回容器的列表和错误
+func (c *ContainerManager) ListContainers() ([]types.Container, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	return containers, nil
+}
+
 // import (
 // 	"miniK8s/pkg/kubelet/containerdClient"
 // 	"time"

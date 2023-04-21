@@ -1,4 +1,4 @@
-package imageTypes
+package minik8stypes
 
 // ImagePullPolicy表示拉取镜像的策略
 type ImagePullPolicy string

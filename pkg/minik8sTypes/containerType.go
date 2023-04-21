@@ -45,3 +45,19 @@ type ContainerConfig struct {
 	// StopTimeout     *int                // Timeout (in seconds) to stop a container
 	// Shell           strslice.StrSlice   // Shell for shell-form of RUN, CMD, ENTRYPOINT
 }
+
+// 根据官方API的定义，这里我用ContainerStatus表示容器的状态
+// 原始的注解如下：Status string
+// String representation of the container state.
+// Can be one of "created", "running", "paused", "restarting", "removing", "exited", or "dead"
+type ContainerStatus string
+
+const (
+	Created  ContainerStatus = "created"
+	Running  ContainerStatus = "running"
+	Paused   ContainerStatus = "paused"
+	Restart  ContainerStatus = "restarting"
+	Removing ContainerStatus = "removing"
+	Exited   ContainerStatus = "exited"
+	Dead     ContainerStatus = "dead"
+)

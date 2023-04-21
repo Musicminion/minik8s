@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/image"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
@@ -75,6 +76,7 @@ func (c *ContainerManager) StartContainer(containerID string) (string, error) {
 }
 
 // 停止一个容器，返回容器的ID和错误
+// 注意：如果多次调用这个方法，重复停止一个容器，不会报错
 func (c *ContainerManager) StopContainer(containerID string) (string, error) {
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
@@ -100,6 +102,19 @@ func (c *ContainerManager) RemoveContainer(containerID string) (string, error) {
 	}
 	defer client.Close()
 
+	// 检查容器是否在运行，如果在运行，先停止容器
+	containerInfo, err := c.GetContainerInspectInfo(containerID)
+	if err != nil {
+		return "", err
+	}
+	if containerInfo.State != nil && containerInfo.State.Running {
+		_, err = c.StopContainer(containerID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	// 然后删除容器
 	err = client.ContainerRemove(ctx, containerID, types.ContainerRemoveOptions{})
 	if err != nil {
 		return "", err
@@ -108,7 +123,7 @@ func (c *ContainerManager) RemoveContainer(containerID string) (string, error) {
 	return containerID, nil
 }
 
-// 列出所有的容器，返回容器的列表和错误
+// 列出所有的容器，包括已经停止的，返回容器的列表和错误
 func (c *ContainerManager) ListContainers() ([]types.Container, error) {
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
@@ -117,12 +132,59 @@ func (c *ContainerManager) ListContainers() ([]types.Container, error) {
 	}
 	defer client.Close()
 
-	containers, err := client.ContainerList(ctx, types.ContainerListOptions{})
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
+		All: true,
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	return containers, nil
+}
+
+// 获取某个容器的状态，返回容器的状态和错误
+// 注意：Stats反应的是容器的实时运行状态，比如CPU、内存状态，而不是什么容器是否在运行的这些
+// 要获取容器是否在运行之类的状态，需要使用client.ContainerInspect
+func (c *ContainerManager) GetContainerStats(containerID string) (*types.StatsJSON, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	containerState, err := client.ContainerStats(ctx, containerID, false)
+
+	if err != nil {
+		return nil, err
+	}
+	defer containerState.Body.Close()
+
+	decoder := json.NewDecoder(containerState.Body)
+	statsInfo := &types.StatsJSON{}
+	err = decoder.Decode(statsInfo)
+	if err != nil {
+		return nil, err
+	}
+
+	return statsInfo, nil
+}
+
+// 获取容器Inspect的信息
+func (c *ContainerManager) GetContainerInspectInfo(containerID string) (*types.ContainerJSON, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	containerInfo, err := client.ContainerInspect(ctx, containerID)
+	if err != nil {
+		return nil, err
+	}
+
+	return &containerInfo, nil
 }
 
 // import (

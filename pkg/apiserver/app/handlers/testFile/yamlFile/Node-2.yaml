@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Node
 metadata:
-  name: testNode-1
+  name: testNode2
   labels:
     labelkey1: labelvalue1
     labelkey2: labelvalue2

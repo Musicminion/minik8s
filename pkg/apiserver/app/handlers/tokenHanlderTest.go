@@ -1,7 +1,9 @@
 // 测试令牌生成的处理程序
 package handlers
 
-import "testing"
+import (
+	"testing"
+)
 
 // 创建一个全局map，用于存储生成的token
 var tokenMap = make(map[string]bool)
@@ -9,6 +11,7 @@ var testTime = 16
 
 func TestDelAllToken(t *testing.T) {
 	// 1. 删除所有的token
+	// handlers.DelAllToken()
 	err := DelAllToken()
 	// 2. 判断是否删除成功
 	if err != nil {

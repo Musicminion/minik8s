@@ -20,7 +20,7 @@ func TestYaml(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(string(content))
+	// t.Log(string(content))
 
 	// 将文件内容转换为Node对象
 	node := &Node{}
@@ -31,13 +31,13 @@ func TestYaml(t *testing.T) {
 	}
 	// 比较转换后的Node对象与预期的Node对象是否相同
 	// 输出转换后的Node对象
-	t.Log(node.Basic.APIVersion)
-	t.Log(node.Basic.Kind)
-	t.Log(node.Basic.Metadata.Annotation)
-	t.Log(node.Basic.Metadata.Label)
-	t.Log(node.Basic.Metadata.Name)
-	t.Log(node.IP)
-
+	t.Log(node.GetAPIVersion())
+	t.Log(node.GetKind())
+	t.Log(node.GetAnnotations())
+	t.Log(node.GetLabels())
+	t.Log(node.GetUUID())
+	t.Log(node.GetName())
+	t.Log(node.GetIP())
 }
 
 func TestJson(t *testing.T) {
@@ -51,7 +51,7 @@ func TestJson(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Log(string(content))
+	// t.Log(string(content))
 
 	// 将文件内容转换为Node的JSON对象
 	node := &Node{}
@@ -62,10 +62,11 @@ func TestJson(t *testing.T) {
 	}
 	// 比较转换后的Node对象与预期的Node对象是否相同
 	// 输出转换后的Node对象
-	t.Log(node.Basic.APIVersion)
-	t.Log(node.Basic.Kind)
-	t.Log(node.Basic.Metadata.Annotation)
-	t.Log(node.Basic.Metadata.Label)
-	t.Log(node.Basic.Metadata.Name)
-	t.Log(node.IP)
+	t.Log(node.GetAPIVersion())
+	t.Log(node.GetKind())
+	t.Log(node.GetAnnotations())
+	t.Log(node.GetLabels())
+	t.Log(node.GetUUID())
+	t.Log(node.GetName())
+	t.Log(node.GetIP())
 }

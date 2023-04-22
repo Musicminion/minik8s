@@ -63,3 +63,17 @@ func TestPrefixGet(t *testing.T) {
 	}
 	t.Log(res)
 }
+
+func TestDel(t *testing.T) {
+	err := testEtcdStore.Del("/test/child1")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPrefixDel(t *testing.T) {
+	err := testEtcdStore.PrefixDel("/test")
+	if err != nil {
+		t.Fatal(err)
+	}
+}

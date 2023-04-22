@@ -34,7 +34,16 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	logPath = usr.HomeDir + "/k8s.log"
+
+	// 如果k8s目录不存在就创建一个目录
+	if _, err := os.Stat(usr.HomeDir + "/k8s"); os.IsNotExist(err) {
+		err := os.Mkdir(usr.HomeDir+"/k8s", 0755)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	logPath = usr.HomeDir + "/k8s" + "/k8s.log"
 	// 初始化的时候 检查文件是否存在，不存在就创建一个
 	// 处理完成后关闭文件，避免不必要的文件资源占用
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)

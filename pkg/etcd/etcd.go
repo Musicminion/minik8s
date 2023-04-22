@@ -166,7 +166,6 @@ func (s *Store) PrefixGet(key string) ([]ListRes, error) {
 		return []ListRes{}, err
 	}
 	var ret []ListRes
-	println(len(response.Kvs))
 	// 遍历response.Kvs，将每一个key-value转换为ListRes
 	for id, kv := range response.Kvs {
 		ret = append(ret, ListRes{

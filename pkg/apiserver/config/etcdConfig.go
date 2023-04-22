@@ -5,7 +5,10 @@ package config
 import "time"
 
 const (
-	EtcdTokenPath = "/registry/tokens/"
+	EtcdTokenPath   = "/registry/tokens/"
+	EtcdNodePath    = "/registry/nodes/"
+	EtcdPodPath     = "/registry/pods/"
+	EtcdServicePath = "/registry/services/"
 )
 
 type EtcdConfig struct {

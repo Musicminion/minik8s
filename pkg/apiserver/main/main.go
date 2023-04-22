@@ -1,7 +1,7 @@
 package main
 
 import (
-	apiserver "miniK8s/pkg/apiserver/app"
+	apiserver "miniK8s/pkg/apiserver/app/server"
 	"miniK8s/pkg/apiserver/config"
 )
 

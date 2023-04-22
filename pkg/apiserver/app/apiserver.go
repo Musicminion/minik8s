@@ -70,15 +70,26 @@ func (s *apiServer) getting(c *gin.Context) {
 	// c.JSON(http.StatusOK, response)
 }
 
-func (s *apiServer) bind() {
-	// 不同的url, for test only
-	// s.router.GET("/get/:key", s.getting)
-	// s.router.POST("/post/:key", s.posting)
-	// s.router.PUT("/put/:key", s.putting)
-	// s.router.DELETE("/del/:key", s.deleting)
+// 不同的url, for test only
+// s.router.GET("/get/:key", s.getting)
+// s.router.POST("/post/:key", s.posting)
+// s.router.PUT("/put/:key", s.putting)
+// s.router.DELETE("/del/:key", s.deleting)
 
-	// s.router.GET("/pods",)
-	s.router.GET("/", handlers.TestHandler)
+// s.router.GET("/pods",)
+// s.router.GET("/", handlers.TestHandler1)
+// s.router.GET(config.NodeURLWithSpecifiedName, handlers.TestHandler2)
+
+func (s *apiServer) bind() {
+
+	// Rest风格的api
+	// 在Kubernetes API中，节点（Node）的标识符是其名称，因此在API URI中，
+	// 节点的名称用于区分不同的节点。例如，获取名为node-1的节点的状态，可以使用以下URI：
+	s.router.GET(config.NodeURL, handlers.GetNodes)
+	s.router.GET(config.NodeURLWithSpecifiedName, handlers.GetNode)
+	s.router.POST(config.NodeURL, handlers.AddNode)
+	s.router.PUT(config.NodeURLWithSpecifiedName, handlers.UpdateNode)
+	s.router.DELETE(config.NodeURLWithSpecifiedName, handlers.DeleteNode)
 
 }
 

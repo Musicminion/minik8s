@@ -2,8 +2,9 @@ package etcd
 
 import (
 	"context"
-	etcd "go.etcd.io/etcd/client/v3"
 	"time"
+
+	etcd "go.etcd.io/etcd/client/v3"
 )
 
 type Store struct {
@@ -27,16 +28,17 @@ type WatchRes struct {
 	IsCreate        bool // true when ResType == PUT and the key is new
 	IsModify        bool // true when ResType == PUT and the key is old
 	Key             string
-	Value      		string
+	Value           string
 }
 
 type ListRes struct {
 	ResourceVersion int64
 	CreateVersion   int64
 	Key             string
-	Value      		string
+	Value           string
 }
 
+// 创建一个新的Etcd客户端存储
 func NewEtcdStore(endpoints []string, timeout time.Duration) (*Store, error) {
 	cli, err := etcd.New(etcd.Config{
 		Endpoints:   endpoints,
@@ -54,6 +56,7 @@ func NewEtcdStore(endpoints []string, timeout time.Duration) (*Store, error) {
 	return &Store{client: cli}, nil
 }
 
+// 修复了一下逻辑，通过返回的时候创建一个切片，而不是直接组装
 func (s *Store) Get(key string) ([]ListRes, error) {
 	response, err := s.client.Get(context.TODO(), key)
 	if err != nil {
@@ -62,21 +65,47 @@ func (s *Store) Get(key string) ([]ListRes, error) {
 	if len(response.Kvs) == 0 {
 		return nil, nil
 	}
-	return []ListRes{ListRes{
-		ResourceVersion: response.Kvs[0].ModRevision,
-		CreateVersion:   response.Kvs[0].CreateRevision,
-		Key:             string(response.Kvs[0].Key),
-		Value:      	 string(response.Kvs[0].Value),
-	}}, nil
+	// 定义一个ListRes的切片，用于存储结果
+	var res []ListRes
+
+	// 遍历response.Kvs，将每一个key-value转换为ListRes
+	for id, kv := range response.Kvs {
+		res = append(res, ListRes{
+			ResourceVersion: response.Header.Revision,
+			CreateVersion:   response.Kvs[id].CreateRevision,
+			Key:             string(kv.Key),
+			Value:           string(kv.Value),
+		})
+		// 如果id超过1，就退出循环
+		if id >= 1 {
+			break
+		}
+	}
+
+	return res, nil
+	// return []ListRes{ListRes{
+	// 	ResourceVersion: response.Kvs[0].ModRevision,
+	// 	CreateVersion:   response.Kvs[0].CreateRevision,
+	// 	Key:             string(response.Kvs[0].Key),
+	// 	Value:           string(response.Kvs[0].Value),
+	// }}, nil
 }
 
+// 值得注意的是，多次Put一个相同的key，会覆盖之前的值！
 func (s *Store) Put(key string, val []byte) error {
 	_, err := s.client.Put(context.TODO(), key, string(val))
 	return err
 }
 
+// 删除指定的Key
 func (s *Store) Del(key string) error {
 	_, err := s.client.Delete(context.TODO(), key)
+	return err
+}
+
+// 删除所有的key
+func (s *Store) DelAll() error {
+	_, err := s.client.Delete(context.TODO(), "", etcd.WithPrefix())
 	return err
 }
 
@@ -92,7 +121,6 @@ func convertEventToWatchRes(event *etcd.Event) WatchRes { // 根据event的类�
 	case etcd.EventTypePut:
 		res.ResType = PUT
 		res.Value = string(event.Kv.Value)
-		break
 	case etcd.EventTypeDelete:
 		res.ResType = DELETE
 	}
@@ -130,19 +158,32 @@ func (s *Store) PrefixWatch(key string) (context.CancelFunc, <-chan WatchRes) {
 	return cancel, watchResChan
 }
 
+// 之前写的是直接赋值ret[i],这样会寄!,应该调用append
 func (s *Store) PrefixGet(key string) ([]ListRes, error) {
 	response, err := s.client.Get(context.TODO(), key, etcd.WithPrefix())
 	if err != nil {
+		println(err)
 		return []ListRes{}, err
 	}
 	var ret []ListRes
-	for i, kv := range response.Kvs {
-		ret[i] = ListRes{
-			ResourceVersion: kv.ModRevision,
-			CreateVersion:   kv.CreateRevision,
+	println(len(response.Kvs))
+	// 遍历response.Kvs，将每一个key-value转换为ListRes
+	for id, kv := range response.Kvs {
+		ret = append(ret, ListRes{
+			ResourceVersion: response.Header.Revision,
+			CreateVersion:   response.Kvs[id].CreateRevision,
 			Key:             string(kv.Key),
-			Value:      	 string(kv.Value),
-		}
+			Value:           string(kv.Value),
+		})
 	}
+
+	// for i, kv := range response.Kvs {
+	// 	ret[i] = ListRes{
+	// 		ResourceVersion: kv.ModRevision,
+	// 		CreateVersion:   kv.CreateRevision,
+	// 		Key:             string(kv.Key),
+	// 		Value:           string(kv.Value),
+	// 	}
+	// }
 	return ret, nil
 }

@@ -2,29 +2,31 @@ package apiserver
 
 import (
 	// "encoding/json"
-	"miniK8s/pkg/etcd"
+	"fmt"
 	"miniK8s/pkg/apiserver/config"
+	"miniK8s/pkg/etcd"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 	// "net/http"
 )
 
 type ApiServer interface {
-	// Run()
+	Run()
 }
 
 type apiServer struct {
-	router     		*gin.Engine
-	etcdStore   	*etcd.Store
-	port			int
+	router    *gin.Engine
+	etcdStore *etcd.Store
+	port      int
 }
 
 func New(c *config.ServerConfig) ApiServer {
 	store, _ := etcd.NewEtcdStore(c.EtcdEndpoints, c.EtcdTimeout)
 	return &apiServer{
-		router: gin.Default(),
+		router:    gin.Default(),
 		etcdStore: store,
-		port: c.Port,
+		port:      c.Port,
 	}
 }
 
@@ -52,7 +54,7 @@ func (s *apiServer) posting(c *gin.Context) {
 
 }
 
-func (s *apiServer) putting(c *gin.Context)  {}
+func (s *apiServer) putting(c *gin.Context) {}
 
 func (s *apiServer) deleting(c *gin.Context) {
 	key := c.Param("key")
@@ -73,9 +75,8 @@ func (s *apiServer) bind() {
 	s.router.DELETE("/del/:key", s.deleting)
 }
 
-
-
 func (s *apiServer) Run() {
 	s.bind()
-	s.router.Run(":%d", string(s.port))
+	portConfig := fmt.Sprintf(":%d", s.port)
+	s.router.Run(portConfig)
 }

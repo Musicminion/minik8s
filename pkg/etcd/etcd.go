@@ -187,3 +187,8 @@ func (s *Store) PrefixGet(key string) ([]ListRes, error) {
 	// }
 	return ret, nil
 }
+
+func (s *Store) PrefixDel(key string) error {
+	_, err := s.client.Delete(context.TODO(), key, etcd.WithPrefix())
+	return err
+}

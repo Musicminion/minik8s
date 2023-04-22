@@ -1,0 +1,21 @@
+// 把etcd要存储的目标目录配置卸载这里
+
+package config
+
+import "time"
+
+const (
+	EtcdTokenPath = "/registry/tokens/"
+)
+
+type EtcdConfig struct {
+	EtcdEndpoints []string
+	EtcdTimeout   time.Duration
+}
+
+func DefaultEtcdConfig() *EtcdConfig {
+	return &EtcdConfig{
+		EtcdEndpoints: []string{"localhost:2379"},
+		EtcdTimeout:   5 * time.Second,
+	}
+}

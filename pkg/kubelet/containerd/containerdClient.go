@@ -1,7 +1,6 @@
 package containerdClient
 
 import (
-	"fmt"
 	"github.com/containerd/containerd"
 	// "github.com/containerd/containerd/oci"
 	// "github.com/containerd/containerd/namespaces"
@@ -13,13 +12,12 @@ type containerdClient struct {
 	client *containerd.Client // containerd.Client
 }
 
-
 /*
  * 1. getClient为内部函数提供获取一个containerd.Client
  * 2. 如果containerd.Client已经存在，则直接返回
  * 3. 如果containerd.Client不存在，则创建一个新的containerd.Client
  * 4. 如果创建containerd.Client失败，则返回错误
-*/ 
+ */
 func (c *containerdClient) getClient() (*containerd.Client, error) {
 	if c.client != nil {
 		return c.client, nil
@@ -38,7 +36,7 @@ func (c *containerdClient) GetClient() (*containerd.Client, error) {
 
 /*
 * closeClient关闭containerd.Client
-*/ 
+ */
 
 func (c *containerdClient) closeClient() error {
 	if c.client == nil {

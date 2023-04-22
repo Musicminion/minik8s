@@ -3,6 +3,7 @@ package k8log
 import (
 	"fmt"
 	"os"
+	"os/user"
 	"runtime"
 	"time"
 
@@ -17,17 +18,23 @@ import (
 // Fatal: 红色
 
 var ifDebug = true
-var logPath = "./k8s.log"
+var ifDirectPrint = true
+var logPath = ""
 var globalLogFile *os.File = nil
 
 const InfoLogFormat string = "[%s]: %s\n"
-const ErrorLogFormat string = "[%s]: [funcFrom: %s] [file: %s] [line: %d] %s\n"
+const ErrorLogFormat string = "[%s]: [func From: %s] [file: %s] [line: %d] %s\n"
 const WarnLogFormat string = "[%s]: %s\n"
-const DebugLogFormat string = "[%s]: [funcFrom: %s] [file: %s] [line: %d] %s\n"
-const FatalLogFormat string = "[%s]: [funcFrom: %s] [file: %s] [line: %d] %s\n"
+const DebugLogFormat string = "[%s]: [func From: %s] [file: %s] [line: %d] %s\n"
+const FatalLogFormat string = "[%s]: [func From: %s] [file: %s] [line: %d] %s\n"
 
 // 注意！这个是这个包被加载的时候要做的事情
 func init() {
+	usr, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
+	logPath = usr.HomeDir + "/k8s.log"
 	// 初始化的时候 检查文件是否存在，不存在就创建一个
 	// 处理完成后关闭文件，避免不必要的文件资源占用
 	logFile, err := os.OpenFile(logPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644)
@@ -46,8 +53,11 @@ func InfoLog(msg string) {
 	logStr := fmt.Sprintf(InfoLogFormat, currentTimeStr, msg)
 	// 3. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
-	// 4. 将字符串打印到控制台
-	color.Green(logStr)
+
+	if ifDirectPrint {
+		// 4. 将字符串打印到控制台
+		color.Green(logStr)
+	}
 }
 
 // 错误日志
@@ -62,8 +72,11 @@ func ErrorLog(msg string) {
 	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
-	// 5. 将字符串打印到控制台
-	color.Red(logStr)
+
+	if ifDirectPrint {
+		// 5. 将字符串打印到控制台
+		color.Red(logStr)
+	}
 }
 
 // 警告日志
@@ -78,8 +91,11 @@ func WarnLog(msg string) {
 	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
-	// 5. 将字符串打印到控制台
-	color.Yellow(logStr)
+
+	if ifDirectPrint {
+		// 5. 将字符串打印到控制台
+		color.Yellow(logStr)
+	}
 }
 
 // Debug日志
@@ -99,8 +115,11 @@ func DebugLog(msg string) {
 	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
-	// 5. 将字符串打印到控制台
-	color.Blue(logStr)
+
+	if ifDirectPrint {
+		// 5. 将字符串打印到控制台
+		color.Blue(logStr)
+	}
 }
 
 // Fatal日志
@@ -115,8 +134,13 @@ func FatalLog(msg string) {
 	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
-	// 5. 将字符串打印到控制台
-	color.Red(logStr)
+
+	if ifDirectPrint {
+		// 5. 将字符串打印到控制台
+		color.Red(logStr)
+	}
+
+	// 6. 退出程序
 	os.Exit(1)
 }
 
@@ -124,15 +148,3 @@ func FatalLog(msg string) {
 func Close() {
 	globalLogFile.Close()
 }
-
-// TODO
-// 1. 获取当前的函数名，文件名，行号
-// funcName, file, line, ok := runtime.Caller(1)
-
-// func errorLog(msg string) {
-// 	// TODO
-// }
-
-// func debugLog(msg string) {
-
-// }

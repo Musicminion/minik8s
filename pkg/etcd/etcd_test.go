@@ -45,6 +45,15 @@ func TestGet(t *testing.T) {
 		t.Fatal("get error")
 	}
 	t.Log(res)
+
+	res, err = testEtcdStore.Get("/testNoExist")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(res) != 0 {
+		t.Fatal("get error")
+	}
+	t.Log(res)
 }
 
 func TestPrefixGet(t *testing.T) {

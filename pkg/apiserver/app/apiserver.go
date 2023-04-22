@@ -1,8 +1,6 @@
 package apiserver
 
 import (
-	// "encoding/json"
-	"fmt"
 	"io"
 	"miniK8s/pkg/apiserver/app/handlers"
 	"miniK8s/pkg/apiserver/config"
@@ -104,11 +102,5 @@ func (s *apiServer) Run() {
 	}
 
 	s.bind()
-	runConfig := fmt.Sprintf("%s:%d", s.listenIP, s.port)
-	logStr := "API Server is running, listening on " + runConfig
-	k8log.InfoLog(logStr)
-	err := s.router.Run(runConfig)
-	if err != nil {
-		k8log.FatalLog("Api server comes across an error: " + err.Error())
-	}
+	s.router.Run(":%d", string(s.port))
 }

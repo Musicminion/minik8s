@@ -18,3 +18,21 @@ func TestGetHostIp(t *testing.T) {
 	}
 
 }
+
+func TestGetSystemMemoryUsage(t *testing.T) {
+	percent, err := GetHostSystemMemoryUsage()
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(percent)
+	}
+}
+
+func TestGetSystemCpuUsage(t *testing.T) {
+	percent, err := GetHostSystemCPUUsage()
+	if err != nil {
+		t.Error(err)
+	} else {
+		t.Log(percent)
+	}
+}

@@ -116,11 +116,24 @@ func sendHeartbeat() error {
 		return nil
 	}
 	hostName := host.GetHostName()
+	memPercent, err := host.GetHostSystemMemoryUsage()
+	if err != nil {
+		k8log.ErrorLog("Kublet", "sendHeartbeat failed, for get mem percent failed")
+		return nil
+	}
+	cpuPercent, err := host.GetHostSystemCPUUsage()
+	if err != nil {
+		k8log.ErrorLog("Kublet", "sendHeartbeat failed, for get cpu percent failed")
+		return nil
+	}
 	nodeStore := apiObject.NodeStore{
 		NodeBasic: apiObject.NodeBasic{},
-		IP:        ip,
 		Status: apiObject.NodeStatus{
-			Condition: apiObject.Ready,
+			Hostname:   hostName,
+			Condition:  apiObject.Ready,
+			Ip:         ip,
+			CpuPercent: cpuPercent,
+			MemPercent: memPercent,
 		},
 	}
 	// 发送PUT请求给API Server，更新当前的Node信息

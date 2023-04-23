@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"miniK8s/pkg/apiserver/config"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/etcd"
 	"miniK8s/pkg/k8log"
 )
@@ -9,7 +9,7 @@ import (
 var EtcdStore *etcd.Store = nil
 
 func init() {
-	etcdConfig := config.DefaultEtcdConfig()
+	etcdConfig := serverconfig.DefaultEtcdConfig()
 	etcdStore, err := etcd.NewEtcdStore(etcdConfig.EtcdEndpoints, etcdConfig.EtcdTimeout)
 	if err != nil {
 		k8log.FatalLog("APIServer", "init etcd client failed, err is "+err.Error())

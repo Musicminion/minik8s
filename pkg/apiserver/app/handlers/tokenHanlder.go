@@ -3,7 +3,7 @@ package handlers
 import (
 	"errors"
 	"math/rand"
-	"miniK8s/pkg/apiserver/config"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/k8log"
 	"time"
 )
@@ -29,7 +29,7 @@ func AddNewToken() (string, error) {
 	k8log.InfoLog("APIServer", logStr)
 
 	// 2. 将token存储到etcd中
-	key := config.EtcdTokenPath + newToken
+	key := serverconfig.EtcdTokenPath + newToken
 	EtcdStore.Put(key, []byte(newToken))
 	// 3. 返回token
 	return newToken, nil
@@ -37,7 +37,7 @@ func AddNewToken() (string, error) {
 
 func DelToken(token string) error {
 	// 1. 删除etcd中的token
-	key := config.EtcdTokenPath + token
+	key := serverconfig.EtcdTokenPath + token
 	err := EtcdStore.Del(key)
 	// 记录日志
 	logStr := "token deleted: " + token
@@ -49,13 +49,13 @@ func DelAllToken() error {
 	// 1. 删除etcd中的所有token
 	logStr := "all token deleted!"
 	k8log.WarnLog("APIServer", logStr)
-	err := EtcdStore.PrefixDel(config.EtcdTokenPath)
+	err := EtcdStore.PrefixDel(serverconfig.EtcdTokenPath)
 	return err
 }
 
 func VerifyToken(token string) (bool, error) {
 	// 1. 从etcd中获取token
-	key := config.EtcdTokenPath + token
+	key := serverconfig.EtcdTokenPath + token
 	res, err := EtcdStore.Get(key)
 	if err != nil {
 		return false, err

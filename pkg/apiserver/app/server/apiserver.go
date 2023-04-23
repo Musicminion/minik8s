@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"miniK8s/pkg/apiserver/app/handlers"
-	serverConfig "miniK8s/pkg/apiserver/config"
+	serverConfig "miniK8s/pkg/apiserver/serverconfig"
 	config "miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 

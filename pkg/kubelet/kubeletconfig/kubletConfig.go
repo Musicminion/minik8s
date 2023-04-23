@@ -1,4 +1,4 @@
-package config
+package kubeletconfig
 
 import "strconv"
 

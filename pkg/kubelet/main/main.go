@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/kubelet/kubeletconfig"
 	"miniK8s/util/host"
 	netrequest "miniK8s/util/netRequest"
 	"os"
@@ -137,7 +139,10 @@ func sendHeartbeat() error {
 		},
 	}
 	// 发送PUT请求给API Server，更新当前的Node信息
-	code, res, err := netrequest.PutRequestByTarget("http://127.0.0.1:8090/api/v1/nodes/"+hostName, nodeStore)
+	perfix := kubeletconfig.DefaultKubeletConfig().APIServerURLPrefix
+	targetAPI := perfix + config.NodesURL + hostName
+
+	code, res, err := netrequest.PutRequestByTarget(targetAPI, nodeStore)
 	if err != nil {
 		k8log.ErrorLog("Kublet", "sendHeartbeat failed, for update node info failed "+err.Error())
 		return nil
@@ -159,8 +164,39 @@ func sendHeartbeat() error {
 
 // 函数结束的时候，给API Server发送删除节点的请求
 func unRegisterNode() error {
-	k8log.InfoLog("Kublet", "unRegisterNode")
-	return nil
+	k8log.InfoLog("Kublet", "try unRegisterNode")
+
+	nodeStore := apiObject.NodeStore{
+		NodeBasic: apiObject.NodeBasic{},
+		Status: apiObject.NodeStatus{
+			Condition:  apiObject.Unknown,
+			CpuPercent: -1,
+			MemPercent: -1,
+		},
+	}
+
+	// 发送PUT请求给API Server，更新当前的Node信息
+	perfix := kubeletconfig.DefaultKubeletConfig().APIServerURLPrefix
+	targetAPI := perfix + config.NodesURL + host.GetHostName()
+	code, res, err := netrequest.PutRequestByTarget(targetAPI, nodeStore)
+	if err != nil {
+		k8log.ErrorLog("Kublet", "unRegisterNode failed, for update node info failed "+err.Error())
+		return nil
+	}
+	jsonBytes, err := json.Marshal(res)
+	if err != nil {
+		k8log.ErrorLog("Kublet", "unRegisterNode failed, for marshal node info failed")
+		return nil
+	}
+	k8log.InfoLog("Kublet", "unRegisterNode resp: "+string(jsonBytes))
+	if code == 200 {
+		k8log.InfoLog("Kublet", "unRegisterNode success")
+		return nil
+	} else {
+		k8log.ErrorLog("Kublet", "unRegisterNode failed, for update node info failed")
+		return nil
+	}
+
 }
 
 func commonLogic() {

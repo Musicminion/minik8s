@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	"miniK8s/pkg/apiserver/config"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/uuid"
 	"time"
@@ -22,7 +22,7 @@ func GetNode(c *gin.Context) {
 
 	// 如果解析成功，返回对应的Node信息
 	if name != "" {
-		res, err := EtcdStore.PrefixGet(config.EtcdNodePath + name)
+		res, err := EtcdStore.PrefixGet(serverconfig.EtcdNodePath + name)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"error": "get node failed " + err.Error(),
@@ -60,7 +60,7 @@ func GetNode(c *gin.Context) {
 
 // 获取所有Node信息
 func GetNodes(c *gin.Context) {
-	res, err := EtcdStore.PrefixGet(config.EtcdNodePath)
+	res, err := EtcdStore.PrefixGet(serverconfig.EtcdNodePath)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": "get nodes failed " + err.Error(),
@@ -87,7 +87,7 @@ func DeleteNode(c *gin.Context) {
 		logStr := "DeleteNode: name = " + name
 		k8log.InfoLog("APIServer", logStr)
 
-		err := EtcdStore.Del(config.EtcdNodePath + name)
+		err := EtcdStore.Del(serverconfig.EtcdNodePath + name)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"error": "delete node failed " + err.Error(),
@@ -122,7 +122,7 @@ func AddNode(c *gin.Context) {
 	}
 
 	// 检查name是否重复
-	res, err := EtcdStore.PrefixGet(config.EtcdNodePath + node.NodeMetadata.Name)
+	res, err := EtcdStore.PrefixGet(serverconfig.EtcdNodePath + node.NodeMetadata.Name)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "get node failed " + err.Error(),
@@ -163,7 +163,7 @@ func AddNode(c *gin.Context) {
 	}
 
 	// 将Node信息写入etcd
-	err = EtcdStore.Put(config.EtcdNodePath+node.NodeMetadata.Name, nodeJson)
+	err = EtcdStore.Put(serverconfig.EtcdNodePath+node.NodeMetadata.Name, nodeJson)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "put node to etcd failed" + err.Error(),
@@ -189,7 +189,7 @@ func UpdateNode(c *gin.Context) {
 		k8log.InfoLog("APIServer", logStr)
 
 		// 先获取原来的Node信息
-		res, err := EtcdStore.PrefixGet(config.EtcdNodePath + name)
+		res, err := EtcdStore.PrefixGet(serverconfig.EtcdNodePath + name)
 		if err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: get node failed "+err.Error())
 			c.JSON(400, gin.H{
@@ -242,7 +242,7 @@ func UpdateNode(c *gin.Context) {
 		}
 
 		// 把更新后的Node信息写入etcd
-		err = EtcdStore.Put(config.EtcdNodePath+name, nodeJson)
+		err = EtcdStore.Put(serverconfig.EtcdNodePath+name, nodeJson)
 		if err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: put node to etcd failed "+err.Error())
 			c.JSON(500, gin.H{

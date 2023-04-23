@@ -1,6 +1,6 @@
 // 把etcd要存储的目标目录配置卸载这里
 
-package config
+package serverconfig
 
 import "time"
 

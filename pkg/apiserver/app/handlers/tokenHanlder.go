@@ -26,7 +26,7 @@ func AddNewToken() (string, error) {
 	newToken := GenerateToken()
 	// 记录日志
 	logStr := "new token created: " + newToken
-	k8log.InfoLog(logStr)
+	k8log.InfoLog("APIServer", logStr)
 
 	// 2. 将token存储到etcd中
 	key := config.EtcdTokenPath + newToken
@@ -41,14 +41,14 @@ func DelToken(token string) error {
 	err := EtcdStore.Del(key)
 	// 记录日志
 	logStr := "token deleted: " + token
-	k8log.WarnLog(logStr)
+	k8log.WarnLog("APIServer", logStr)
 	return err
 }
 
 func DelAllToken() error {
 	// 1. 删除etcd中的所有token
 	logStr := "all token deleted!"
-	k8log.WarnLog(logStr)
+	k8log.WarnLog("APIServer", logStr)
 	err := EtcdStore.PrefixDel(config.EtcdTokenPath)
 	return err
 }
@@ -63,14 +63,14 @@ func VerifyToken(token string) (bool, error) {
 	// 2. 如果token存在，则返回true，否则返回false
 	if len(res) == 1 {
 		logStr := "token verified successful: " + token
-		k8log.InfoLog(logStr)
+		k8log.InfoLog("APIServer", logStr)
 		return true, nil
 	} else if len(res) > 1 {
 		logStr := "token verified failed[duplicate token error]: " + token
-		k8log.InfoLog(logStr)
+		k8log.InfoLog("APIServer", logStr)
 		return false, errors.New("token duplicate error")
 	}
 	logStr := "token verified failed: " + token
-	k8log.InfoLog(logStr)
+	k8log.InfoLog("APIServer", logStr)
 	return false, nil
 }

@@ -1,6 +1,7 @@
 package apiserver
 
 import (
+	"fmt"
 	"io"
 	"miniK8s/pkg/apiserver/app/handlers"
 	"miniK8s/pkg/apiserver/config"
@@ -92,15 +93,17 @@ func (s *apiServer) bind() {
 }
 
 func (s *apiServer) Run() {
-	k8log.InfoLog("Starting api server")
+	k8log.InfoLog("APIServer", "Starting api server")
 	if s.ifDebug {
 		gin.SetMode(gin.DebugMode)
-		k8log.InfoLog("Debug mode is on")
+		k8log.InfoLog("APIServer", "Debug mode is on")
 	} else {
 		gin.SetMode(gin.ReleaseMode)
-		k8log.InfoLog("Debug mode is off, release mode is on")
+		k8log.InfoLog("APIServer", "Debug mode is off, release mode is on")
 	}
 
 	s.bind()
-	s.router.Run(":%d", string(s.port))
+	runAddr := s.listenIP + ":" + fmt.Sprint(s.port)
+	k8log.InfoLog("APIServer", "Listening on "+runAddr)
+	s.router.Run("0.0.0.0:8090")
 }

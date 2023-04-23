@@ -25,7 +25,7 @@ func TestHandler2(c *gin.Context) {
 	response := ResponseData{
 		Data: name + "是你请求的参数哦！",
 	}
-	k8log.DebugLog(name)
+	k8log.DebugLog("APIServer", name)
 	c.JSON(http.StatusOK, response)
 	// return "test"
 }

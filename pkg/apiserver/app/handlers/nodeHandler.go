@@ -18,7 +18,7 @@ func GetNode(c *gin.Context) {
 	name := c.Param("name")
 	// log
 	logStr := "GetNode: name = " + name
-	k8log.InfoLog(logStr)
+	k8log.InfoLog("APIServer", logStr)
 
 	// 如果解析成功，返回对应的Node信息
 	if name != "" {
@@ -85,7 +85,7 @@ func DeleteNode(c *gin.Context) {
 	if name != "" {
 		// log
 		logStr := "DeleteNode: name = " + name
-		k8log.InfoLog(logStr)
+		k8log.InfoLog("APIServer", logStr)
 
 		err := EtcdStore.Del(config.EtcdNodePath + name)
 		if err != nil {
@@ -109,14 +109,15 @@ func DeleteNode(c *gin.Context) {
 // 添加新的Node
 func AddNode(c *gin.Context) {
 	// log
-	k8log.InfoLog("AddNode: add new node")
+	k8log.InfoLog("APIServer", "AddNode: add new node")
 	// POST请求，获取请求体
 	var node apiObject.Node
 	if err := c.ShouldBind(&node); err != nil {
 		c.JSON(500, gin.H{
 			"error": "parser node failed " + err.Error(),
 		})
-		k8log.ErrorLog("AddNode: parser node failed " + err.Error())
+
+		k8log.ErrorLog("APIServer", "AddNode: parser node failed "+err.Error())
 		return
 	}
 
@@ -126,7 +127,7 @@ func AddNode(c *gin.Context) {
 		c.JSON(500, gin.H{
 			"error": "get node failed " + err.Error(),
 		})
-		k8log.ErrorLog("AddNode: get node failed " + err.Error())
+		k8log.ErrorLog("APIServer", "AddNode: get node failed "+err.Error())
 		return
 	}
 
@@ -134,7 +135,15 @@ func AddNode(c *gin.Context) {
 		c.JSON(500, gin.H{
 			"error": "node name already exist",
 		})
-		k8log.ErrorLog("AddNode: node name already exist")
+		k8log.ErrorLog("APIServer", "AddNode: node name already exist")
+		return
+	}
+	// 检查Node的kind是否正确
+	if node.Kind != "Node" {
+		c.JSON(500, gin.H{
+			"error": "node kind is not Node",
+		})
+		k8log.ErrorLog("APIServer", "AddNode: node kind is not Node")
 		return
 	}
 
@@ -177,11 +186,12 @@ func UpdateNode(c *gin.Context) {
 	if name != "" {
 		// log
 		logStr := "UpdateNode: name = " + name
-		k8log.InfoLog(logStr)
+		k8log.InfoLog("APIServer", logStr)
 
 		// 先获取原来的Node信息
 		res, err := EtcdStore.PrefixGet(config.EtcdNodePath + name)
 		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNode: get node failed "+err.Error())
 			c.JSON(400, gin.H{
 				"error": "get node failed " + err.Error(),
 			})
@@ -190,6 +200,7 @@ func UpdateNode(c *gin.Context) {
 
 		// 处理res，如果发现有多个Node，返回错误
 		if len(res) != 1 {
+			k8log.DebugLog("APIServer", "UpdateNode: find more than one node")
 			c.JSON(500, gin.H{
 				"error": "get node err, find more than one node",
 			})
@@ -199,6 +210,7 @@ func UpdateNode(c *gin.Context) {
 		// 把POST请求里面的Node信息解析出来
 		newNode := apiObject.NodeStore{}
 		if err := c.ShouldBind(&newNode); err != nil {
+			k8log.DebugLog("APIServer", "UpdateNode: parser post node failed "+err.Error())
 			c.JSON(500, gin.H{
 				"error": "parser post node failed " + err.Error(),
 			})
@@ -209,6 +221,7 @@ func UpdateNode(c *gin.Context) {
 		oldNode := apiObject.NodeStore{}
 		err = json.Unmarshal([]byte(res[0].Value), &oldNode)
 		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNode: unmarshal old node failed "+err.Error())
 			c.JSON(500, gin.H{
 				"error": "unmarshal old node failed " + err.Error(),
 			})
@@ -217,6 +230,32 @@ func UpdateNode(c *gin.Context) {
 
 		// 选择性的更新Node信息
 		selectiveUpdateNode(&oldNode, &newNode)
+
+		// 把更新后的Node信息转化为json
+		nodeJson, err := json.Marshal(oldNode)
+		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNode: marshal node failed "+err.Error())
+			c.JSON(500, gin.H{
+				"error": "marshal node failed " + err.Error(),
+			})
+			return
+		}
+
+		// 把更新后的Node信息写入etcd
+		err = EtcdStore.Put(config.EtcdNodePath+name, nodeJson)
+		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNode: put node to etcd failed "+err.Error())
+			c.JSON(500, gin.H{
+				"error": "put node to etcd failed " + err.Error(),
+			})
+			return
+		}
+
+		// 返回200处理成功
+		c.JSON(200, gin.H{
+			"message": "update node success",
+			"data":    oldNode,
+		})
 
 	} else {
 		c.JSON(404, gin.H{

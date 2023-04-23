@@ -7,25 +7,25 @@ var outTimes = 2
 func TestInfoLog(t *testing.T) {
 	// 循环输出5次
 	for i := 0; i < outTimes; i++ {
-		InfoLog("test log info: aaaaa")
+		InfoLog("kubelet", "test log info: aaaaa")
 	}
 }
 
 func TestErrorLog(t *testing.T) {
 	for i := 0; i < outTimes; i++ {
-		ErrorLog("test log error: aaaaa")
+		ErrorLog("kubelet", "test log error: aaaaa")
 	}
 }
 
 func TestWarnLog(t *testing.T) {
 	for i := 0; i < outTimes; i++ {
-		WarnLog("test log warn: aaaaa")
+		WarnLog("kubelet", "test log warn: aaaaa")
 	}
 }
 
 func TestDebugLog(t *testing.T) {
 	for i := 0; i < outTimes; i++ {
-		DebugLog("test log debug: aaaaa")
+		DebugLog("kubelet", "test log debug: aaaaa")
 	}
 }
 

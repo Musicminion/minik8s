@@ -22,11 +22,11 @@ var ifDirectPrint = true
 var logPath = ""
 var globalLogFile *os.File = nil
 
-const InfoLogFormat string = "[%s]: %s\n"
-const ErrorLogFormat string = "[%s]: [func From: %s] [file: %s] [line: %d] %s\n"
-const WarnLogFormat string = "[%s]: %s\n"
-const DebugLogFormat string = "[%s]: [func From: %s] [file: %s] [line: %d] %s\n"
-const FatalLogFormat string = "[%s]: [func From: %s] [file: %s] [line: %d] %s\n"
+const InfoLogFormat string = "[%s]: [%s] %s\n"
+const ErrorLogFormat string = "[%s]: [%s] [func From: %s] [file: %s] [line: %d] %s\n"
+const WarnLogFormat string = "[%s]: [%s] %s\n"
+const DebugLogFormat string = "[%s]: [%s] [func From: %s] [file: %s] [line: %d] %s\n"
+const FatalLogFormat string = "[%s]: [%s] [func From: %s] [file: %s] [line: %d] %s\n"
 
 // 注意！这个是这个包被加载的时候要做的事情
 func init() {
@@ -54,12 +54,12 @@ func init() {
 }
 
 // 基本的日志信息
-func InfoLog(msg string) {
+func InfoLog(component string, msg string) {
 	// 1. 获取当前的时间
 	t := time.Now()
 	currentTimeStr := t.Format("2006-01-02 15:04:05")
 	// 2. 根据InfoLogFormat格式化字符串
-	logStr := fmt.Sprintf(InfoLogFormat, currentTimeStr, msg)
+	logStr := fmt.Sprintf(InfoLogFormat, currentTimeStr, component, msg)
 	// 3. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
 
@@ -70,7 +70,7 @@ func InfoLog(msg string) {
 }
 
 // 错误日志
-func ErrorLog(msg string) {
+func ErrorLog(component string, msg string) {
 	// 1. 获取当前的时间
 	t := time.Now()
 	currentTimeStr := t.Format("2006-01-02 15:04:05")
@@ -78,7 +78,7 @@ func ErrorLog(msg string) {
 	funcName, file, line, _ := runtime.Caller(1)
 
 	// 3. 根据 ErrorLogFormat 组装成字符串
-	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
+	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, component, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
 
@@ -89,7 +89,7 @@ func ErrorLog(msg string) {
 }
 
 // 警告日志
-func WarnLog(msg string) {
+func WarnLog(component string, msg string) {
 	// 1. 获取当前的时间
 	t := time.Now()
 	currentTimeStr := t.Format("2006-01-02 15:04:05")
@@ -97,7 +97,7 @@ func WarnLog(msg string) {
 	funcName, file, line, _ := runtime.Caller(1)
 
 	// 3. 根据 ErrorLogFormat 组装成字符串
-	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
+	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, component, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
 
@@ -108,7 +108,7 @@ func WarnLog(msg string) {
 }
 
 // Debug日志
-func DebugLog(msg string) {
+func DebugLog(component string, msg string) {
 	// 如果是debug模式，才会打印日志
 	if !ifDebug {
 		return
@@ -121,7 +121,7 @@ func DebugLog(msg string) {
 	funcName, file, line, _ := runtime.Caller(1)
 
 	// 3. 根据 ErrorLogFormat 组装成字符串
-	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
+	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, component, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
 
@@ -132,7 +132,7 @@ func DebugLog(msg string) {
 }
 
 // Fatal日志
-func FatalLog(msg string) {
+func FatalLog(component string, msg string) {
 	// 1. 获取当前的时间
 	t := time.Now()
 	currentTimeStr := t.Format("2006-01-02 15:04:05")
@@ -140,7 +140,7 @@ func FatalLog(msg string) {
 	funcName, file, line, _ := runtime.Caller(1)
 
 	// 3. 根据 ErrorLogFormat 组装成字符串
-	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, runtime.FuncForPC(funcName).Name(), file, line, msg)
+	logStr := fmt.Sprintf(ErrorLogFormat, currentTimeStr, component, runtime.FuncForPC(funcName).Name(), file, line, msg)
 	// 4. 将字符串写入到文件中
 	globalLogFile.WriteString(logStr)
 

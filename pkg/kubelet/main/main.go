@@ -32,7 +32,7 @@ func commonLogic() {
 		// 每隔一段时间给API Server发送心跳
 		sendHeartbeat()
 		// 睡眠一段时间
-		time.Sleep(5 * time.Second)
+		time.Sleep(2 * time.Second)
 	}
 }
 
@@ -41,19 +41,17 @@ func main() {
 	var wg sync.WaitGroup
 
 	// 启动 goroutine
-	wg.Add(1)
+	wg.Add(2)
 
 	// // 创建一个通道来接收信号
 	sigs := make(chan os.Signal, 1)
 	// // 注册一个信号接收函数，将接收到的信号发送到通道
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	registerNode()
 	// // 启动一个 goroutine 处理信号
 	go func() {
-		// 在这里执行业务逻辑
-		// ...
-		registerNode()
-		// 处理完业务逻辑后，阻塞等待收到信号
+		// 阻塞等待收到信号
 		<-sigs
 		// 发送信号给退出前执行的函数
 		unRegisterNode()

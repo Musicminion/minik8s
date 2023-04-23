@@ -1,5 +1,7 @@
 package config
 
+// 考虑到APIServer用URL，而Kuble用URI，那URI的规定就该放在全局配置里面
+
 // 这里是包括了API Server的所有URL
 
 // Node相关操作的URL

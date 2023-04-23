@@ -4,7 +4,8 @@ import (
 	"fmt"
 	"io"
 	"miniK8s/pkg/apiserver/app/handlers"
-	"miniK8s/pkg/apiserver/config"
+	serverConfig "miniK8s/pkg/apiserver/config"
+	config "miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 
 	"github.com/gin-gonic/gin"
@@ -22,7 +23,7 @@ type apiServer struct {
 	ifDebug  bool
 }
 
-func New(c *config.ServerConfig) ApiServer {
+func New(c *serverConfig.ServerConfig) ApiServer {
 	gin.DefaultWriter = io.Discard
 	return &apiServer{
 		router:   gin.Default(),

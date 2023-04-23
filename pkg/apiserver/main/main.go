@@ -8,6 +8,7 @@ import (
 func main() {
 	// apiServer := apiserver.New(config.DefaultServerConfig())
 	// apiServer.Run()
+
 	apiserver.New(config.DefaultServerConfig()).Run()
 
 }

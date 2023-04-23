@@ -6,9 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"miniK8s/pkg/apiObject"
-	"miniK8s/pkg/apiserver/config"
+	"miniK8s/pkg/config"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -95,7 +94,7 @@ func TestGetNodes(t *testing.T) {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		Output: ioutil.Discard, // 将输出重定向到 ioutil.Discard，即丢弃
+		Output: io.Discard, // 将输出重定向到 ioutil.Discard，即丢弃
 	}))
 	r.GET(config.NodeSpecURL, GetNodes)
 
@@ -131,7 +130,7 @@ func TestDeleteNode(t *testing.T) {
 	r := gin.New()
 	r.Use(gin.Recovery())
 	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
-		Output: ioutil.Discard, // 将输出重定向到 ioutil.Discard，即丢弃
+		Output: io.Discard, // 将输出重定向到 ioutil.Discard，即丢弃
 	}))
 	r.DELETE(config.NodeSpecURL, DeleteNode)
 

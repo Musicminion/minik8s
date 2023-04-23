@@ -38,17 +38,16 @@ type PodStatus struct {
 }
 
 type PodMetaData struct {
-	Name   string            `json:"name" yaml:"name"`
-	Namespace  string        `json:"namespace" yaml:"namespace"`
+	Name      string `json:"name" yaml:"name"`
+	Namespace string `json:"namespace" yaml:"namespace"`
 }
 
-
 type Pod struct {
-	ApiVersion  string				 `json:"apiVersion" yaml:"apiVersion"`
-	Kind		string				 `json:"kind" yaml:"kind"`
-	Metadata 	PodMetaData  		 `json:"metadata" yaml:"metadata"`
-	Labels  	map[string]string 	 `json:"labels" yaml:"labels"`
-	UID     	string            	 `json:"uid" yaml:"uid"`
-	Spec 		PodSpec  			 `json:"spec" yaml:"spec"`
-	Status 		PodStatus 		 	 `json:"status" yaml:"status"`
+	ApiVersion string            `json:"apiVersion" yaml:"apiVersion"`
+	Kind       string            `json:"kind" yaml:"kind"`
+	Metadata   PodMetaData       `json:"metadata" yaml:"metadata"`
+	Labels     map[string]string `json:"labels" yaml:"labels"`
+	UID        string            `json:"uid" yaml:"uid"`
+	Spec       PodSpec           `json:"spec" yaml:"spec"`
+	Status     PodStatus         `json:"status" yaml:"status"`
 }

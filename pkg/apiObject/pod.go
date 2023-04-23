@@ -8,46 +8,187 @@ type ContainerPort struct {
 	HostIP        string `yaml:"hostIP"`
 }
 
+// 参考Probe
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#probe-v1-core
+type ContainerProbe struct {
+	// HTTPGet specifies the http request to perform.
+	HttpGet struct {
+		Path   string `yaml:"path"`
+		Port   int    `yaml:"port"`
+		Host   string `yaml:"host"`
+		Scheme string `yaml:"scheme"`
+	} `yaml:"httpGet"`
+	// Number of seconds after the container has started before liveness probes are initiated.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	InitialDelaySeconds int `yaml:"initialDelaySeconds"`
+
+	// Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	TimeoutSeconds int `yaml:"timeoutSeconds"`
+
+	// How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
+	PeriodSeconds int `yaml:"periodSeconds"`
+}
+
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core
+type EnvVar struct {
+	Name  string `yaml:"name"`
+	Value string `yaml:"value"`
+}
+
+// 看文档：VolumeMount用在Container中
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#volumemount-v1-core
+type VolumeMount struct {
+	Name      string `yaml:"name" json:"name"`
+	MountPath string `yaml:"mountPath" json:"mountPath"`
+	ReadOnly  bool   `yaml:"readOnly" json:"readOnly"`
+}
+
+type LifecycleHandler struct {
+	Exec struct {
+		Command []string `yaml:"cmd,flow"`
+	} `yaml:"exec"`
+}
+
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#lifecycle-v1-core
+type ContainerLifecycle struct {
+	PostStart LifecycleHandler `yaml:"postStart"`
+	PreStop   LifecycleHandler `yaml:"preStop"`
+}
+
+// 关于CPU和Memory怎么写，看这里
+// https://kubernetes.io/zh-cn/docs/concepts/configuration/manage-resources-containers/
+type ContainerResourcesTypes struct {
+	CPU    string `yaml:"cpu"`
+	Memory string `yaml:"memory"`
+}
+
+// 这个当你为 Pod 中的 Container 指定了资源 请求时， kube-scheduler 就利用该信息决定将 Pod 调度到哪个节点上。
+// 当你还为 Container 指定了资源 限制 时，kubelet 就可以确保运行的容器不会使用超出所设限制的资源。
+//
+// kubelet 还会为容器预留所 请求 数量的系统资源，供其使用。
+//
+// https://kubernetes.io/zh-cn/docs/concepts/configuration/manage-resources-containers/
+type ContainerResources struct {
+	Limits   ContainerResourcesTypes `yaml:"limits"`
+	Requests ContainerResourcesTypes `yaml:"requests"`
+}
+
+// Conatiner结构体
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#container-v1-core
 type Container struct {
-	Name            string   `yaml:"name"`
-	Image           string   `yaml:"image"`
-	ImagePullPolicy string   `yaml:"imagePullPolicy"`
-	Command         []string `yaml:"cmd,flow"`
-	Args            []string `yaml:"args,flow"`
-	// Env             []EnvVar                     `yaml:"env"`
-	// Resources       ContainerResources           `yaml:"resources"`
-	Ports []ContainerPort `yaml:"ports"`
-	// LivenessProbe   ContainerLivenessProbeConfig `yaml:"livenessProbe"`
-	// Lifecycle       ContainerLifecycleConfig     `yaml:"lifecycle"`
-	// VolumeMounts    []VolumeMount                `yaml:"volumeMounts"`
+	// Name代表容器的名字
+	Name string `yaml:"name" json:"name"`
+
+	// Image代表容器的镜像
+	Image string `yaml:"image" json:"image"`
+
+	// ImagePullPolicy代表容器的镜像拉取策略
+	ImagePullPolicy string `yaml:"imagePullPolicy" json:"imagePullPolicy"`
+
+	// Command代表容器的命令
+	Command []string `yaml:"command" json:"command"`
+
+	// Args代表容器的命令行参数
+	Args []string `yaml:"args" json:"args"`
+
+	// 容器的环境变量
+	Env []EnvVar `yaml:"env"`
+
+	// 容器的资源相关的东西，不能更新，详细看文档
+	// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#resourcerequirements-v1-core
+	// Compute Resources required by this container. Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+	Resources ContainerResources `yaml:"resources"`
+	Ports     []ContainerPort    `yaml:"ports"`
+
+	// Periodic probe of container liveness. Container will be restarted if the probe fails.
+	// Cannot be updated.
+	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
+	LivenessProbe ContainerProbe `yaml:"livenessProbe"`
+
+	// 生命周期相关的命令，主要都是针对容器的启动或者挂了的时候执行的命令
+	Lifecycle ContainerLifecycle `yaml:"lifecycle" json:"lifecycle"`
+
+	// 挂载的文件系统的东西
+	VolumeMounts []VolumeMount `yaml:"volumeMounts"`
+
+	// 是否开启TTY
 	TTY bool `yaml:"tty"`
 }
 
+// 参考hostPath
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#hostpathvolumesource-v1-core
+type HostPath struct {
+	// 主机上面的目录、文件、Socket甚至都行
+	Path string `json:"path" yaml:"path"`
+
+	// Type有下面的取值：参考官方文档
+	// https://kubernetes.io/zh-cn/docs/concepts/storage/volumes/#hostpath
+	Type string `json:"type" yaml:"type"`
+}
+
+// 参考Volume的官方
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#volume-v1-core
+type Volume struct {
+	Name     string   `json:"name" yaml:"name"`
+	HostPath HostPath `json:"hostPath" yaml:"hostPath"`
+}
+
+// 参考Kubernetes API文档
+// https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#podspec-v1-core
 type PodSpec struct {
-	RestartPolicy string      `yaml:"restartPolicy"`
-	Containers    []Container `yaml:"containers"`
-	ClusterIp     string      `yaml:"clusterIp,omitempty"`
-}
+	// 参考https://kubernetes.io/zh-cn/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy
+	// 其可能取值包括 Always、OnFailure 和 Never。默认值是 Always。
+	// restartPolicy 适用于 Pod 中的所有容器。restartPolicy 仅针对同一节点上 kubelet 的容器重启动作。
+	// 当 Pod 中的容器退出时，kubelet 会按指数回退方式计算重启的延迟（10s、20s、40s、...），其最长延迟
+	// 为 5 分钟。 一旦某容器执行了 10 分钟并且没有出现问题，kubelet 对该容器的重启回退计时器执行重置操作。
+	RestartPolicy string `json:"restartPolicy" yaml:"restartPolicy" default:"Always"`
 
-type PodStatus struct {
-	Phase string `json:"phase" yaml:"phase"`
-	// IP address allocated to the pod. Routable at least within the cluster
-	PodIP string `json:"podIP" yaml:"podIP"`
-	//error message
-	Err string `json:"err" yaml:"err"`
-}
+	// 如果指定了nodeName，那么Pod将会被调度到指定的节点上
+	NodeName string `json:"nodeName" yaml:"nodeName"`
 
-type PodMetaData struct {
-	Name      string `json:"name" yaml:"name"`
-	Namespace string `json:"namespace" yaml:"namespace"`
+	// 容器的集合
+	Containers []Container `json:"containers" yaml:"containers"`
+
+	// 一个键值对的map，用来给Pod打标签
+	NodeSelector map[string]string `json:"nodeSelector" yaml:"nodeSelector"`
+
+	// pod的挂载的文件系统的东西
+	Volumes []Volume `json:"volumes" yaml:"volumes"`
 }
 
 type Pod struct {
-	ApiVersion string            `json:"apiVersion" yaml:"apiVersion"`
-	Kind       string            `json:"kind" yaml:"kind"`
-	Metadata   PodMetaData       `json:"metadata" yaml:"metadata"`
-	Labels     map[string]string `json:"labels" yaml:"labels"`
-	UID        string            `json:"uid" yaml:"uid"`
-	Spec       PodSpec           `json:"spec" yaml:"spec"`
-	Status     PodStatus         `json:"status" yaml:"status"`
+	Basic `yaml:",inline"`
+	Spec  PodSpec `json:"spec" yaml:"spec"`
+}
+
+// PodStatus是用来存储Pod的状态的
+// 参考官方文档：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#podstatus-v1-core
+type PodStatus struct {
+	// IP address allocated to the pod. Routable at least within the cluster. Empty if not yet allocated.
+	PodIP string `json:"podIP" yaml:"podIP"`
+
+	// Phase参考官方文档
+	// https://kubernetes.io/zh-cn/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase
+	// Pending（悬决）   Pod 已被 Kubernetes 系统接受，但有一个或者多个容器尚未创建亦未运行。
+	//                  此阶段包括等待 Pod 被调度的时间和通过网络下载镜像的时间。
+	// Running（运行中） Pod 已经绑定到了某个节点，Pod 中所有的容器都已被创建。至少有一个容器仍在运行，
+	//                   或者正处于启动或重启状态。
+	// Succeeded（成功） Pod 中的所有容器都已成功终止，并且不会再重启。
+	// Failed（失败）	 Pod 中的所有容器都已终止，并且至少有一个容器是因为失败终止。也就是说，容器以
+	//                  非 0 状态退出或者被系统终止。
+	// Unknown（未知）	 因为某些原因无法取得 Pod 的状态。这种情况通常是因为与 Pod 所在主机通信失败。
+	Phase string `json:"phase" yaml:"phase"`
+
+	// 最新的更新时间
+	UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+}
+
+// PodStore是用来存储Pod的设定和他的状态的
+type PodStore struct {
+	Basic `yaml:",inline"`
+	Spec  PodSpec `json:"spec" yaml:"spec"`
+	// Pod的状态
+	Status PodStatus `json:"status" yaml:"status"`
 }

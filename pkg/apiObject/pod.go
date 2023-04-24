@@ -192,3 +192,20 @@ type PodStore struct {
 	// Pod的状态
 	Status PodStatus `json:"status" yaml:"status"`
 }
+
+// 定义Pod到PodStore的转换器
+func (p *Pod) ToStore() *PodStore {
+	return &PodStore{
+		Basic:  p.Basic,
+		Spec:   p.Spec,
+		Status: PodStatus{},
+	}
+}
+
+// 定义PodStore到Pod的转换器
+func (p *PodStore) ToPod() *Pod {
+	return &Pod{
+		Basic: p.Basic,
+		Spec:  p.Spec,
+	}
+}

@@ -92,8 +92,12 @@ func (s *apiServer) bind() {
 	s.router.DELETE(config.NodeSpecURL, handlers.DeleteNode)
 
 	// Pod相关的api
-	s.router.GET(config.PodsURL, handlers.GetPods)
-	s.router.POST(config.PodsURL, handlers.AddPod)
+
+	s.router.GET(config.PodsURL, handlers.GetPods)         // 所有pod
+	s.router.GET(config.PodSpecURL, handlers.GetPod)       // 单个pod
+	s.router.POST(config.PodsURL, handlers.AddPod)         // 创建pod
+	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)    // 更新Pod
+	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
 
 }
 

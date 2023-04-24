@@ -5,8 +5,10 @@ package serverconfig
 import "time"
 
 const (
-	EtcdTokenPath   = "/registry/tokens/"
-	EtcdNodePath    = "/registry/nodes/"
+	EtcdTokenPath = "/registry/tokens/"
+	EtcdNodePath  = "/registry/nodes/"
+
+	// 更具体的说POD存在的是 /registry/pods/<namespace>/<pod-name>
 	EtcdPodPath     = "/registry/pods/"
 	EtcdServicePath = "/registry/services/"
 )

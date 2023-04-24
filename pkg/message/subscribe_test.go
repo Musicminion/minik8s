@@ -23,7 +23,7 @@ func TestSubscribe(t *testing.T) {
 		// t.Log(string(msg.Body))
 	}, ch)
 
-	time.Sleep(1000 * time.Second)
+	time.Sleep(5 * time.Second)
 	// 关闭chan
 	close(ch)
 

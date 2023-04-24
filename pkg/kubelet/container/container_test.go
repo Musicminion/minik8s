@@ -47,6 +47,7 @@ func TestCreateContainer(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		cm.StartContainer(ID)
 		t.Logf("[Created] Container ID: %s", ID)
 	}
 }

@@ -2,6 +2,7 @@ package etcd
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	etcd "go.etcd.io/etcd/client/v3"
@@ -184,6 +185,42 @@ func (s *Store) PrefixGet(key string) ([]ListRes, error) {
 	// 		Value:           string(kv.Value),
 	// 	}
 	// }
+	return ret, nil
+}
+
+// 这个函数用来排除一些前缀的key
+// 可以把要排除的目录放到excude里面
+func (s *Store) PrefixGetWithExcude(key string, excude []string) ([]ListRes, error) {
+	response, err := s.client.Get(context.TODO(), key, etcd.WithPrefix())
+	if err != nil {
+		println(err)
+		return []ListRes{}, err
+	}
+	var ret []ListRes
+	// 遍历response.Kvs，将每一个key-value转换为ListRes
+	for id, kv := range response.Kvs {
+		// 判断excude是否是kv.Key的前缀
+		// 初始化的时候，ifPrefix为false
+		ifPrefix := false
+		for _, excudeStr := range excude {
+			ifPrefix := strings.HasPrefix(string(kv.Key), excudeStr)
+			// 发现有前缀，就退出循环
+			if ifPrefix {
+				break
+			}
+		}
+		// 如果有前缀，就跳过，不增加这个到ret中
+		if ifPrefix {
+			continue
+		}
+
+		ret = append(ret, ListRes{
+			ResourceVersion: response.Header.Revision,
+			CreateVersion:   response.Kvs[id].CreateRevision,
+			Key:             string(kv.Key),
+			Value:           string(kv.Value),
+		})
+	}
 	return ret, nil
 }
 

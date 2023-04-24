@@ -91,6 +91,10 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.NodeSpecURL, handlers.UpdateNode)
 	s.router.DELETE(config.NodeSpecURL, handlers.DeleteNode)
 
+	// Pod相关的api
+	s.router.GET(config.PodsURL, handlers.GetPods)
+	s.router.POST(config.PodsURL, handlers.AddPod)
+
 }
 
 func (s *apiServer) Run() {

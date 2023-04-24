@@ -58,9 +58,9 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		// 完成YAML转化为POD对象
 		var pod apiObject.Pod
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
-		// 发请求，走你！
-		URL := config.NodeSpecURL + "/api/v1/namespaces/" + pod.Metadata.Namespace + "/pods"
-		kubectlutil.PostAPIObjectToServer()
+		// // 发请求，走你！
+		URL := config.PodsURL
+		kubectlutil.PostAPIObjectToServer(URL, pod)
 	case "Service":
 		fmt.Println("Service")
 		// 后面的类似写就完事了！！

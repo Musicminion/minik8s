@@ -1,5 +1,21 @@
 package handlers
 
+import "github.com/gin-gonic/gin"
+
+// 获取单个Pod的信息
+// 某个特定的Pod状态 对应的PodSpecURL = "/api/v1/pods/:name"
+func GetPod(c *gin.Context) {
+
+}
+
+func GetPods(c *gin.Context) {
+
+}
+
+func AddPod(c *gin.Context) {
+
+}
+
 // import (
 // 	"encoding/json"
 // 	"fmt"

@@ -23,6 +23,7 @@ jobs:
     - name: Build Production
       run: |
         export GOPATH=$HOME/go
+        export GOMOD=./go.mod
         go build  -o ./build/apiserver/apiserver ./pkg/apiserver/main/main.go 
         go build  -o ./build/kubelet/kubelet ./pkg/kubelet/main/main.go
         go build  -o ./build/kubectl/kubectl ./pkg/kubectl/main/main.go 

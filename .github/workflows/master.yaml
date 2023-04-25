@@ -15,7 +15,10 @@ jobs:
     runs-on: self-hosted
     steps:
     - uses: actions/checkout@v3
-
+    - name: Set up system env
+      run: |
+        sudo chmod 777 ./setup.sh
+        sudo ./setup.sh
     # - name: Set up Go
     #   uses: actions/setup-go@v3
     #   with:

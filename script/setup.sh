@@ -22,7 +22,7 @@ if ! command -v go &> /dev/null
 then
     echo "Go Need install"
     cd
-    wget https://go.dev/dl/go1.20.3.linux-amd64.tar.gz >> /dev/null
+    wget -q https://go.dev/dl/go1.20.3.linux-amd64.tar.gz >> /dev/null
     sudo tar -C /usr/local -xzf go1.20.3.linux-amd64.tar.gz
     sudo su
     echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
@@ -63,7 +63,7 @@ then
 else
     # 如果etcd没有安装，则安装它
     echo "etcd未安装，开始安装..."
-    wget https://github.com/etcd-io/etcd/releases/download/v3.5.0/etcd-v3.5.0-linux-amd64.tar.gz >> /dev/null
+    wget -q https://github.com/etcd-io/etcd/releases/download/v3.5.0/etcd-v3.5.0-linux-amd64.tar.gz >> /dev/null
     tar -xvf etcd-v3.5.0-linux-amd64.tar.gz
     cd etcd-v3.5.0-linux-amd64
     sudo mv etcd /usr/local/bin/

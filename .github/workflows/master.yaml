@@ -23,7 +23,8 @@ jobs:
     - name: Build Production
       run: |
         ls
-        export GOPATH=`pwd`
+        cd ..
+        export GOROOT=$(pwd)
         export GOMOD=./go.mod
         go build  -o ./build/apiserver/apiserver ./pkg/apiserver/main/main.go 
         go build  -o ./build/kubelet/kubelet ./pkg/kubelet/main/main.go

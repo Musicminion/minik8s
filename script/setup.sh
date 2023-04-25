@@ -17,43 +17,33 @@ else
 fi
 
 
-# 检查是否已经安装Go
+# 检查Go是否已安装
 if ! command -v go &> /dev/null
 then
-    echo "Go Need install"
-    cd
-    wget -q https://go.dev/dl/go1.20.3.linux-amd64.tar.gz >> /dev/null
-    sudo tar -C /usr/local -xzf go1.20.3.linux-amd64.tar.gz
-    sudo su
-    echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile
-    exit
-    source /etc/profile
-    rm go1.20.3.linux-amd64.tar.gz
+    echo "Go尚未安装。正在安装Go 1.20.3..."
 
-    # 在文章的末尾追加,保证sudo用户可以搞
-    echo 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/usr/local/go/bin/"' >> /etc/sudoers
+    # 下载Go 1.20.3版本的二进制文件
+    wget -q https://golang.org/dl/go1.20.3.linux-amd64.tar.gz -O /tmp/go.tar.gz
+
+    # 解压缩二进制文件到/usr/local目录
+    sudo tar -C /usr/local -xzf /tmp/go.tar.gz
+
+    # 将Go二进制文件路径添加到PATH环境变量
+    echo 'export PATH=$PATH:/usr/local/go/bin' >> /etc/profile.d/go.sh
+
+    # 使所有用户都能够访问PATH环境变量中的Go路径
+    echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/go.sh > /dev/null
+    sudo chmod +x /etc/profile.d/go.sh
+
+    # 加载新的环境变量
+    source /etc/profile.d/go.sh
+
+    # 验证Go安装
+    go version
 else
-    echo "Go Already install "
+    echo "Go已经安装。跳过安装步骤。"
+    go version
 fi
-
-# Set the Go installation directory
-GO_INSTALL_DIR=/usr/local/go
-
-# Loop through all user accounts
-for username in $(awk -F: '{print $1}' /etc/passwd); do
-  # Get the home directory for the user
-  homedir=$(eval echo ~$username)
-
-  # Check if the .bashrc file exists for the user
-  if [ -f "$homedir/.bashrc" ]; then
-    # Add the GOPATH and PATH environment variables to the .bashrc file
-    echo "export GOPATH=$homedir/go" >> "$homedir/.bashrc"
-    echo "export PATH=\$PATH:\$GOPATH/bin:$GO_INSTALL_DIR/bin" >> "$homedir/.bashrc"
-
-    # Load the new environment variables for the current session
-    source "$homedir/.bashrc"
-  fi
-done
 
 
 # 检查etcd是否已安装

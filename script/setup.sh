@@ -3,6 +3,8 @@
 # 超级无敌巨无霸一键安装脚本
 # 1s搞定环境安装 By zzq！
 
+# 安装的东西有awk、docker、etcd、rabbitmq消息队列
+
 
 # Check if awk is installed
 if ! command -v awk &> /dev/null; then
@@ -13,7 +15,6 @@ if ! command -v awk &> /dev/null; then
 else
     echo "awk is already installed."
 fi
-
 
 
 # 检查是否已经安装Go
@@ -145,10 +146,14 @@ if [ ! -x "$(command -v docker)" ]; then
   # 安装最新版本的Docker CE
   sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
-  # 将当前用户添加到Docker用户组
-  sudo usermod -aG docker $USER
-  
-  echo "Docker安装完成并将当前用户添加到Docker用户组。"
+  # 将主机上的所有用户添加到Docker用户组
+  sudo groupadd docker
+  sudo gpasswd -a "$USER" docker
+  sudo getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
+    [ $uid -ge 1000 ] && sudo gpasswd -a "$name" docker
+  done
+
+  echo "Docker安装完成并将主机上的所有用户添加到Docker用户组！注意！你需要手动启动机器"
 else
   echo "Docker已经安装。"
 fi

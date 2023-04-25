@@ -23,7 +23,7 @@ jobs:
     - name: Build Production
       run: |
         ls
-        cd ..
+        pwd
         export GOROOT=$(pwd)
         export GOMOD=./go.mod
         go build  -o ./build/apiserver/apiserver ./pkg/apiserver/main/main.go 

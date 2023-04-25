@@ -1,5 +1,17 @@
 #!/bin/bash
 
+# Check if awk is installed
+if ! command -v awk &> /dev/null; then
+    # Install awk
+    echo "awk is not installed. Installing now..."
+    sudo apt-get update
+    sudo apt-get install -y awk
+else
+    echo "awk is already installed."
+fi
+
+
+
 # 检查是否已经安装Go
 if ! command -v go &> /dev/null
 then
@@ -18,6 +30,26 @@ then
 else
     echo "Go Already install "
 fi
+
+# Set the Go installation directory
+GO_INSTALL_DIR=/usr/local/go
+
+# Loop through all user accounts
+for username in $(awk -F: '{print $1}' /etc/passwd); do
+  # Get the home directory for the user
+  homedir=$(eval echo ~$username)
+
+  # Check if the .bashrc file exists for the user
+  if [ -f "$homedir/.bashrc" ]; then
+    # Add the GOPATH and PATH environment variables to the .bashrc file
+    echo "export GOPATH=$homedir/go" >> "$homedir/.bashrc"
+    echo "export PATH=\$PATH:\$GOPATH/bin:$GO_INSTALL_DIR/bin" >> "$homedir/.bashrc"
+
+    # Load the new environment variables for the current session
+    source "$homedir/.bashrc"
+  fi
+done
+
 
 # 检查etcd是否已安装
 if command -v etcd &> /dev/null

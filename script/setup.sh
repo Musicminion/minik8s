@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# 超级无敌巨无霸一键安装脚本
+# 1s搞定环境安装 By zzq！
+
+
 # Check if awk is installed
 if ! command -v awk &> /dev/null; then
     # Install awk
@@ -113,3 +117,38 @@ sudo systemctl start rabbitmq-server
 
 echo "RabbitMQ已安装并设置开机启动"
 
+# 检查Docker是否已经安装
+if [ ! -x "$(command -v docker)" ]; then
+  # 更新软件包列表
+  sudo apt-get update
+
+  # 安装必要的软件包以允许apt通过HTTPS使用存储库
+  sudo apt-get install -y \
+      apt-transport-https \
+      ca-certificates \
+      curl \
+      gnupg-agent \
+      software-properties-common
+
+  # 添加Docker的官方GPG密钥
+  curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+
+  # 添加Docker的存储库
+  sudo add-apt-repository \
+     "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+     $(lsb_release -cs) \
+     stable"
+
+  # 更新软件包列表
+  sudo apt-get update
+
+  # 安装最新版本的Docker CE
+  sudo apt-get install -y docker-ce docker-ce-cli containerd.io
+
+  # 将当前用户添加到Docker用户组
+  sudo usermod -aG docker $USER
+  
+  echo "Docker安装完成并将当前用户添加到Docker用户组。"
+else
+  echo "Docker已经安装。"
+fi

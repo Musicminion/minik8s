@@ -25,8 +25,9 @@ then
     echo "Go尚未安装。正在安装Go 1.20.3..."
 
 
-    # 下载Go 1.20.3版本的二进制文件
-    wget -q https://golang.org/dl/go1.20.3.linux-amd64.tar.gz -O /tmp/go.tar.gz
+    # 下载Go 1.20.3版本的二进制文件(使用aliyun镜像源)
+    wget -c --tries=0 --timeout=300 --waitretry=5 --read-timeout=20 -O /tmp/go.tar.gz https://mirrors.aliyun.com/golang/go1.20.3.linux-amd64.tar.gz
+
 
     # 解压缩二进制文件到/usr/local目录
     sudo tar -C /usr/local -xzf /tmp/go.tar.gz
@@ -50,7 +51,7 @@ else
 fi
 
 
-检查etcd是否已安装
+# 检查etcd是否已安装
 
 if command -v etcd &> /dev/null
 then

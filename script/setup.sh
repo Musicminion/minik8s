@@ -33,11 +33,14 @@ then
 
     # 使所有用户都能够访问PATH环境变量中的Go路径
     echo 'export PATH=$PATH:/usr/local/go/bin' | sudo tee /etc/profile.d/go.sh > /dev/null
-    sudo chmod +x /etc/profile.d/go.sh
+    sudo chmod 777 /etc/profile.d/go.sh
 
     # 加载新的环境变量
     source /etc/profile.d/go.sh
 
+    # 把Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin:/usr/local/go/bin/"添加到/etc/sudoers文件中
+    sudo sed -i 's/secure_path="/secure_path="\/usr\/local\/go\/bin:/' /etc/sudoers
+    
     # 验证Go安装
     go version
 else
@@ -137,7 +140,6 @@ if [ ! -x "$(command -v docker)" ]; then
   sudo apt-get install -y docker-ce docker-ce-cli containerd.io
 
   # 将主机上的所有用户添加到Docker用户组
-  sudo groupadd docker
   sudo gpasswd -a "$USER" docker
   sudo getent passwd | while IFS=: read -r name _ uid gid _ home shell; do
     [ $uid -ge 1000 ] && sudo gpasswd -a "$name" docker

@@ -7,6 +7,7 @@ import (
 	serverConfig "miniK8s/pkg/apiserver/serverconfig"
 	config "miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/listwatcher"
 
 	"github.com/gin-gonic/gin"
 	// "net/http"
@@ -21,15 +22,22 @@ type apiServer struct {
 	listenIP string
 	port     int
 	ifDebug  bool
+	lw       *listwatcher.Listwatcher
 }
 
 func New(c *serverConfig.ServerConfig) ApiServer {
 	gin.DefaultWriter = io.Discard
+	lw, err := listwatcher.NewListWatcher(listwatcher.DefaultListwatcherConfig())
+	if err != nil {
+		k8log.FatalLog("apiserver", fmt.Sprintf("创建ListWatcher失败:%s", err.Error()))
+	}
+
 	return &apiServer{
 		router:   gin.Default(),
 		port:     c.Port,
 		listenIP: c.ListenIP,
 		ifDebug:  c.IfDebug,
+		lw:       lw,
 	}
 }
 
@@ -59,6 +67,10 @@ func (s *apiServer) bind() {
 }
 
 func (s *apiServer) Run() {
+	k8log.InfoLog("APIServer", "Watcher try to connect to RabbitMQ")
+	go s.lw.WatchQueue_Block("apiserver", handlers.MessageHandler, make(chan struct{}))
+	k8log.InfoLog("APIServer", "Bind MessageHandler To RabbitMQ Success")
+
 	k8log.InfoLog("APIServer", "Starting api server")
 	if s.ifDebug {
 		gin.SetMode(gin.DebugMode)

@@ -6,11 +6,11 @@ import (
 	"github.com/streadway/amqp"
 )
 
-type listwatcher struct {
+type Listwatcher struct {
 	subscriber *message.Subscriber
 }
 
-func NewListWatcher(conf *listwatcherConfig) (*listwatcher, error) {
+func NewListWatcher(conf *listwatcherConfig) (*Listwatcher, error) {
 	// message.NewSubscriber(message.DefaultMsgConfig())
 
 	newSubscriber, err := message.NewSubscriber(conf.subscriberConfig)
@@ -18,7 +18,7 @@ func NewListWatcher(conf *listwatcherConfig) (*listwatcher, error) {
 		return nil, err
 	}
 
-	ls := &listwatcher{
+	ls := &Listwatcher{
 		subscriber: newSubscriber,
 	}
 
@@ -27,14 +27,14 @@ func NewListWatcher(conf *listwatcherConfig) (*listwatcher, error) {
 
 // WatchQueue_Block 阻塞的方式监听队列，一旦有消息就会调用handleFunc
 // 那么,只有当调用者主动关闭done的时候，才会退出
-func (ls *listwatcher) WatchQueue_Block(queueName string, handleFunc func(amqp.Delivery), done chan struct{}) error {
+func (ls *Listwatcher) WatchQueue_Block(queueName string, handleFunc func(amqp.Delivery), done chan struct{}) error {
 	ls.subscriber.Subscribe(queueName, handleFunc, done)
 	return nil
 }
 
 // WatchQueue_NoBlock 非阻塞的方式监听队列，一旦有消息就会调用handleFunc
 // 函数立刻返回，返回一个函数，调用这个函数可以取消监听
-func (ls *listwatcher) WatchQueue_NoBlock(queueName string, handleFunc func(amqp.Delivery)) (func(), error) {
+func (ls *Listwatcher) WatchQueue_NoBlock(queueName string, handleFunc func(amqp.Delivery)) (func(), error) {
 	stopChannelChan := make(chan struct{})
 
 	go ls.subscriber.Subscribe(queueName, handleFunc, stopChannelChan)

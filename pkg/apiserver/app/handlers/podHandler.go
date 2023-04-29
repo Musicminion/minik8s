@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"miniK8s/pkg/apiObject"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/k8log"
 
 	"miniK8s/util/uuid"
@@ -189,6 +190,7 @@ func AddPod(c *gin.Context) {
 	/*
 		后面需要发送请求给调度器，让调度器进行调度到节点上面
 	*/
+	msgutil.PublishRequestNodeScheduleMsg(podStore)
 }
 
 // "/api/v1/namespaces/:namespace/pods/:name"

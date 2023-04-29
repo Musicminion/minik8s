@@ -82,25 +82,6 @@ func (s *Subscriber) handleMsgs(msgs <-chan amqp.Delivery, handleFunc func(amqp.
 		handleFunc(msg)
 	}
 	k8log.DebugLog("message", "handleMsgs exit")
-	// 使用 select 语句和超时控制来读取通道中的数据
-	// timeout := time.After(time.Second * 10)
-	// for {
-	// 	select {
-	// 	case msg, ok := <-msgs:
-	// 		if !ok {
-	// 			fmt.Println("Channel closed")
-	// 			return
-	// 		}
-	// 		fmt.Printf("Received message: %s\n", string(msg.Body))
-	// 	case <-timeout:
-	// 		fmt.Println("Timeout")
-	// 		return
-	// 	default:
-	// 		// 非阻塞操作
-	// 		fmt.Println("No message received yet")
-	// 		time.Sleep(time.Millisecond * 100)
-	// 	}
-	// }
 }
 
 // 调用者主动关闭这个通道，否则程序阻塞在里面运行
@@ -113,6 +94,32 @@ func (s *Subscriber) Subscribe(queueName string, handleFunc func(amqp.Delivery),
 	}
 	defer ch.Close()
 
+	// 检查queueName是否存在，不存在就创建
+	_, err = ch.QueueDeclare(
+		queueName, // name
+		true,      // durable
+		false,     // delete when unused
+		false,     // exclusive，排他性队列，只有创建这个队列的链接才能使用这个队列
+		false,     // no-wait
+		nil,       // arguments
+	)
+
+	if err != nil {
+		return err
+	}
+
+	// 确保交换机和queueName按照名字的关系绑定在一起
+	err = ch.QueueBind(
+		queueName,   // queue name
+		queueName,   // routing key
+		K8sExchange, // exchange
+		false,
+		nil,
+	)
+
+	if err != nil {
+		return err
+	}
 	msgs, err := ch.Consume(
 		queueName, // queue
 		"",        // consumer
@@ -139,4 +146,10 @@ func (s *Subscriber) Subscribe(queueName string, handleFunc func(amqp.Delivery),
 	// 把函数阻塞在这里，直到收到stopChannelCh的消息,才会退出
 	stop(stopChannelCh)
 	return nil
+}
+
+// 关闭链接并且关闭通道，这时候
+func (s *Subscriber) UnSubscribe(stopChannelCh chan<- struct{}) {
+	close(stopChannelCh)
+	s.conn.Close()
 }

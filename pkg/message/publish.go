@@ -47,6 +47,7 @@ func NewPublisher(conf *msgConfig) (*Publisher, error) {
 	return p, nil
 }
 
+// 此外在发布消息的时候，也要检测对应的key绑定的队列是否存在，如果不存在，消息会丢失
 // key：你要发给谁，就把key设置成谁的名字
 // contentType：消息的类型，比如json、text等,参考下面的变量
 // const ContentTypeJson = "application/json"
@@ -58,6 +59,20 @@ func (p *Publisher) Publish(key string, contentType string, msg []byte) error {
 		return err
 	}
 	defer ch.Close()
+
+	// 检测这个key是否绑定了队列，队列不存在就创建队列
+
+	_, err = ch.QueueDeclare(key, true, false, false, false, nil)
+	if err != nil {
+		return err
+	}
+	// 如果没有绑定队列，就尝试绑定队列
+	err = ch.QueueBind(key, key, K8sExchange, false, nil)
+	if err != nil {
+		return err
+	}
+
+	// 发布消息
 	err = ch.Publish(K8sExchange, key, false, false, amqp.Publishing{
 		ContentType: contentType,
 		Body:        msg,

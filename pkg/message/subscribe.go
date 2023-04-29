@@ -18,7 +18,7 @@ type Subscriber struct {
 	reconnectInterval int
 }
 
-func NewSubscriber(conf *msgConfig) (*Subscriber, error) {
+func NewSubscriber(conf *MsgConfig) (*Subscriber, error) {
 	url := "amqp://" + conf.User + ":" + conf.Password + "@" + conf.Host + ":" + fmt.Sprint(conf.Port) + "/" + conf.VHost
 	k8log.DebugLog("message", "url is "+url)
 	s := new(Subscriber)

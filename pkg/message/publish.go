@@ -18,7 +18,7 @@ type Publisher struct {
 	reconnectInterval int
 }
 
-func NewPublisher(conf *msgConfig) (*Publisher, error) {
+func NewPublisher(conf *MsgConfig) (*Publisher, error) {
 	url := "amqp://" + conf.User + ":" + conf.Password + "@" + conf.Host + ":" + fmt.Sprint(conf.Port) + "/" + conf.VHost
 	k8log.DebugLog("message", "url is "+url)
 	p := new(Publisher)

@@ -63,7 +63,10 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		kubectlutil.PostAPIObjectToServer(URL, pod)
 	case "Service":
 		fmt.Println("Service")
-		// 后面的类似写就完事了！！
+		var service apiObject.Service
+		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
+		URL := config.ServiceURL
+		kubectlutil.PostAPIObjectToServer(URL, service)
 
 	case "Deployment":
 		fmt.Println("Deployment")

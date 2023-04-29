@@ -9,7 +9,7 @@ import (
 
 // 负责处理调度结果的消息, content是表示调度到节点的名称
 func ScheduleResultHandler(content string) {
-	k8log.DebugLog("scheduleResultHandler", "收到调度结果消息"+content)
+	k8log.WarnLog("scheduleResultHandler", "收到调度结果消息!!!!!!!!!!!!!"+content)
 	// 在etcd里面搜索这个节点的信息，检查是否存在，存在就把
 
 }

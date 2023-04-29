@@ -82,7 +82,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	nodes, err := sch.GetAllNodes()
 
 	if err != nil {
-		k8log.ErrorLog("scheduler", "获取所有节点失败")
+		k8log.ErrorLog("scheduler", "获取所有节点失败"+err.Error())
 	}
 
 	scheduledNode := sch.ChooseFromNodes(nodes)

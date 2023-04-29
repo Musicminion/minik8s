@@ -68,7 +68,7 @@ func (s *apiServer) bind() {
 
 func (s *apiServer) Run() {
 	k8log.InfoLog("APIServer", "Watcher try to connect to RabbitMQ")
-	go s.lw.WatchQueue_Block("apiserver", handlers.MessageHandler, make(chan struct{}))
+	go s.lw.WatchQueue_Block("apiServer", handlers.MessageHandler, make(chan struct{}))
 	k8log.InfoLog("APIServer", "Bind MessageHandler To RabbitMQ Success")
 
 	k8log.InfoLog("APIServer", "Starting api server")

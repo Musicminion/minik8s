@@ -1,0 +1,20 @@
+{
+    "kind": "Service",
+    "apiVersion": "v1",
+    "metadata": {
+      "name": "service-example"
+    },
+    "spec": {
+      "ports": [
+        {
+          "name": "http",
+          "port": 80,
+          "targetPort": 80
+        }
+      ],
+      "selector": {
+        "app": "nginx"
+      },
+      "type": "LoadBalancer"
+    }
+  }

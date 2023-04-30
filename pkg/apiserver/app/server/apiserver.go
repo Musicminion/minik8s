@@ -99,6 +99,9 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)    // 更新Pod
 	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
 
+	// Service相关的api
+	s.router.POST(config.ServiceURL, handlers.AddService)   // 创建service
+
 }
 
 func (s *apiServer) Run() {

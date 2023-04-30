@@ -7,7 +7,8 @@ import (
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"os"
-
+	// "github.com/gorilla/mux"
+	"strings"
 	"github.com/spf13/cobra"
 )
 
@@ -54,18 +55,21 @@ func applyHandler(cmd *cobra.Command, args []string) {
 
 	switch Kind {
 	case "Pod":
-		fmt.Println("Pod")
+		fmt.Println("Kind: Pod")
 		// 完成YAML转化为POD对象
 		var pod apiObject.Pod
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
 		// // 发请求，走你！
 		URL := config.PodsURL
+		URL = strings.Replace(URL, ":namespace", pod.Metadata.Namespace, -1)
 		kubectlutil.PostAPIObjectToServer(URL, pod)
+		fmt.Println("finish pod")
 	case "Service":
-		fmt.Println("Service")
+		fmt.Println("Kind: Service")
 		var service apiObject.Service
-		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
+		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &service)
 		URL := config.ServiceURL
+		URL = strings.Replace(URL, ":namespace", service.Metadata.Namespace, -1)
 		kubectlutil.PostAPIObjectToServer(URL, service)
 
 	case "Deployment":

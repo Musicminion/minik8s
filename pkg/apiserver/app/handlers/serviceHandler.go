@@ -11,6 +11,7 @@ import (
 
 
 // 添加新的Service
+// POST "/api/v1/namespaces/:namespace/services"
 func AddService(c *gin.Context) {
 	// log
 	k8log.InfoLog("APIServer", "AddService: add new service")

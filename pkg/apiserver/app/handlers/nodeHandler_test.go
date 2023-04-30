@@ -100,7 +100,7 @@ func TestGetNodes(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/nodes"。
-		uri := config.NodesURL + "testNode-" + fmt.Sprint(i)
+		uri := config.NodesURL + "/testNode-" + fmt.Sprint(i)
 		req, err := http.NewRequest("GET", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
@@ -136,7 +136,7 @@ func TestDeleteNode(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/nodes"。
-		uri := config.NodesURL + "testNode" + fmt.Sprint(i)
+		uri := config.NodesURL + "/testNode" + fmt.Sprint(i)
 		req, err := http.NewRequest("DELETE", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {

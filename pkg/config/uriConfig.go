@@ -11,7 +11,7 @@ const (
 	// 请把所有和namespace【没有关系】的放在下面
 	// Node是属于集群级别的资源，需要放在下面，没有名字空间
 	// 所有Node状态
-	NodesURL = "/api/v1/nodes/"
+	NodesURL = "/api/v1/nodes"
 	// 某个特定的Node状态
 	NodeSpecURL = "/api/v1/nodes/:name"
 	// 某个特定的Node的status
@@ -20,7 +20,7 @@ const (
 	// 请把所有和名字空间【有关系】的放在下面
 	// Pod相关操作的URL
 	// 所有Pod的状态的URL
-	PodsURL = "/api/v1/namespaces/:namespace/pods/"
+	PodsURL = "/api/v1/namespaces/:namespace/pods"
 	// 某个特定Pod的URL
 	PodSpecURL = "/api/v1/namespaces/:namespace/pods/:name"
 	// 获取Pod的某个状态的URL
@@ -28,7 +28,7 @@ const (
 
 	// Service相关操作的URL
 	// 所有Service的状态的URL
-	ServicesURL = "/api/v1/namespaces/:namespace/services/"
+	ServiceURL = "/api/v1/namespaces/:namespace/services"
 	// 某个特定Service的URL
 	ServiceSpecURL = "/api/v1/namespaces/:namespace/services/:name"
 	// 获取Service的某个状态的URL

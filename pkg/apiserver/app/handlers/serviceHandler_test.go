@@ -25,7 +25,7 @@ func TestAddService(t *testing.T){
 	// 设置gin为生产模式
 	gin.SetMode(gin.ReleaseMode)
 	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddService方法。
-	r.POST(config.ServicesURL, AddService)
+	r.POST(config.ServiceURL, AddService)
 
 	// 读取文件"./testFile/yamlFile/Service-i.yaml"，将文件内容作为请求体。
 	// 打开文件
@@ -60,7 +60,7 @@ func TestAddService(t *testing.T){
 		serviceReader := bytes.NewReader(jsonBytes)
 
 		// 创建一个http请求，请求方法为POST，请求路径为"/api/v1/services"，请求体为一个json字符串。
-		req, err := http.NewRequest("POST", config.ServicesURL, serviceReader)
+		req, err := http.NewRequest("POST", config.ServiceURL, serviceReader)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,7 +99,7 @@ func TestGetServices(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/services"。
-		uri := config.ServicesURL + "service-example" + fmt.Sprint(i)
+		uri := config.ServiceURL + "/service-example" + fmt.Sprint(i)
 		req, err := http.NewRequest("GET", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
@@ -135,7 +135,7 @@ func TestDeleteService(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/services"。
-		uri := config.ServicesURL + "service-example" + fmt.Sprint(i)
+		uri := config.ServiceURL + "/service-example" + fmt.Sprint(i)
 		req, err := http.NewRequest("DELETE", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {

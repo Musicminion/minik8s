@@ -35,3 +35,13 @@ const (
 	ServiceSpecStatusURL = "/api/v1/namespaces/:namespace/services/:name/status"
 
 )
+
+const (
+	// 请把所有【参数】相关的放在下面，这部分是不带冒号的
+	URL_PARAM_NAME      = "name"
+	URL_PARAM_NAMESPACE = "namespace"
+
+	// 请把所有【参数】相关的放在下面，【PART】是指URI里面带冒号的部分
+	URI_PARAM_NAME_PART      = ":name"
+	URL_PARAM_NAMESPACE_PART = ":namespace"
+)

@@ -82,7 +82,7 @@ func TestPostAPIObjectToServer(t *testing.T) {
 	jsonBytes, _ := json.Marshal(service)
 
 	URL := config.ServiceURL
-	URL = strings.Replace(URL, ":namespace", service.Metadata.Namespace, -1)
+	URL = strings.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace, -1)
 
 	serviceHeader := bytes.NewReader(jsonBytes)
 	req, err := http.NewRequest("POST", URL, serviceHeader)

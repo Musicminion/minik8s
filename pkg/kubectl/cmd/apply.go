@@ -7,6 +7,7 @@ import (
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -60,6 +61,7 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
 		// // 发请求，走你！
 		URL := "http://localhost:8090" + config.PodsURL
+		URL = strings.Replace(URL, config.URL_PARAM_NAMESPACE, pod.GetPodNamespace(), -1)
 		err := kubectlutil.PostAPIObjectToServer(URL, pod)
 		if err != nil {
 			fmt.Println(err.Error())

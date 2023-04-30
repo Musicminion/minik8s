@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 
 	"miniK8s/util/uuid"
@@ -17,8 +18,10 @@ import (
 func GetPod(c *gin.Context) {
 	// "/api/v1/namespaces/:namespace/pods/:name"
 	// 解析里面的参数
-	namespace := c.Param("namespace")
-	name := c.Param("name")
+	// namespace := c.Param("namespace")
+	// name := c.Param("name")
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	name := c.Param(config.URL_PARAM_NAME)
 	if namespace == "" || name == "" {
 		c.JSON(400, gin.H{
 			"error": "namespace or name is empty",
@@ -63,8 +66,9 @@ func GetPod(c *gin.Context) {
 // 获取所有的Pod的信息
 // API "/api/v1/namespaces/:namespace/pods"
 func GetPods(c *gin.Context) {
-	namespaces := c.Param("namespace")
-	if namespaces == "" {
+	// namespaces := c.Param("namespace")
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	if namespace == "" {
 		c.JSON(400, gin.H{
 			"error": "namespace is empty",
 		})
@@ -72,10 +76,10 @@ func GetPods(c *gin.Context) {
 	}
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/
-	logStr := fmt.Sprintf("GetPods: namespace = %s", namespaces)
+	logStr := fmt.Sprintf("GetPods: namespace = %s", namespace)
 	k8log.InfoLog("APIServer", logStr)
 
-	key := fmt.Sprintf("/registry/pods/%s/", namespaces)
+	key := fmt.Sprintf("/registry/pods/%s/", namespace)
 	res, err := EtcdStore.PrefixGet(key)
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -108,7 +112,8 @@ func AddPod(c *gin.Context) {
 
 	// POST /api/v1/namespaces/:namespace/pods
 	// 解析里面的参数
-	namespace := c.Param("namespace")
+	// namespace := c.Param("namespace")
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	if namespace == "" {
 		c.JSON(400, gin.H{
 			"error": "namespace is empty",
@@ -199,8 +204,10 @@ func DeletePod(c *gin.Context) {
 	k8log.InfoLog("APIServer", "DeletePod")
 
 	// 解析参数
-	namespace := c.Param("namespace")
-	name := c.Param("name")
+	// namespace := c.Param("namespace")
+	// name := c.Param("name")
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	name := c.Param(config.URL_PARAM_NAME)
 
 	// 检查参数是否为空
 	if namespace == "" || name == "" {

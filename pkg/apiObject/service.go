@@ -1,6 +1,4 @@
 package apiObject
-/*  */
-
 // 从Condition到ServiceStatus基本都是和负载均衡相关的内容，目前暂不考虑实现
 
 type Condition struct {
@@ -42,7 +40,7 @@ type ServicePort struct {
 	// The port on each node on which this service is exposed when type is NodePort or LoadBalancer. 
 	NodePort   int 				`yaml:"nodePort"`
 
-    // TargetPort intstr.IntOrString   
+    TargetPort int32          `yaml:"targetPort,omitempty"`
 
 	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP". Default is TCP.
     Protocol   string        `yaml:"protocol"`
@@ -62,15 +60,6 @@ type ServiceSpec struct {
 	ClusterIP         string    `yaml:"clusterIP"`
 	// 分配给该服务的IP地址列表，通常是随机分配的。
 	ClusterIPs		[]string    `yaml:"clusterIPs"`
-	
-	// // 一个IP地址的列表，集群中的节点也将接受这项service的流量。
-    // ExternalIPs        []string   `yaml:"externalIPs"`
-
-	// // Only applies to Service Type: LoadBalancer. 
-    // LoadBalancerIP     string    `yaml:"loadBalancerIP"`
-
-	// // healthCheckNodePort specifies the healthcheck nodePort for the service. This only applies when type is set to LoadBalancer and externalTrafficPolicy is set to Local. 
-	// HealthCheckNodePort  int  `yaml:"healthCheckNodePort"`
 }
 
 

@@ -31,7 +31,7 @@ func GetHostIp() (string, error) {
 	for _, i := range interfaces {
 		// 获取网络接口的名称
 		name := i.Name
-		if name == "ens33" {
+		if name == "ens33" || name == "eth0" {
 			// 获取网络接口的地址信息
 			addrs, err := i.Addrs()
 			if err != nil {
@@ -49,7 +49,7 @@ func GetHostIp() (string, error) {
 			}
 		}
 	}
-	return "", errors.New("no interface or no named ens33")
+	return "", errors.New("no interface or no named ens33/eth0")
 }
 
 // GetSystemMemoryUsage 返回当前系统内存使用率

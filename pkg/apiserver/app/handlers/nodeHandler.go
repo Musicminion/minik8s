@@ -75,6 +75,7 @@ func GetNodes(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"data": nodes,
 	})
+	// c.JSON(200, nodes)
 }
 
 // 删除Node信息

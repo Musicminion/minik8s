@@ -62,17 +62,17 @@ func init() {
 
 	// 绑定队列和交换机
 	// 绑定scheduler队列
-	err = ch.QueueBind("scheduler", "scheduler", "K8sExchange", false, nil)
+	err = ch.QueueBind("scheduler", "scheduler", K8sExchange, false, nil)
 	if err != nil {
 		k8log.FatalLog("message", "Failed to bind scheduler queue:"+err.Error())
 	}
 	// 绑定controller队列
-	err = ch.QueueBind("controller", "controller", "K8sExchange", false, nil)
+	err = ch.QueueBind("controller", "controller", K8sExchange, false, nil)
 	if err != nil {
 		k8log.FatalLog("message", "Failed to bind controller queue:"+err.Error())
 	}
 	// 绑定apiServer队列
-	err = ch.QueueBind("apiServer", "apiServer", "K8sExchange", false, nil)
+	err = ch.QueueBind("apiServer", "apiServer", K8sExchange, false, nil)
 	if err != nil {
 		k8log.FatalLog("message", "Failed to bind apiServer queue:"+err.Error())
 	}

@@ -10,5 +10,4 @@ func main() {
 	// apiServer.Run()
 
 	apiserver.New(serverconfig.DefaultServerConfig()).Run()
-
 }

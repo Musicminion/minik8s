@@ -3,12 +3,11 @@ package kubectlutil
 import (
 	"encoding/json"
 	"fmt"
-	
+	"miniK8s/pkg/k8log"
 	netrequest "miniK8s/util/netRequest"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v3"
-	"miniK8s/pkg/k8log"
 )
 
 // 把一个API文件对象从文件的数据流里面读取出来kind字段
@@ -40,6 +39,7 @@ func ParseAPIObjectFromYamlfileContent(fileContent []byte, obj interface{}) erro
 
 // 用来解决发送API对象到服务器的问题
 func PostAPIObjectToServer(URL string, obj interface{}) error {
+	k8log.DebugLog("PostAPIObjectToServer", "URL: "+URL)
 	// 发送到服务器
 	code, res, err := netrequest.PostRequestByTarget(URL, obj)
 	if err != nil {

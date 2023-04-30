@@ -179,6 +179,7 @@ type PodStatus struct {
 	// Failed（失败）	 Pod 中的所有容器都已终止，并且至少有一个容器是因为失败终止。也就是说，容器以
 	//                  非 0 状态退出或者被系统终止。
 	// Unknown（未知）	 因为某些原因无法取得 Pod 的状态。这种情况通常是因为与 Pod 所在主机通信失败。
+	// Terminating（需要终止） Pod 已被请求终止，但是该终止请求还没有被发送到底层容器。Pod 仍然在运行。
 	Phase string `json:"phase" yaml:"phase"`
 
 	// 最新的更新时间
@@ -208,4 +209,30 @@ func (p *PodStore) ToPod() *Pod {
 		Basic: p.Basic,
 		Spec:  p.Spec,
 	}
+}
+
+// 工具函数，用来获取Pod的名字
+func (p *Pod) GetPodName() string {
+	return p.Metadata.Name
+}
+
+func (p *Pod) GetPodNamespace() string {
+	return p.Metadata.Namespace
+}
+
+func (p *Pod) GetPodUUID() string {
+	return p.Metadata.UUID
+}
+
+// 工具函数，用来获取Pod的名字
+func (p *PodStore) GetPodName() string {
+	return p.Metadata.Name
+}
+
+func (p *PodStore) GetPodNamespace() string {
+	return p.Metadata.Namespace
+}
+
+func (p *PodStore) GetPodUUID() string {
+	return p.Metadata.UUID
 }

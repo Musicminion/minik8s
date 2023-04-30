@@ -8,7 +8,7 @@ const ContentTypeJson = "application/json"
 const ContentTypeText = "text/plain"
 
 // 消息组件的配置
-type msgConfig struct {
+type MsgConfig struct {
 	// RabbitMQ服务器地址
 	User     string
 	Password string
@@ -23,8 +23,8 @@ type msgConfig struct {
 }
 
 // 默认的配置是连接本地的RabbitMQ服务器，使用Guest账号
-func DefaultMsgConfig() *msgConfig {
-	config := msgConfig{
+func DefaultMsgConfig() *MsgConfig {
+	config := MsgConfig{
 		User:     "guest",
 		Password: "guest",
 		Host:     "localhost",

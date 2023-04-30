@@ -26,14 +26,12 @@ func registerNode() error {
 
 	hostName := host.GetHostName()
 	if hostName == "" {
-
 		k8log.FatalLog("Kublet", "registerNode failed, for hostName is empty")
 		return nil
 	}
 
 	ip, err := host.GetHostIp()
 	if err != nil {
-
 		k8log.FatalLog("Kublet", "registerNode failed, for get host ip failed")
 		return nil
 	}
@@ -43,7 +41,7 @@ func registerNode() error {
 		return nil
 	}
 
-	netrequest.GetRequest("")
+	// netrequest.GetRequest("")
 	// 发送GET请求给API Server，获取当前的Node信息
 	code, res, err := netrequest.GetRequest("http://127.0.0.1:8090/api/v1/nodes/" + hostName)
 

@@ -79,17 +79,16 @@ func (r *rediscache) Get(key string) (string, error) {
 
 - 假设你自定义了一个类型type MyType struct {Name string Age int}
 
-  - 那么你可以这样调用GetObject函数：
+- 那么你可以这样调用GetObject函数：
 
-    ```
+		```
+		var myType MyType
+		obj, err := testRedisCache.GetObject("test-2", &myType)
 
-    var myType MyType
-    obj, err := testRedisCache.GetObject("test-2", &myType)
+		```
 
-    ```
-
-  - 值得强调的是，第二个参数一定要是一个指针类型，否则会报错！！！
-    函数会通过两个方式返回解析后的对象，你可以自己选择一种解析
+	  - 值得强调的是，第二个参数一定要是一个指针类型，否则会报错！！！
+	    函数会通过两个方式返回解析后的对象，你可以自己选择一种解析
 
 - 因为你传递的第二个参数是一个指针类型，所以函数会直接修改这个指针指向的对象，你直接解析传入的第二个参数就可以了
 

@@ -61,7 +61,7 @@ func (im *ImageManager) PullImageWithPolicy(imageRef string, policy imageTypes.I
 		return imageIDs[0], nil
 
 	// 如果镜像不存在，那么就拉取镜像
-	case imageTypes.PullIfNotPresent:
+	case imageTypes.PullIfNotPresent, "":
 		// 在本地查找镜像
 		imageIDs, err := im.findLocalImageIDsByImageRef(imageRef)
 		if err != nil {

@@ -4,18 +4,19 @@ import (
 	"context"
 	"encoding/json"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
-	"miniK8s/pkg/kubelet/image"
-	minik8stypes "miniK8s/pkg/minik8sTypes"
+	"miniK8s/pkg/kubelet/runtime/image"
+	minik8sTypes "miniK8s/pkg/minik8sTypes"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 )
 
 type ContainerManager struct {
 }
 
 // 创建容器的方法,返回容器的ID和错误
-func (c *ContainerManager) CreateContainer(name string, option *minik8stypes.ContainerConfig) (string, error) {
+func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.ContainerConfig) (string, error) {
 	// 获取docker的client
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
@@ -44,7 +45,15 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8stypes.Con
 			Entrypoint: option.Entrypoint,
 			Volumes:    option.Volumes,
 		},
-		nil,
+		&container.HostConfig{
+			NetworkMode:  container.NetworkMode(option.NetworkMode),
+			Binds:        option.Binds,
+			PortBindings: option.PortBindings,
+			IpcMode:      container.IpcMode(option.IpcMode),
+			PidMode:      container.PidMode(option.PidMode),
+			VolumesFrom:  option.VolumesFrom,
+			Links:        option.Links,
+		},
 		nil,
 		nil,
 		name,
@@ -135,6 +144,34 @@ func (c *ContainerManager) ListContainers() ([]types.Container, error) {
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
 		All: true,
 	})
+	if err != nil {
+		return nil, err
+	}
+
+	return containers, nil
+}
+
+// 按照条件查询容器列表，返回容器的列表和错误
+func (c *ContainerManager) ListContainersWithOpt(filter map[string][]string) ([]types.Container, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	listFliter := filters.NewArgs()
+	for key, valVec := range filter {
+		for _, val := range valVec {
+			listFliter.Add(key, val)
+		}
+	}
+
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
+		All:     true,
+		Filters: listFliter,
+	})
+
 	if err != nil {
 		return nil, err
 	}

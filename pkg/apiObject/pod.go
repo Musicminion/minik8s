@@ -84,7 +84,7 @@ type Container struct {
 	Image string `yaml:"image" json:"image"`
 
 	// ImagePullPolicy代表容器的镜像拉取策略
-	ImagePullPolicy string `yaml:"imagePullPolicy" json:"imagePullPolicy"`
+	ImagePullPolicy string `yaml:"imagePullPolicy" json:"imagePullPolicy" default:"IfNotPresent"`
 
 	// Command代表容器的命令
 	Command []string `yaml:"command" json:"command"`

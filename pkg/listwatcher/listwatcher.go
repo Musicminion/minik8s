@@ -10,7 +10,7 @@ type Listwatcher struct {
 	subscriber *message.Subscriber
 }
 
-func NewListWatcher(conf *listwatcherConfig) (*Listwatcher, error) {
+func NewListWatcher(conf *ListwatcherConfig) (*Listwatcher, error) {
 	// message.NewSubscriber(message.DefaultMsgConfig())
 
 	newSubscriber, err := message.NewSubscriber(conf.subscriberConfig)

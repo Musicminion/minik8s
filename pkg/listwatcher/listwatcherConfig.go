@@ -2,12 +2,12 @@ package listwatcher
 
 import "miniK8s/pkg/message"
 
-type listwatcherConfig struct {
+type ListwatcherConfig struct {
 	subscriberConfig *message.MsgConfig
 }
 
-func DefaultListwatcherConfig() *listwatcherConfig {
-	config := listwatcherConfig{
+func DefaultListwatcherConfig() *ListwatcherConfig {
+	config := ListwatcherConfig{
 		subscriberConfig: message.DefaultMsgConfig(),
 	}
 	return &config

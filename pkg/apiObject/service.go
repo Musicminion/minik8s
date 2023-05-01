@@ -112,3 +112,32 @@ func (s *Service) GetPorts() []ServicePort {
 func (s *Service) GetName() string {
 	return s.Basic.Metadata.Name
 }
+
+func (s *Service) GetNamespace() string {
+	return s.Basic.Metadata.Namespace
+}
+
+
+func (s *ServiceStore) GetAPIVersion() string {
+	return s.Basic.APIVersion
+}
+
+func (s *ServiceStore) GetKind() string{
+	return s.Basic.Kind
+}
+
+func (s *ServiceStore) GetType() string {
+	return s.Spec.Type
+}
+
+func (s *ServiceStore) GetPorts() []ServicePort {
+	return s.Spec.Ports
+}
+
+func (s *ServiceStore) GetName() string {
+	return s.Basic.Metadata.Name
+}
+
+func (s *ServiceStore) GetNamespace() string {
+	return s.Basic.Metadata.Namespace
+}

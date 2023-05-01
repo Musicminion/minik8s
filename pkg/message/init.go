@@ -33,7 +33,7 @@ func init() {
 		k8log.FatalLog("message", "Failed to open a channel:"+err.Error())
 	}
 	defer ch.Close()
-	// 声明一个交换机，存在话会检查类型，不存在new一个，
+	// 声明一个交换机，存在的话会检查类型，不存在new一个，
 	// 这里考虑用直接交换机，根据key来路由消息
 	// 假如你要发送给kublet消息，那么key就是kublet
 	err = ch.ExchangeDeclare("K8sExchange", "direct", true, false, false, false, nil)
@@ -60,6 +60,19 @@ func init() {
 		k8log.FatalLog("message", "Failed to declare apiServer queue:"+err.Error())
 	}
 
+	// 4. serviceUpdate队列
+	_, err = ch.QueueDeclare("serviceUpdate", true, false, false, false, nil)
+	if err != nil {
+		k8log.FatalLog("message", "Failed to declare serviceUpdate queue:"+err.Error())
+	}
+
+	// 5. endpointUpdate队列
+	_, err = ch.QueueDeclare("endpointUpdate", true, false, false, false, nil)
+	if err != nil {
+		k8log.FatalLog("message", "Failed to declare endpointUpdate queue:"+err.Error())
+	}
+
+
 	// 绑定队列和交换机
 	// 绑定scheduler队列
 	err = ch.QueueBind("scheduler", "scheduler", K8sExchange, false, nil)
@@ -75,6 +88,16 @@ func init() {
 	err = ch.QueueBind("apiServer", "apiServer", K8sExchange, false, nil)
 	if err != nil {
 		k8log.FatalLog("message", "Failed to bind apiServer queue:"+err.Error())
+	}
+	// 绑定serviceUpdate队列
+	err = ch.QueueBind("serviceUpdate", "serviceUpdate", K8sExchange, false, nil)
+	if err != nil {
+		k8log.FatalLog("message", "Failed to bind serviceUpdate queue:"+err.Error())
+	}
+	// 绑定endpointUpdate队列
+	err = ch.QueueBind("endpointUpdate", "endpointUpdate", K8sExchange, false, nil)
+	if err != nil {
+		k8log.FatalLog("message", "Failed to bind endpointUpdate queue:"+err.Error())
 	}
 
 	k8log.DebugLog("message", "init binding message finished")

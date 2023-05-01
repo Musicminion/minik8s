@@ -3,12 +3,14 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/entity"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/uuid"
-	"miniK8s/pkg/apiserver/serverconfig"
+
 	"github.com/gin-gonic/gin"
 )
-
 
 // 添加新的Service
 // POST "/api/v1/namespaces/:namespace/services"
@@ -79,11 +81,22 @@ func AddService(c *gin.Context) {
 	c.JSON(201, gin.H{
 		"message": "create service success",
 	})
+
+	serviceUpdate := &entity.ServiceUpdate{
+		Action: entity.CREATE,
+		ServiceTarget: entity.ServiceWithEndpoints{
+			Service: service,
+			Endpoints: make([]apiObject.Endpoint, 0),
+		},
+	}
+
+	msgutil.PublishUpdateService(serviceUpdate)
+
 }
 
 // 获取单个Service信息
 // 某个特定的Service状态 对应的ServiceSpecURL = "/api/v1/services/:name"
-func GetService(c *gin.Context){
+func GetService(c *gin.Context) {
 	// 尝试解析请求里面的name
 	name := c.Param("name")
 	// log

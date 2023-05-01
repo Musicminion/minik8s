@@ -20,7 +20,7 @@ type KubeProxy struct {
 	serviceUpdates  chan *entity.ServiceUpdate
 	endpointUpdates chan *entity.EndpointUpdate
 }
-
+       
 func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
     lw, err := listwatcher.NewListWatcher(lsConfig)
     if err != nil {

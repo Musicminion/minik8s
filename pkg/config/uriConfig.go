@@ -34,6 +34,15 @@ const (
 	// 获取Service的某个状态的URL
 	ServiceSpecStatusURL = "/api/v1/namespaces/:namespace/services/:name/status"
 
+
+	// Endpoint相关操作的URL
+	// 所有Endpoint的状态的URL
+	EndpointURL = "/api/v1/namespaces/:namespace/endpoints"
+	// 某个特定Endpoint的URL
+	EndpointSpecURL = "/api/v1/namespaces/:namespace/services/:name"
+
+
+
 )
 
 const (

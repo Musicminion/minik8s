@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"miniK8s/pkg/apiObject"
+	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
@@ -34,7 +35,7 @@ func GetPod(c *gin.Context) {
 	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf("/registry/pods/%s/%s", namespace, name)
-	res, err := EtcdStore.Get(key)
+	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "get pod failed " + err.Error(),
@@ -80,7 +81,7 @@ func GetPods(c *gin.Context) {
 	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf("/registry/pods/%s/", namespace)
-	res, err := EtcdStore.PrefixGet(key)
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "get pods failed " + err.Error(),
@@ -143,7 +144,7 @@ func AddPod(c *gin.Context) {
 
 	// 检查name是否重复
 	key := fmt.Sprintf("/registry/pods/%s/%s", namespace, newPodName)
-	res, err := EtcdStore.Get(key)
+	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "get pod failed " + err.Error(),
@@ -179,7 +180,7 @@ func AddPod(c *gin.Context) {
 	key = fmt.Sprintf("/registry/pods/%s/%s", namespace, newPodName)
 
 	// 将pod存储到etcd中
-	err = EtcdStore.Put(key, podStoreJson)
+	err = etcdclient.EtcdStore.Put(key, podStoreJson)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "put pod to etcd failed " + err.Error(),
@@ -220,7 +221,7 @@ func DeletePod(c *gin.Context) {
 	logStr := fmt.Sprintf("DeletePod: namespace = %s, name = %s", namespace, name)
 	k8log.InfoLog("APIServer", logStr)
 
-	err := EtcdStore.Del(fmt.Sprintf("/registry/pods/%s/%s", namespace, name))
+	err := etcdclient.EtcdStore.Del(fmt.Sprintf("/registry/pods/%s/%s", namespace, name))
 
 	if err != nil {
 		c.JSON(500, gin.H{

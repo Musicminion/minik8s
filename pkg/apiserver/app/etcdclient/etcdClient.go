@@ -1,4 +1,4 @@
-package handlers
+package etcdclient
 
 import (
 	"miniK8s/pkg/apiserver/serverconfig"

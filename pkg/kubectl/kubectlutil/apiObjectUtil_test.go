@@ -16,7 +16,6 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	// "miniK8s/pkg/kubectl/kubectlutil"
 )
 
 func TestGetAPIObjectTypeFromPodYamlFile(t *testing.T) {
@@ -32,7 +31,6 @@ func TestGetAPIObjectTypeFromPodYamlFile(t *testing.T) {
 	}
 	t.Log(kind)
 }
-
 
 func TestGetAPIObjectTypeFromServiceYamlFile(t *testing.T) {
 	// 读取文件
@@ -55,7 +53,7 @@ func TestParseAPIObjectFromYamlfileContent(t *testing.T) {
 	}
 	var service apiObject.Service
 	err = ParseAPIObjectFromYamlfileContent(fileContent, &service)
-	if err != nil{
+	if err != nil {
 		t.Fatal(err)
 	}
 }
@@ -75,7 +73,7 @@ func TestPostAPIObjectToServer(t *testing.T) {
 	}
 	var service apiObject.Service
 	err = ParseAPIObjectFromYamlfileContent(fileContent, &service)
-	if err != nil{
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -111,4 +109,3 @@ func TestPostAPIObjectToServer(t *testing.T) {
 		t.Errorf("expected status %v but got %v", http.StatusOK, resp.StatusCode)
 	}
 }
-

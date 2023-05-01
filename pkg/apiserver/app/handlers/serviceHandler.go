@@ -3,11 +3,16 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	"miniK8s/pkg/entity"
+
+	"miniK8s/pkg/apiserver/app/etcdclient"
+	"miniK8s/pkg/apiserver/app/helper"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
+	"miniK8s/pkg/config"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/uuid"
+	"path"
 
 	"github.com/gin-gonic/gin"
 )
@@ -29,7 +34,7 @@ func AddService(c *gin.Context) {
 	}
 
 	// 检查name是否重复
-	res, err := EtcdStore.PrefixGet(serverconfig.EtcdServicePath + service.Metadata.Name)
+	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + service.Metadata.Name)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "get service failed " + err.Error(),
@@ -70,7 +75,7 @@ func AddService(c *gin.Context) {
 	}
 
 	// 将Service信息写入etcd
-	err = EtcdStore.Put(serverconfig.EtcdServicePath+service.Metadata.Name, serviceJson)
+	err = etcdclient.EtcdStore.Put(serverconfig.EtcdServicePath+service.Metadata.Name, serviceJson)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "put service to etcd failed" + err.Error(),
@@ -85,11 +90,31 @@ func AddService(c *gin.Context) {
 	serviceUpdate := &entity.ServiceUpdate{
 		Action: entity.CREATE,
 		ServiceTarget: entity.ServiceWithEndpoints{
-			Service: service,
+			Service:   service,
 			Endpoints: make([]apiObject.Endpoint, 0),
 		},
 	}
 
+	// TODO: scan etcd and find all endpoints of this service
+	for key, value := range service.Spec.Selector {
+		func(key, value string) {
+			if err := etcdclient.EtcdStore.Put(path.Join(config.ServiceURL, key, value, service.Metadata.UUID), serviceJson); err != nil {
+				c.JSON(500, gin.H{
+					"error": "add service to etcd failed" + err.Error(),
+				})
+				return
+			}
+			if endpoints, err := helper.GetEndpoints(key, value); err != nil {
+				c.JSON(500, gin.H{
+					"error": "get endpoints failed" + err.Error(),
+				})
+				return
+			} else {
+				serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
+			}
+		}(key, value)
+	}
+	// publishServiceUpdate(serviceUpdate)
 	msgutil.PublishUpdateService(serviceUpdate)
 
 }
@@ -105,7 +130,7 @@ func GetService(c *gin.Context) {
 
 	// 如果解析成功，返回对应的Service信息
 	if name != "" {
-		res, err := EtcdStore.PrefixGet(serverconfig.EtcdServicePath + name)
+		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + name)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"error": "get service failed " + err.Error(),
@@ -143,7 +168,7 @@ func GetService(c *gin.Context) {
 
 // 获取所有Service信息
 func GetServices(c *gin.Context) {
-	res, err := EtcdStore.PrefixGet(serverconfig.EtcdServicePath)
+	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath)
 	if err != nil {
 		c.JSON(400, gin.H{
 			"error": "get services failed " + err.Error(),
@@ -170,7 +195,7 @@ func DeleteService(c *gin.Context) {
 		logStr := "DeleteService: name = " + name
 		k8log.InfoLog("APIServer", logStr)
 
-		err := EtcdStore.Del(serverconfig.EtcdServicePath + name)
+		err := etcdclient.EtcdStore.Del(serverconfig.EtcdServicePath + name)
 		if err != nil {
 			c.JSON(400, gin.H{
 				"error": "delete service failed " + err.Error(),

@@ -166,7 +166,7 @@ else
     echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
 
     sudo apt-get update
-    sudo apt-get install redis
+    sudo apt-get install -y redis
     echo "Redis安装完成"
 
     # 设置Redis开机自动启动

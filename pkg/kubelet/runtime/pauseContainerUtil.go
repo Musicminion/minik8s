@@ -3,6 +3,7 @@ package runtime
 import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
 
 	"miniK8s/util/netutil"
@@ -156,7 +157,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	uuid := pod.Metadata.UUID
 
 	// 取pause-[Pod UUID]作为pause容器的名字
-	newPauseName := fmt.Sprintf("%s-%s", PauseContainerNameBase, uuid)
+	newPauseName := fmt.Sprintf("%s%s", PauseContainerNameBase, uuid)
 
 	ID, err := r.containerManager.CreateContainer(newPauseName, pauseConfig)
 
@@ -172,7 +173,12 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	}
 
 	// [Weave网络] 为pause容器添加网络
-	weave.WeaveAttach(ID, pod.Status.PodIP)
+	res, err := weave.WeaveAttach(ID, pod.Status.PodIP)
+	if err != nil {
+		return "", err
+	}
+
+	k8log.DebugLog("WeaveAttach", "WeaveAttach res "+res)
 
 	return ID, nil
 }

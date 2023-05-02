@@ -3,6 +3,7 @@ package image
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -85,6 +86,7 @@ func (im *ImageManager) PullImageWithPolicy(imageRef string, policy imageTypes.I
 			}
 
 			if len(imageIDs) != 1 {
+				fmt.Println(imageIDs)
 				return "", errors.New("imageID not found or more than one imageID")
 			}
 
@@ -179,6 +181,12 @@ func (im *ImageManager) findLocalImageIDsByImageRef(imageRef string) ([]string, 
 // 工具函数
 // 解析镜像"docker.io/library/busybox:latest", 返回 "busybox:latest"
 func parseImageRef(imageRef string) (result string) {
+	// 检查imageRef是否是docker.io开头的
+	if !strings.HasPrefix(imageRef, "docker.io/") {
+		result = imageRef
+		return result
+	}
+
 	// 通过/分割字符串
 	split := strings.Split(imageRef, "/")
 	// 如果分割后的长度大于1，那么就取最后一个
@@ -187,6 +195,5 @@ func parseImageRef(imageRef string) (result string) {
 	} else {
 		result = imageRef
 	}
-	return
-
+	return result
 }

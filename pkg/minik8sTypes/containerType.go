@@ -95,5 +95,14 @@ const (
 
 // 系统保留字段，给容器的标签使用
 const (
-	ContainerLabel_Pod = "_pod"
+	// meta相关的
+	ContainerLabel_PodName = "_pod_name"
+	ContainerLabel_PodUID  = "_pod_uid"
+	// pause容器相关的
+	ContainerLabel_IfPause       = "_if_pause"
+	ContainerLabel_IfPause_True  = "_true"
+	ContainerLabel_IfPause_False = "_false"
+
+	// namespace相关的
+	ContainerLabel_PodNamespace = "_namespace"
 )

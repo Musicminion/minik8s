@@ -6,7 +6,6 @@ import (
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
 
 	"miniK8s/util/netutil"
-	"miniK8s/util/uuid"
 	"miniK8s/util/weave"
 
 	"github.com/docker/go-connections/nat"
@@ -19,7 +18,11 @@ func (r *runtimeManager) removePauseContainer(pod *apiObject.PodStore) (string, 
 	filter := make(map[string][]string)
 	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
 	// 在filter中添加标签
-	filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
+	// 四个标签：PodName、PodNamespace、PodUID、IfPause
+	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodNamespace] = []string{pod.Metadata.Namespace}
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{pod.Metadata.UUID}
+	filter[minik8sTypes.ContainerLabel_IfPause] = []string{minik8sTypes.ContainerLabel_IfPause_True}
 
 	res, err := r.containerManager.ListContainersWithOpt(filter)
 
@@ -111,8 +114,14 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 		pauseLabels[labelKey] = labelVal
 	}
 	// 为pause容器添加标签，标签的key为"pod"，value为pod的名字
-	pauseLabels[minik8sTypes.ContainerLabel_Pod] = pod.Metadata.Name
+	// 三个标签
+	// podName、podUID、ifPause
+	pauseLabels[minik8sTypes.ContainerLabel_PodName] = pod.Metadata.Name
+	pauseLabels[minik8sTypes.ContainerLabel_PodUID] = string(pod.Metadata.UUID)
+	pauseLabels[minik8sTypes.ContainerLabel_IfPause] = minik8sTypes.ContainerLabel_IfPause_True
+	pauseLabels[minik8sTypes.ContainerLabel_PodNamespace] = pod.Metadata.Namespace
 
+	// 返回配置的信息
 	config := minik8sTypes.ContainerConfig{
 		Image:        PauseContainerImage,
 		Labels:       pauseLabels,
@@ -126,6 +135,7 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 	return &config, nil
 }
 
+// Pause容器的命名规则目前是 pause-[Pod UUID]
 func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, error) {
 	// [镜像检查] 检查pause镜像是否存在，不存在则拉取
 	_, err := r.imageManager.PullImageWithPolicy(PauseContainerImage, minik8sTypes.PullIfNotPresent)
@@ -142,9 +152,10 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 
 	// [容器创建] 创建pause容器
 	// 产生一个随机的uuid
-	uuid := uuid.NewUUID()
+	// uuid := uuid.NewUUID()
+	uuid := pod.Metadata.UUID
 
-	// 取uuid的前12位作为pause容器的名字
+	// 取pause-[Pod UUID]作为pause容器的名字
 	newPauseName := fmt.Sprintf("%s-%s", PauseContainerNameBase, uuid)
 
 	ID, err := r.containerManager.CreateContainer(newPauseName, pauseConfig)
@@ -167,26 +178,66 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 }
 
 // 启动一个
-// func (r *runtimeManager) startPauseContainer(pod *apiObject.PodStore) (string, error) {
-// 	var filter = make(map[string][]string)
-// 	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
-// 	// 在filter中添加标签
-// 	filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
+func (r *runtimeManager) startPauseContainer(pod *apiObject.PodStore) (string, error) {
+	var filter = make(map[string][]string)
+	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
+	// 在filter中添加标签
+	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{string(pod.Metadata.UUID)}
+	filter[minik8sTypes.ContainerLabel_IfPause] = []string{minik8sTypes.ContainerLabel_IfPause_True}
+	filter[minik8sTypes.ContainerLabel_PodNamespace] = []string{pod.Metadata.Namespace}
 
-// 	res, err := r.containerManager.ListContainersWithOpt(filter)
+	res, err := r.containerManager.ListContainersWithOpt(filter)
 
-// 	if err != nil {
-// 		return "", err
-// 	}
+	if err != nil {
+		return "", err
+	}
 
-// 	if len(res) != 1 {
-// 		return "", fmt.Errorf("pause container found more than one")
-// 	}
+	// 	// if len(res) != 1 {
+	// 	return "", fmt.Errorf("pause container found more than one")
+	// }
 
-// 	// 启动pause容器
-// 	if _, err := r.containerManager.StartContainer(res[0].ID); err != nil {
-// 		return "", err
-// 	}
+	// // 启动pause容器
+	// if _, err := r.containerManager.StartContainer(res[0].ID); err != nil {
+	// 	return "", err
+	// }
 
-// 	return res[0].ID, nil
-// }
+	// 暂时放宽松力度，不检查多个pause容器的情况
+
+	retID := ""
+	// 遍历启动pause容器
+	for _, container := range res {
+		retID = container.ID
+		if _, err := r.containerManager.StartContainer(container.ID); err != nil {
+			return "", err
+		}
+	}
+	return retID, nil
+}
+
+// stopPauseContainer
+func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, error) {
+	var filter = make(map[string][]string)
+	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{string(pod.Metadata.UUID)}
+	filter[minik8sTypes.ContainerLabel_IfPause] = []string{minik8sTypes.ContainerLabel_IfPause_True}
+	filter[minik8sTypes.ContainerLabel_PodNamespace] = []string{pod.Metadata.Namespace}
+
+	res, err := r.containerManager.ListContainersWithOpt(filter)
+
+	if err != nil {
+		return "", err
+	}
+
+	retID := ""
+	// 遍历停止pause容器
+	for _, container := range res {
+		retID = container.ID
+		if _, err := r.containerManager.StopContainer(container.ID); err != nil {
+			return "", err
+		}
+	}
+
+	return retID, nil
+}

@@ -63,8 +63,9 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 		return "", err
 	}
 
+	// 将容器的ID返回
 	return result.ID, nil
-	// return nil
+
 }
 
 // 启动一个容器，返回容器的ID和错误

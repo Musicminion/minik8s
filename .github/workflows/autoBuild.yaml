@@ -1,0 +1,39 @@
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: minik8s
+
+on:
+  push:
+    branches: [ "master", "feature/*"]
+  pull_request:
+    branches: [ "master", "feature/*"]
+
+jobs:
+  build:
+    runs-on: self-hosted
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up system env
+      run: |
+        sudo chmod 777 ./script/setup.sh
+        sudo ./script/setup.sh
+    # - name: Set up Go
+    #   uses: actions/setup-go@v3
+    #   with:
+    #     go-version: 1.20
+
+    - name: Test
+      run: | 
+        sudo go test ./...
+
+    - name: Build Production
+      run: |
+        go build  -o ./build/apiserver/apiserver ./pkg/apiserver/main/main.go 
+        go build  -o ./build/kubelet/kubelet ./pkg/kubelet/main/main.go
+        go build  -o ./build/kubectl/kubectl ./pkg/kubectl/main/main.go 
+        mkdir -p ~/minik8s
+        mkdir -p ~/minik8s/bin
+        cp -r ./build ~/minik8s/bin
+
+

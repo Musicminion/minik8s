@@ -179,7 +179,6 @@ fi
 if command -v weave &> /dev/null
 then
     echo "Weave已安装"
-    sudo weave launch
 else
     # 如果Weave没有安装，则安装它
     echo "Weave未安装，开始安装..."

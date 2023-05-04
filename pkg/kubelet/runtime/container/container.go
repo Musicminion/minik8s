@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
@@ -164,7 +165,8 @@ func (c *ContainerManager) ListContainersWithOpt(filter map[string][]string) ([]
 	listFliter := filters.NewArgs()
 	for key, valVec := range filter {
 		for _, val := range valVec {
-			listFliter.Add(key, val)
+			// listFliter.Add(key, val)
+			listFliter.Add("label", fmt.Sprint(key, "=", val))
 		}
 	}
 

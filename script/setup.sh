@@ -184,9 +184,8 @@ else
     # 如果Weave没有安装，则安装它
     echo "Weave未安装，开始安装..."
     # 下载Weave二进制文件
-    sudo wget -O /usr/local/bin/weave https://raw.githubusercontent.com/zettio/weave/master/weave 
-    # 设置Weave二进制文件的权限
-    sudo chmod a+x /usr/local/bin/weave
+    sudo wget -O /usr/local/bin/weave https://raw.githubusercontent.com/zettio/weave/master/weave && sudo chmod +x /usr/local/bin/weave
+
     # 启动Weave网络
     sudo weave launch
     echo "Weave安装完成"

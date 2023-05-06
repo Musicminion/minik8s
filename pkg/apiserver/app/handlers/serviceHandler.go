@@ -11,6 +11,7 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
+	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"path"
 
@@ -75,7 +76,8 @@ func AddService(c *gin.Context) {
 	}
 
 	// 将Service信息写入etcd
-	err = etcdclient.EtcdStore.Put(serverconfig.EtcdServicePath+service.Metadata.Name, serviceJson)
+	etcdURL := serverconfig.EtcdServicePath + service.Metadata.Name
+	err = etcdclient.EtcdStore.Put(etcdURL , serviceJson)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "put service to etcd failed" + err.Error(),
@@ -98,7 +100,11 @@ func AddService(c *gin.Context) {
 	// TODO: scan etcd and find all endpoints of this service
 	for key, value := range service.Spec.Selector {
 		func(key, value string) {
-			if err := etcdclient.EtcdStore.Put(path.Join(config.ServiceURL, key, value, service.Metadata.UUID), serviceJson); err != nil {
+			// 替换可变参 namespace
+			etcdURL := path.Join(config.ServiceURL, key, value, service.Metadata.UUID)
+			etcdURL = stringutil.Replace(etcdURL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
+
+			if err := etcdclient.EtcdStore.Put(etcdURL, serviceJson); err != nil {
 				c.JSON(500, gin.H{
 					"error": "add service to etcd failed" + err.Error(),
 				})

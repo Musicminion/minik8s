@@ -6,11 +6,11 @@ import (
 	"io"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/apiserver/app/handlers"
-	"strings"
 
 	// apiserver "miniK8s/pkg/apiserver/app/server"
 	"miniK8s/pkg/config"
 	"miniK8s/util/file"
+	"miniK8s/util/stringutil"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -80,7 +80,7 @@ func TestPostAPIObjectToServer(t *testing.T) {
 	jsonBytes, _ := json.Marshal(service)
 
 	URL := config.ServiceURL
-	URL = strings.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace, -1)
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace)
 
 	serviceHeader := bytes.NewReader(jsonBytes)
 	req, err := http.NewRequest("POST", URL, serviceHeader)

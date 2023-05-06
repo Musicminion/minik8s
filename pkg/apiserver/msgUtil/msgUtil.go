@@ -3,10 +3,10 @@ package msgutil
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	"miniK8s/pkg/entity"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/message"
-	"strings"
+	"miniK8s/util/stringutil"
 )
 
 type MsgUtil struct {
@@ -33,8 +33,8 @@ func PublishMsg(queueName string, msg []byte) error {
 
 // 发布消息的组件函数
 func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
-	resourceURI := strings.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName(), -1)
-	resourceURI = strings.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace(), -1)
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 	message := message.Message{
 		Type:         message.RequestSchedule,
 		Content:      pod.GetPodName(),
@@ -71,8 +71,8 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 // }
 
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
-	resourceURI := strings.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.Service.GetName(), -1)
-	resourceURI = strings.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.Service.GetNamespace(), -1)
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.Service.GetName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.Service.GetNamespace())
 	message := message.Message{
 		Type:         message.PUT,
 		Content:      serviceUpdate.ServiceTarget.Service.GetName(),
@@ -88,4 +88,3 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 
 	return PublishMsg("serviceUpdate", jsonMsg)
 }
- 

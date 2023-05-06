@@ -2,14 +2,15 @@ kind: Service
 apiVersion: v1
 metadata:
   # Unique key of the Service instance
-  name: service-example2
-  namemspace: default
+  name: service-example
+  namespace: default
 spec:
   ports:
     # Accept traffic sent to port 80
     - name: http
       port: 80
       targetPort: 80
+      protocol: TCP
   selector:
     # Loadbalance traffic across Pods matching
     # this label selector

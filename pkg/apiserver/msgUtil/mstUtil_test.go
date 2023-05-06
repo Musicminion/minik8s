@@ -3,7 +3,6 @@ package msgutil
 import (
 	"encoding/json"
 	"fmt"
-	"strings"
 	"testing"
 
 	"miniK8s/pkg/apiObject"
@@ -12,6 +11,7 @@ import (
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/message"
 	"miniK8s/util/file"
+	"miniK8s/util/stringutil"
 
 	"gopkg.in/yaml.v3"
 )
@@ -52,8 +52,8 @@ func TestPublishRequestNodeScheduleMsg(t *testing.T) {
 	if err != nil {
 		t.Errorf("unmarshal pod failed")
 	}
-	resourceURI := strings.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName(), -1)
-	resourceURI = strings.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace(), -1)
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 	message := message.Message{
 		Type:         message.RequestSchedule,
 		Content:      pod.GetPodName(),

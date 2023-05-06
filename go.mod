@@ -3,6 +3,7 @@ module miniK8s
 go 1.20
 
 require (
+	github.com/coreos/go-iptables v0.6.0
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/fatih/color v1.15.0
 	github.com/gin-gonic/gin v1.9.0
@@ -11,6 +12,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/streadway/amqp v1.0.0
 	go.etcd.io/etcd/client/v3 v3.5.8
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -18,7 +20,6 @@ require (
 	github.com/Microsoft/go-winio v0.6.0 // indirect
 	github.com/bytedance/sonic v1.8.0 // indirect
 	github.com/chenzhuoyu/base64x v0.0.0-20221115062448-fe3a3abad311 // indirect
-	github.com/coreos/go-iptables v0.6.0 // indirect
 	github.com/coreos/go-semver v0.3.0 // indirect
 	github.com/coreos/go-systemd/v22 v22.5.0 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect

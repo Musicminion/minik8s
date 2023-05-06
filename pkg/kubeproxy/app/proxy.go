@@ -19,6 +19,7 @@ type KubeProxy struct {
 	stopChannel     <-chan struct{}
 	serviceUpdates  chan *entity.ServiceUpdate
 	endpointUpdates chan *entity.EndpointUpdate
+	iptableManager  *IptableManager
 }
        
 func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
@@ -27,8 +28,10 @@ func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
         k8log.ErrorLog("KubeProxy", "NewKubeProxy: new watcher failed")
     }
     // TODO: health check server
+	iptableManager := New()
 	proxy := &KubeProxy{
         lw: lw,
+		iptableManager: iptableManager,
         stopChannel: make(<-chan struct{}),
         serviceUpdates: make(chan *entity.ServiceUpdate, 10),
         endpointUpdates: make(chan *entity.EndpointUpdate, 10),
@@ -40,13 +43,13 @@ func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
 func (proxy *KubeProxy) HandleServiceUpdate(msg amqp.Delivery) {
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
-		k8log.ErrorLog("proxy", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("KubeProxy", "消息格式错误,无法转换为Message")
 	}
 	if parsedMsg.Type == message.PUT {
 		serviceUpdate := &entity.ServiceUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), serviceUpdate)
 		if err != nil {
-			k8log.ErrorLog("proxy", "HandleServiceUpdate: failed to unmarshal")
+			k8log.ErrorLog("KubeProxy", "HandleServiceUpdate: failed to unmarshal")
 			return
 		}
 		proxy.serviceUpdates <- serviceUpdate
@@ -57,13 +60,13 @@ func (proxy *KubeProxy) HandleServiceUpdate(msg amqp.Delivery) {
 func (proxy *KubeProxy) HandleEndpointUpdate(msg amqp.Delivery) {
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
-		k8log.ErrorLog("proxy", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("KubeProxy", "消息格式错误,无法转换为Message")
 	}
 	if parsedMsg.Type == message.PUT {
 		endpointUpdate := &entity.EndpointUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), endpointUpdate)
 		if err != nil {
-			k8log.ErrorLog("proxy", "HandleServiceUpdate: failed to unmarshal")
+			k8log.ErrorLog("KubeProxy", "HandleServiceUpdate: failed to unmarshal")
 			return
 		}
 		proxy.endpointUpdates <- endpointUpdate
@@ -72,14 +75,17 @@ func (proxy *KubeProxy) HandleEndpointUpdate(msg amqp.Delivery) {
 
 // 当管道发生变化时的处理函数
 func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceUpdate, endpointUpdates <-chan *entity.EndpointUpdate) bool {
-	k8log.InfoLog("proxy", "syncLoopIteration: Sync loop Iteration")
+	k8log.InfoLog("KubeProxy", "syncLoopIteration: Sync loop Iteration")
 
 	select {
 	case serviceUpdate := <-serviceUpdates:
 		switch serviceUpdate.Action {
 		case entity.CREATE:
+			k8log.InfoLog("KubeProxy", "syncLoopIteration: create Service action")
+			proxy.iptableManager.CreateService(serviceUpdate)
             
 		case entity.UPDATE:
+			
 		case entity.DELETE:
 		}
 	case endpointUpdate := <-endpointUpdates:

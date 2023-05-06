@@ -60,7 +60,7 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		var pod apiObject.Pod
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
 		// // 发请求，走你！
-		URL := "http://localhost:8090" + config.PodsURL
+		URL := config.API_SERVER_IP + config.PodsURL
 		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 		err := kubectlutil.PostAPIObjectToServer(URL, pod)
 		if err != nil {
@@ -71,8 +71,8 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		fmt.Println("Kind: Service")
 		var service apiObject.Service
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &service)
-		URL := config.ServiceURL
-		URL = stringutil.Replace(URL, ":namespace", service.Metadata.Namespace)
+		URL := config.API_SERVER_IP + config.ServiceURL
+		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace)
 		kubectlutil.PostAPIObjectToServer(URL, service)
 
 	case "Deployment":

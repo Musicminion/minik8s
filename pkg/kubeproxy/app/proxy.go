@@ -78,6 +78,7 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 	k8log.InfoLog("KubeProxy", "syncLoopIteration: Sync loop Iteration")
 
 	select {
+		
 	case serviceUpdate := <-serviceUpdates:
 		switch serviceUpdate.Action {
 		case entity.CREATE:
@@ -95,6 +96,7 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 		case entity.DELETE:
 		}
 	}
+	k8log.InfoLog("KubeProxy", "reach here")
 	return true
 }
 

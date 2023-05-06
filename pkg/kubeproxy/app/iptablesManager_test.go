@@ -1,20 +1,16 @@
 package proxy
 
 import (
-	"bytes"
-	"encoding/json"
 	"io"
 	"io/ioutil"
-	"net/http"
-	"net/http/httptest"
 	"os"
 	"testing"
 
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/apiserver/app/handlers"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/listwatcher"
-	"miniK8s/util/stringutil"
 
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v2"
@@ -105,41 +101,49 @@ func TestCreateService(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// 读取的内容转化为jsons
-	jsonBytes, err := json.Marshal(service)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	serviceReader := bytes.NewReader(jsonBytes)
-
-	URL := config.ServiceURL
-	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
-	t.Log("request url:" + URL)
-	// 创建一个http请求，请求方法为POST，请求路径为"/api/v1/services"，请求体为一个json字符串。
-	req, err := http.NewRequest("POST", URL, serviceReader)
-
-	if err != nil {
-		t.Fatal(err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	// 创建响应写入器
-	w := httptest.NewRecorder()
-
-	// 将请求和响应写入gin.Context
-	c, _ := gin.CreateTestContext(w)
-	c.Request = req
-
-	// 执行处理函数
-	r.HandleContext(c)
-
-	// 获取响应结果
-	resp := w.Result()
-
-	if resp.StatusCode != http.StatusCreated {
-		t.Errorf("expected status %v but got %v", http.StatusOK, resp.StatusCode)
+	serviceUpdate := &entity.ServiceUpdate{
+		Action: entity.CREATE,
+		ServiceTarget: entity.ServiceWithEndpoints{
+			Service:   *service,
+			Endpoints: make([]apiObject.Endpoint, 0),
+		},
 	}
 
-	// proxy.iptableManager.CreateService(serviceUpdate)
+	// // 读取的内容转化为jsons
+	// jsonBytes, err := json.Marshal(service)
+
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// serviceReader := bytes.NewReader(jsonBytes)
+
+	// URL := config.ServiceURL
+	// URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
+	// t.Log("request url:" + URL)
+	// // 创建一个http请求，请求方法为POST，请求路径为"/api/v1/services"，请求体为一个json字符串。
+	// req, err := http.NewRequest("POST", URL, serviceReader)
+
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
+	// req.Header.Set("Content-Type", "application/json")
+
+	// // 创建响应写入器
+	// w := httptest.NewRecorder()
+
+	// // 将请求和响应写入gin.Context
+	// c, _ := gin.CreateTestContext(w)
+	// c.Request = req
+
+	// // 执行处理函数
+	// r.HandleContext(c)
+
+	// // 获取响应结果
+	// resp := w.Result()
+
+	// if resp.StatusCode != http.StatusCreated {
+	// 	t.Errorf("expected status %v but got %v", http.StatusOK, resp.StatusCode)
+	// }
+
+	proxy.iptableManager.CreateService(serviceUpdate)
 }

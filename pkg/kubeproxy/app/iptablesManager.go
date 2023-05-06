@@ -22,16 +22,24 @@ import (
 
 type IptableManager struct {
 	// SvcChain     map[string]map[string]
-	ipt *iptables.IPTables
+	ipt      *iptables.IPTables
+	stragegy string
 	// serviceName to clusterIP
-	serviceIPMap map[string]string
-	serviceDict  map[string]map[string]string
+	// serviceIPMap map[string]string
+	serviceDict map[string]map[string]string
 }
 
 // var ipt *iptables.IPTables
 
+const (
+	RANDOM   = "random"
+	ROUNDDOB = "roundrobin"
+)
+
 func New() *IptableManager {
-	iptableManager := &IptableManager{}
+	iptableManager := &IptableManager{
+		stragegy: RANDOM,
+	}
 	iptableManager.init_iptables()
 	return iptableManager
 }
@@ -176,18 +184,33 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		if err := im.ipt.NewChain("nat", kubesep); err != nil {
 			k8log.ErrorLog("KUBEPROXY", "Failed to create kubesep chain: "+err.Error())
 		}
-		// 使用随机策略，将流量随机重定向到某个 Pod
-		prob := 1 / (podNum - i)
-		if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
-			if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
-				k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+
+		if im.stragegy == RANDOM {
+			prob := 1 / (podNum - i)
+			if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
+				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
+					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+				}
+			} else { // 使用 im.iptables 的随机策略，将流量随机重定向到某个 Pod
+				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
+					"-m", "statistic", "--mode", "random", "--probability", strconv.Itoa(prob)); err != nil {
+					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+				}
 			}
-		} else { // 使用 im.iptables 的随机策略，将流量随机重定向到某个 Pod
-			if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
-				"-m", "statistic", "--mode", "random", "--probability", strconv.Itoa(prob)); err != nil {
-				k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+		} else if im.stragegy == ROUNDDOB {
+			if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
+				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
+					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: " + err.Error())
+				}
+			} else { // 使用 roundrobin 策略，将流量重定向到下一个 Pod
+				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
+					"-m", "statistic", "--mode", "nth", "--every", strconv.Itoa(podNum - i)); err != nil {
+					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: " + err.Error())
+				}
 			}
 		}
+
+
 		// 将流量 DNAT 到 Pod IP 和端口
 		if err := im.ipt.Insert("nat", kubesep, 1, "-j", "DNAT",
 			"-p", protocol, "-d", podIPList[i], "--dport", string(targetPort),

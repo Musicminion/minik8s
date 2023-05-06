@@ -26,6 +26,7 @@ func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
     if err != nil {
         k8log.ErrorLog("KubeProxy", "NewKubeProxy: new watcher failed")
     }
+    // TODO: health check server
 	proxy := &KubeProxy{
         lw: lw,
         stopChannel: make(<-chan struct{}),
@@ -75,9 +76,9 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 
 	select {
 	case serviceUpdate := <-serviceUpdates:
-
 		switch serviceUpdate.Action {
 		case entity.CREATE:
+            
 		case entity.UPDATE:
 		case entity.DELETE:
 		}
@@ -93,6 +94,8 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 
 
 func (proxy *KubeProxy) Run() {
+
+    
 	go proxy.lw.WatchQueue_Block("ServiceUpdate", proxy.HandleServiceUpdate, make(chan struct{}))
 	go proxy.lw.WatchQueue_Block("EndpointUpdate", proxy.HandleEndpointUpdate, make(chan struct{}))
     // 持续监听serviceUpdates和endpointUpdates的channel

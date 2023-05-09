@@ -227,6 +227,23 @@ func (c *ContainerManager) GetContainerInspectInfo(containerID string) (*types.C
 	return &containerInfo, nil
 }
 
+// 重启一个容器，返回容器的ID和错误
+func (c *ContainerManager) RestartContainer(containerID string) (string, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	err = client.ContainerRestart(ctx, containerID, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return containerID, nil
+}
+
 // import (
 // 	"miniK8s/pkg/kubelet/containerdClient"
 // 	"time"

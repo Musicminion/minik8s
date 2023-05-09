@@ -65,6 +65,18 @@ func TestStartPod(t *testing.T) {
 	}
 }
 
+func TestRestartPod(t *testing.T) {
+	// 创建一个runtimeManager
+	r := NewRuntimeManager()
+
+	// 重启pod
+	err := r.RestartPod(&testPod)
+
+	if err != nil {
+		t.Error(err)
+	}
+}
+
 func TestDeletePod(t *testing.T) {
 	// 创建一个runtimeManager
 	r := NewRuntimeManager()

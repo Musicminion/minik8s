@@ -2,6 +2,7 @@ package runtime
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime/container"
 	"miniK8s/pkg/kubelet/runtime/image"
 )
@@ -11,6 +12,7 @@ type RuntimeManager interface {
 	DeletePod(pod *apiObject.PodStore) error
 	StartPod(pod *apiObject.PodStore) error
 	StopPod(pod *apiObject.PodStore) error
+	RestartPod(pod *apiObject.PodStore) error
 }
 
 type runtimeManager struct {
@@ -47,6 +49,8 @@ func (r *runtimeManager) CreatePod(pod *apiObject.PodStore) error {
 		return err
 	}
 
+	LogStr := "[Runtime Manager] create pod success" + pod.GetPodName()
+	k8log.InfoLog("kubelet", LogStr)
 	// TODO:
 	return nil
 }
@@ -68,6 +72,8 @@ func (r *runtimeManager) DeletePod(pod *apiObject.PodStore) error {
 		return err
 	}
 
+	LogStr := "[Runtime Manager] delete pod success" + pod.GetPodName()
+	k8log.InfoLog("kubelet", LogStr)
 	return nil
 }
 
@@ -87,6 +93,8 @@ func (r *runtimeManager) StartPod(pod *apiObject.PodStore) error {
 		return err
 	}
 
+	LogStr := "[Runtime Manager] start pod success" + pod.GetPodName()
+	k8log.InfoLog("kubelet", LogStr)
 	return nil
 }
 
@@ -106,6 +114,30 @@ func (r *runtimeManager) StopPod(pod *apiObject.PodStore) error {
 		return err
 	}
 
+	LogStr := "[Runtime Manager] stop pod success" + pod.GetPodName()
+	k8log.InfoLog("kubelet", LogStr)
+
 	return nil
 
+}
+
+// RestartPod 重启pod
+func (r *runtimeManager) RestartPod(pod *apiObject.PodStore) error {
+	// 先重启pause容器
+	_, err := r.restartPauseContainer(pod)
+
+	if err != nil {
+		return err
+	}
+
+	// 重启pod中的所有容器
+	_, err = r.restartPodAllContainer(pod)
+
+	if err != nil {
+		return err
+	}
+
+	LogStr := "[Runtime Manager] restart pod success" + pod.GetPodName()
+	k8log.InfoLog("kubelet", LogStr)
+	return nil
 }

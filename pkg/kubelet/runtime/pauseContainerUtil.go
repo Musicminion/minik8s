@@ -247,3 +247,30 @@ func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, er
 
 	return retID, nil
 }
+
+// restartPauseContainer
+func (r *runtimeManager) restartPauseContainer(pod *apiObject.PodStore) (string, error) {
+	var filter = make(map[string][]string)
+	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{string(pod.Metadata.UUID)}
+	filter[minik8sTypes.ContainerLabel_IfPause] = []string{minik8sTypes.ContainerLabel_IfPause_True}
+	filter[minik8sTypes.ContainerLabel_PodNamespace] = []string{pod.Metadata.Namespace}
+
+	res, err := r.containerManager.ListContainersWithOpt(filter)
+
+	if err != nil {
+		return "", err
+	}
+
+	retID := ""
+	// 遍历重启pause容器
+	for _, container := range res {
+		retID = container.ID
+		if _, err := r.containerManager.RestartContainer(container.ID); err != nil {
+			return "", err
+		}
+	}
+
+	return retID, nil
+}

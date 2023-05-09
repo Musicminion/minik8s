@@ -12,7 +12,7 @@ type testStruct struct {
 }
 
 func TestMain(m *testing.M) {
-	testRedisCache = NewRedisCache()
+	testRedisCache = NewRedisCache(0)
 	testRedisCache.InitCache()
 
 	m.Run()

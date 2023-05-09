@@ -75,28 +75,21 @@ func (r *rediscache) Get(key string) (string, error) {
 }
 
 /*
-- 特别注意：这个函数的用法，可以参考测试代码里面的
+// - 特别注意：这个函数的用法，可以参考测试代码里面的
+// - 假设你自定义了一个类型type MyType struct {Name string Age int}
 
-- 假设你自定义了一个类型type MyType struct {Name string Age int}
+//   - 那么你可以这样调用GetObject函数：
+//  ```
+//     var myType MyType
+//     obj, err := testRedisCache.GetObject("test-2", &myType)
+//
+//  ```
+// 值得强调的是，第二个参数一定要是一个指针类型，否则会报错！！！函数会通过两个方式返回解析后的对象，你可以自己选择一种解析
 
-- 那么你可以这样调用GetObject函数：
-
-		```
-		var myType MyType
-		obj, err := testRedisCache.GetObject("test-2", &myType)
-
-		```
-
-	  - 值得强调的是，第二个参数一定要是一个指针类型，否则会报错！！！
-	    函数会通过两个方式返回解析后的对象，你可以自己选择一种解析
-
-- 因为你传递的第二个参数是一个指针类型，所以函数会直接修改这个指针指向的对象，你直接解析传入的第二个参数就可以了
-
-- 函数会返回一个interface{}类型的对象(这是一个指针!),你可以解析这个指针指向的对象，然后获取返回的结果
-
-- 如果你仍然觉得困难，可以参考测试代码里面的用法
-
-- 【强调】：第二个参数是一个【指针】,需要用【&XXX】的方法传递
+// 因为你传递的第二个参数是一个指针类型，所以函数会直接修改这个指针指向的对象，你直接解析传入的第二个参数就可以了
+// 函数会返回一个interface{}类型的对象(这是一个指针!),你可以解析这个指针指向的对象，然后获取返回的结果
+// 如果你仍然觉得困难，可以参考测试代码里面的用法
+// 【强调】：第二个参数是一个【指针】,需要用【&XXX】的方法传递
 */
 func (r *rediscache) GetObject(key string, valueType interface{}) (interface{}, error) {
 	r.lock.Lock()
@@ -148,12 +141,16 @@ func (r *rediscache) ifExists(key string) (bool, error) {
 }
 
 // 创建一个redis缓存的实例
-func NewRedisCache() RedisCache {
+func NewRedisCache(cacheID int) RedisCache {
+	if cacheID < 0 || cacheID > 15 {
+		panic("cacheID must be in [0,15]")
+	}
+
 	return &rediscache{
 		lock: sync.RWMutex{},
 		redisClient: redis.NewClient(&redis.Options{
 			Addr: "localhost:6379",
-			DB:   0,
+			DB:   cacheID,
 		}),
 	}
 }

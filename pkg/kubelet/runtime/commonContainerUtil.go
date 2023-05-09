@@ -91,6 +91,26 @@ func (r *runtimeManager) startPodAllContainer(pod *apiObject.PodStore) (string, 
 	return pod.Metadata.UUID, nil
 }
 
+// 尝试重启所有的容器，如果遇到某个容器重启失败，则会继续重启其他容器，最后返回错误信息
+func (r *runtimeManager) restartPodAllContainer(pod *apiObject.PodStore) (string, error) {
+	// TODO: 从容器管理器中启动一个pod中的所有容器
+	retErr := ""
+	for _, container := range pod.Spec.Containers {
+		_, err := r.restartPodContainer(pod, &container)
+		if err != nil {
+			retErr += err.Error() + "\n"
+			k8log.ErrorLog("kubelet", fmt.Sprintf("restart pod %s/%s failed, err %s", pod.Metadata.Namespace, pod.Metadata.Name, err.Error()))
+		}
+	}
+
+	if retErr != "" {
+		return "", fmt.Errorf(retErr)
+	}
+
+	k8log.InfoLog("kubelet", fmt.Sprintf("restart pod %s/%s success", pod.Metadata.Namespace, pod.Metadata.Name))
+	return pod.Metadata.UUID, nil
+}
+
 // **********************************************************************************
 //  单个容器的操作放在下面
 // **********************************************************************************
@@ -195,7 +215,7 @@ func (r *runtimeManager) createPodContainer(pod *apiObject.PodStore, container *
 
 func (r *runtimeManager) removePodContainer(pod *apiObject.PodStore, container *apiObject.Container) (string, error) {
 	// TODO: 从容器管理器中删除一个普通的容器
-	// 删选出来所有标签和当前POD相关的容器
+	// 筛选出来所有标签和当前POD相关的容器
 	filter := make(map[string][]string)
 
 	// 根据标签过滤器，过滤出来所有的容器
@@ -221,6 +241,41 @@ func (r *runtimeManager) removePodContainer(pod *apiObject.PodStore, container *
 
 	return "", nil
 }
+
+// restartPodContainer
+// 重启Pod里面的一个Container
+func (r *runtimeManager) restartPodContainer(pod *apiObject.PodStore, container *apiObject.Container) (string, error) {
+	// TODO: 从容器管理器中重启一个普通的容器
+	// 筛选出来所有标签和当前POD相关的容器
+	filter := make(map[string][]string)
+
+	// 根据标签过滤器，过滤出来所有的容器
+	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
+	filter[minik8sTypes.ContainerLabel_PodNamespace] = []string{pod.Metadata.Namespace}
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{pod.Metadata.UUID}
+	filter[minik8sTypes.ContainerLabel_IfPause] = []string{minik8sTypes.ContainerLabel_IfPause_False}
+
+	// 根据容器的名字过滤器，过滤出来所有的容器
+	res, err := r.containerManager.ListContainersWithOpt(filter)
+
+	if err != nil {
+		return "", err
+	}
+
+	// 遍历所有的容器，然后重启
+	for _, container := range res {
+		_, err := r.containerManager.RestartContainer(container.ID)
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return "", nil
+}
+
+// ******************************************************************
+// 以下是一些辅助函数
+// ******************************************************************
 
 func (r *runtimeManager) parseVolumeBinds(podVolumes []apiObject.Volume, containerVolumeMounts []apiObject.VolumeMount) ([]string, error) {
 	// 我们知道Pod的配置文件里面Pod有自己的Volume，然后Container可以通过Pod挂在的Volume的名字来挂载Pod的Volume

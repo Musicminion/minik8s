@@ -172,7 +172,7 @@ func AddPod(c *gin.Context) {
 	// 持久化
 	// key = stringutil.Replace(serverconfig.DefaultPod, config.URI_PARAM_NAME_PART, newPodName)
 
-	key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
+	key = fmt.Sprintf(serverconfig.EtcdPodPath + "%s/%s", pod.GetPodNamespace(), newPodName)
 
 	// 将pod存储到etcd中
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)

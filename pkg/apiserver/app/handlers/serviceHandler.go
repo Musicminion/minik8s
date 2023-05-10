@@ -3,9 +3,9 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
+	"strconv"
 
 	"miniK8s/pkg/apiserver/app/etcdclient"
-	"miniK8s/pkg/apiserver/app/helper"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
@@ -77,7 +77,7 @@ func AddService(c *gin.Context) {
 
 	// 将Service信息写入etcd
 	etcdURL := serverconfig.EtcdServicePath + service.Metadata.Name
-	err = etcdclient.EtcdStore.Put(etcdURL , serviceJson)
+	err = etcdclient.EtcdStore.Put(etcdURL, serviceJson)
 	if err != nil {
 		c.JSON(500, gin.H{
 			"error": "put service to etcd failed" + err.Error(),
@@ -103,20 +103,50 @@ func AddService(c *gin.Context) {
 			// 替换可变参 namespace
 			etcdURL := path.Join(config.ServiceURL, key, value, service.Metadata.UUID)
 			etcdURL = stringutil.Replace(etcdURL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
+			res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
+			// if err := etcdclient.EtcdStore.Put(etcdURL, serviceJson); err != nil {
+			// 	c.JSON(500, gin.H{
+			// 		"error": "add service to etcd failed" + err.Error(),
+			// 	})
+			// 	return
+			// }
+			// if endpoints, err := helper.GetEndpoints(key, value); err != nil {
+			// 	c.JSON(500, gin.H{
+			// 		"error": "get endpoints failed" + err.Error(),
+			// 	})
+			// 	return
+			// } else {
+			// 	serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
+			// }
 
-			if err := etcdclient.EtcdStore.Put(etcdURL, serviceJson); err != nil {
-				c.JSON(500, gin.H{
-					"error": "add service to etcd failed" + err.Error(),
-				})
-				return
-			}
-			if endpoints, err := helper.GetEndpoints(key, value); err != nil {
+			if err != nil {
 				c.JSON(500, gin.H{
 					"error": "get endpoints failed" + err.Error(),
 				})
 				return
 			} else {
-				serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
+				// iterate res
+				for _, r := range res {
+					// pod to endpoint
+					pod := &apiObject.PodStore{}
+					if err := json.Unmarshal([]byte(r.Value), pod); err != nil {
+						c.JSON(500, gin.H{
+							"error": "unmarshal pod failed" + err.Error(),
+						})
+						return
+					}
+					endpoint := apiObject.Endpoint{}
+					endpoint.Metadata.Name = pod.GetPodName()
+					endpoint.Metadata.Namespace = pod.GetPodNamespace()
+					endpoint.Metadata.UUID = pod.Metadata.UUID
+					endpoint.Metadata.Labels = pod.Metadata.Labels
+					endpoint.Metadata.Annotations = pod.Metadata.Annotations
+					endpoint.IP = pod.Status.PodIP
+					// add endpoint to serviceUpdate.ServiceTarget.Endpoints
+					serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoint)
+				}
+				k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Endpoints)))
+				// serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
 			}
 		}(key, value)
 	}

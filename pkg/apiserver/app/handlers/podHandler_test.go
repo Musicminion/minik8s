@@ -64,8 +64,8 @@ func TestAddPod(t *testing.T) {
 
 		// 创建一个http请求，请求方法为POST，请求路径为"/api/v1/namespaces/:namespace/pods"，请求体为一个json字符串。
 		URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, pod.Metadata.Namespace)
-		k8log.DebugLog("APIServer", "TestAddPod: URL = "+ URL)
-		k8log.DebugLog("APIServer", "TestAddPod: podInfo" + string(jsonBytes))
+		k8log.DebugLog("APIServer", "TestAddPod: URL = "+URL)
+		k8log.DebugLog("APIServer", "TestAddPod: podInfo"+string(jsonBytes))
 		req, err := http.NewRequest("POST", URL, podReader)
 		if err != nil {
 			t.Fatal(err)

@@ -9,6 +9,7 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/util/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -68,6 +69,7 @@ func GetPod(c *gin.Context) {
 // API "/api/v1/namespaces/:namespace/pods"
 func GetPods(c *gin.Context) {
 	// namespaces := c.Param("namespace")
+
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	if namespace == "" {
 		c.JSON(400, gin.H{
@@ -111,17 +113,6 @@ func AddPod(c *gin.Context) {
 	// log
 	k8log.InfoLog("APIServer", "AddPod")
 
-	// POST /api/v1/namespaces/:namespace/pods
-	// 解析里面的参数
-	// namespace := c.Param("namespace")
-	namespace := c.Param(config.URL_PARAM_NAMESPACE)
-	if namespace == "" {
-		c.JSON(400, gin.H{
-			"error": "namespace is empty",
-		})
-		return
-	}
-
 	// 从body中获取pod的信息
 	var pod apiObject.Pod
 	if err := c.ShouldBind(&pod); err != nil {
@@ -139,11 +130,12 @@ func AddPod(c *gin.Context) {
 		c.JSON(400, gin.H{
 			"error": "pod name is empty",
 		})
+		k8log.ErrorLog("APIServer", "AddPod: pod name is empty")
 		return
 	}
 
 	// 检查name是否重复
-	key := fmt.Sprintf("/registry/pods/%s/%s", namespace, newPodName)
+	key := fmt.Sprintf("/registry/pods/%s/%s", pod.GetPodNamespace(), newPodName)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -156,6 +148,7 @@ func AddPod(c *gin.Context) {
 		c.JSON(400, gin.H{
 			"error": "pod name has exist",
 		})
+		k8log.ErrorLog("APIServer", "AddPod: pod name has exist")
 		return
 	}
 
@@ -177,7 +170,9 @@ func AddPod(c *gin.Context) {
 
 	// 将pod存储到etcd中
 	// 持久化
-	key = fmt.Sprintf("/registry/pods/%s/%s", namespace, newPodName)
+	// key = stringutil.Replace(serverconfig.DefaultPod, config.URI_PARAM_NAME_PART, newPodName)
+
+	key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
 
 	// 将pod存储到etcd中
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)
@@ -239,47 +234,3 @@ func DeletePod(c *gin.Context) {
 func UpdatePod(c *gin.Context) {
 	// TODO: 更新pod
 }
-
-// import (
-// 	"encoding/json"
-// 	"fmt"
-// 	"io"
-
-// 	"github.com/gin-gonic/gin"
-
-// 	"miniK8s/pkg/apiObject"
-// 	"miniK8s/pkg/apiserver/config"
-// )
-
-// func (s *apiServer) AddPod(c *gin.Context) {
-// 	body, _ := io.ReadAll(c.Request.Body)
-// 	// 对pod进行赋值
-// 	pod := &apiObject.Pod{}
-// 	err := json.Unmarshal(body, pod)
-// 	if err != nil {
-// 		fmt.Println("[AddPod] unmarshall pod fail")
-// 		return
-// 	}
-
-// 	body, _ = json.Marshal(pod)
-// 	// TODO: 先判断pod是否已存在
-
-// 	// 持久化
-// 	err = s.etcdStore.Put("to filled"+"/"+pod.Name, body)
-// 	if err != nil {
-// 		fmt.Println("[AddPod] etcd failed to put")
-// 	}
-// }
-
-// // A naive delete method
-// func (s *apiServer) DeletePod(c *gin.Context) {
-// 	podName := c.Param(config.ResourceName)
-// 	key := "" + podName + "" // to be defined
-
-// 	// 实际上，仅仅对pod进行删除是不够的
-// 	if err := s.etcdStore.Del(key); err == nil {
-// 		fmt.Println("[DelPod] etcd failed to delete")
-// 	} else {
-// 		fmt.Printf("Delete pod %s successfully\n", podName)
-// 	}
-// }

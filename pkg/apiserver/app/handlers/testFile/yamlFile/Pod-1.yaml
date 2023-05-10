@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: test
+  name: pod-example1
+  namespace: default
+  uuid: 1f3a54a3-c1b9-4e47-b063-2a6d84fde222
+spec:
+  containers:
+    - image: docker.io/library/redis
+      name: testContainer-1
+    - image: docker.io/library/nginx
+      name: testContainer-2

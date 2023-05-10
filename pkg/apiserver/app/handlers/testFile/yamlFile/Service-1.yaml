@@ -3,7 +3,7 @@ apiVersion: v1
 metadata:
   # Unique key of the Service instance
   name: service-example1
-  namemspace: default
+  namespace: default
 spec:
   ports:
     # Accept traffic sent to port 80

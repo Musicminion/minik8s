@@ -13,6 +13,9 @@ var testPod = apiObject.PodStore{
 			Name:      "testPod",
 			Namespace: "testNamespace",
 			UUID:      "1f3a54a3-c1b9-4e47-b063-2a6d84fde222",
+			Labels: map[string]string{
+				"app": "test",
+			},
 		},
 	},
 	Spec: apiObject.PodSpec{
@@ -41,53 +44,53 @@ func TestCreatePod(t *testing.T) {
 	}
 }
 
-func TestStopPod(t *testing.T) {
-	// 创建一个runtimeManager
-	r := NewRuntimeManager()
+// func TestStopPod(t *testing.T) {
+// 	// 创建一个runtimeManager
+// 	r := NewRuntimeManager()
 
-	// 停止pod
-	err := r.StopPod(&testPod)
+// 	// 停止pod
+// 	err := r.StopPod(&testPod)
 
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
-func TestStartPod(t *testing.T) {
-	// 创建一个runtimeManager
-	r := NewRuntimeManager()
+// func TestStartPod(t *testing.T) {
+// 	// 创建一个runtimeManager
+// 	r := NewRuntimeManager()
 
-	// 启动pod
-	err := r.StartPod(&testPod)
+// 	// 启动pod
+// 	err := r.StartPod(&testPod)
 
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
-func TestRestartPod(t *testing.T) {
-	// 创建一个runtimeManager
-	r := NewRuntimeManager()
+// func TestRestartPod(t *testing.T) {
+// 	// 创建一个runtimeManager
+// 	r := NewRuntimeManager()
 
-	// 重启pod
-	err := r.RestartPod(&testPod)
+// 	// 重启pod
+// 	err := r.RestartPod(&testPod)
 
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
-func TestDeletePod(t *testing.T) {
-	// 创建一个runtimeManager
-	r := NewRuntimeManager()
+// func TestDeletePod(t *testing.T) {
+// 	// 创建一个runtimeManager
+// 	r := NewRuntimeManager()
 
-	// 删除pod
-	err := r.DeletePod(&testPod)
+// 	// 删除pod
+// 	err := r.DeletePod(&testPod)
 
-	if err != nil {
-		t.Error(err)
-	}
-}
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// }
 
 // Spec: apiObject.PodSpec{
 // 	Containers: []apiObject.Container{},

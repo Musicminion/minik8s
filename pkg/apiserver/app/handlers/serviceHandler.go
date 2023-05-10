@@ -219,3 +219,8 @@ func DeleteService(c *gin.Context) {
 		return
 	}
 }
+
+// 更新Service信息
+func UpdateService(c *gin.Context) {
+
+}

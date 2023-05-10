@@ -88,6 +88,8 @@ func (s *apiServer) bind() {
 
 	// Service相关的api
 	s.router.POST(config.ServiceURL, handlers.AddService)   // 创建service
-
+	s.router.GET(config.ServiceURL, handlers.GetServices)   // 获取所有service
+	s.router.GET(config.ServiceSpecURL, handlers.GetService) // 获取单个service
+	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService)   // 更新service
 }
 

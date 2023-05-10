@@ -7,16 +7,18 @@ import (
 	"io"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/k8log"
+	"miniK8s/util/stringutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"testing"
-	
+
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
 )
 
-func TestAddService(t *testing.T){
+func TestAddService(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	// 创建一个新的gin引擎，并注册AddService处理函数。
 	r := gin.New()
@@ -59,8 +61,9 @@ func TestAddService(t *testing.T){
 		}
 		serviceReader := bytes.NewReader(jsonBytes)
 
-		// 创建一个http请求，请求方法为POST，请求路径为"/api/v1/services"，请求体为一个json字符串。
-		req, err := http.NewRequest("POST", config.ServiceURL, serviceReader)
+		// 创建一个http请求，请求方法为POST，请求路径为"/api/v1/namespaces/:namespace/services"，请求体为一个json字符串。
+		k8log.DebugLog("APIServer", "TestAddService: serviceReader = "+string(jsonBytes))
+		req, err := http.NewRequest("POST", stringutil.Replace(config.ServiceURL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace), serviceReader)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -85,8 +88,6 @@ func TestAddService(t *testing.T){
 	}
 }
 
-
-
 func TestGetServices(t *testing.T) {
 	// 创建一个新的gin引擎，并注册GetService处理函数。
 	gin.SetMode(gin.ReleaseMode)
@@ -99,10 +100,12 @@ func TestGetServices(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/services"。
+
 		uri := config.ServiceURL + "/service-example" + fmt.Sprint(i)
 		req, err := http.NewRequest("GET", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
+
 			t.Fatal(err)
 		}
 

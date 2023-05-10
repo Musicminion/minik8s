@@ -334,7 +334,7 @@ func GetNodePods(c *gin.Context) {
 	}
 
 	// 先获取所有的Pod的信息
-	res, err := EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
+	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
 
 	if err != nil {
 		k8log.DebugLog("APIServer", "GetNodePods: get pod failed "+err.Error())

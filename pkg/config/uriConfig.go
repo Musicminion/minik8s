@@ -16,6 +16,8 @@ const (
 	NodeSpecURL = "/api/v1/nodes/:name"
 	// 某个特定的Node的status
 	NodeSpecStatusURL = "/api/v1/nodes/:name/status"
+	// 某个特定的Node持有的所有的Pod
+	NodeAllPodsURL = "/api/v1/nodes/:name/pods"
 
 	// 请把所有和名字空间【有关系】的放在下面
 	// Pod相关操作的URL

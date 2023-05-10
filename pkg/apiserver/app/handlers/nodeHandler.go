@@ -321,3 +321,49 @@ func selectiveUpdateNode(oldNode *apiObject.NodeStore, postNode *apiObject.NodeS
 		oldNode.Status.UpdateTime = time.Now()
 	}
 }
+
+// 获取Node所有的Pod
+// NodeAllPodsURL = "/api/v1/nodes/:name/pods"
+func GetNodePods(c *gin.Context) {
+	nodeName := c.Params.ByName("name")
+	if nodeName == "" {
+		c.JSON(404, gin.H{
+			"error": "name is empty",
+		})
+		return
+	}
+
+	// 先获取所有的Pod的信息
+	res, err := EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
+
+	if err != nil {
+		k8log.DebugLog("APIServer", "GetNodePods: get pod failed "+err.Error())
+		c.JSON(400, gin.H{
+			"error": "get pod failed " + err.Error(),
+		})
+		return
+	}
+
+	// 遍历所有的Pod，找到属于该Node的Pod
+	var pods []apiObject.PodStore
+	for _, v := range res {
+		pod := apiObject.PodStore{}
+		err = json.Unmarshal([]byte(v.Value), &pod)
+		if err != nil {
+			k8log.DebugLog("APIServer", "GetNodePods: unmarshal pod failed "+err.Error())
+			c.JSON(500, gin.H{
+				"error": "unmarshal pod failed " + err.Error(),
+			})
+			return
+		}
+		if pod.Spec.NodeName == nodeName {
+			pods = append(pods, pod)
+		}
+	}
+
+	// 返回200处理成功
+	c.JSON(200, gin.H{
+		"data": pods,
+	})
+
+}

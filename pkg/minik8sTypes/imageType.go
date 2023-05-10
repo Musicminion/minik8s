@@ -5,7 +5,7 @@ type ImagePullPolicy string
 
 // 三个可能的值
 const (
+	PullIfNotPresent ImagePullPolicy = "IfNotPresent"
 	PullAlways       ImagePullPolicy = "Always"
 	PullNever        ImagePullPolicy = "Never"
-	PullIfNotPresent ImagePullPolicy = "IfNotPresent"
 )

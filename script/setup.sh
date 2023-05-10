@@ -149,3 +149,43 @@ if [ ! -x "$(command -v docker)" ]; then
 else
   echo "Docker已经安装。"
 fi
+
+# 安装Redis
+if command -v redis-server &> /dev/null
+then
+    echo "Redis已安装,尝试启动..."
+    sudo systemctl start redis-server
+else
+    # 如果Redis没有安装，则安装它
+    echo "Redis未安装，开始安装..."
+    sudo apt-get update
+    sudo apt install -y lsb-release
+
+    curl -fsSL https://packages.redis.io/gpg | sudo gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+
+    echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/redis.list
+
+    sudo apt-get update
+    sudo apt-get install -y redis
+    echo "Redis安装完成"
+
+    # 设置Redis开机自动启动
+    sudo systemctl enable redis-server
+    # 启动Redis服务
+    sudo systemctl start redis-server
+fi
+
+# 安装Weave网络插件
+if command -v weave &> /dev/null
+then
+    echo "Weave已安装"
+else
+    # 如果Weave没有安装，则安装它
+    echo "Weave未安装，开始安装..."
+    # 下载Weave二进制文件
+    sudo wget -O /usr/local/bin/weave https://raw.githubusercontent.com/zettio/weave/master/weave && sudo chmod +x /usr/local/bin/weave
+
+    # 启动Weave网络
+    sudo weave launch
+    echo "Weave安装完成"
+fi

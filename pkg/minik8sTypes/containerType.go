@@ -1,9 +1,18 @@
 package minik8stypes
 
+import "github.com/docker/go-connections/nat"
+
+type PortBinding struct {
+	HostIp   string // Host IP address that the container's port is mapped to
+	HostPort string // Host port number that the container's port is mapped to
+}
+
 // ContainerType表示容器的类型
 // 参考Docker官方的API https://github.com/docker/go-docker/blob/master/api/types/container/config.go
 // 编写一个容器的配置结构体，在创建容器的时候使用
 type ContainerConfig struct {
+	// 所有的Container相关的配置都在这里
+	// ************************************************ //
 	Tty bool     // 是否需要Tty终端 Attach standard streams to a tty, including stdin if it is not closed.
 	Env []string // 环境变量 List of environment variable to set in the container
 	// Cmd和Entrypoint的区别：
@@ -14,9 +23,21 @@ type ContainerConfig struct {
 	Cmd             []string            // 启动子容器的时候执行的命令 Command to run when starting the container
 	Entrypoint      []string            // Entrypoint to run when starting the container
 	Image           string              // Name of the image as it was passed by the operator (e.g. could be symbolic)
-	ImagePullPolicy ImagePullPolicy     // 拉取镜像的策略, Always, Never, IfNotPresent
+	ImagePullPolicy ImagePullPolicy     `default:"IfNotPresent"` // 拉取镜像的策略, Always, Never, IfNotPresent
 	Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 	Labels          map[string]string   // List of labels set to this container
+	ExposedPorts    map[string]struct{} // List of exposed ports
+
+	// ************************************************ //
+	// 所有的HostConfig相关的配置都在这里
+	VolumesFrom  []string    // List of volumes to take from other containers
+	Links        []string    // List of links (in the name:alias form)
+	NetworkMode  string      // [网络模式] Network mode to use for the container
+	PidMode      string      // [PidMode] PID namespace to use for the container
+	IpcMode      string      // [IPC Mode ]IPC namespace to use for the container(设置这三个可以让容器共享主机的网络、PID、IPC、NetworkMode)
+	Binds        []string    // List of volume bindings for this container
+	PortBindings nat.PortMap // List of port bindings for this container
+	// ************************************************ //
 
 	// 下面的是Docker官方的API中的字段，用作开发参考
 	// Hostname        string              // Hostname
@@ -60,4 +81,28 @@ const (
 	Removing ContainerStatus = "removing"
 	Exited   ContainerStatus = "exited"
 	Dead     ContainerStatus = "dead"
+)
+
+const (
+	PORT_PROTOCOL_TCP = "tcp"
+	PORT_PROTOCOL_UDP = "udp"
+	PORT_LOCALHOST_IP = "127.0.0.1"
+)
+
+const (
+	Contianer_IPCMode_Sharable = "shareable"
+)
+
+// 系统保留字段，给容器的标签使用
+const (
+	// meta相关的
+	ContainerLabel_PodName = "_pod_name"
+	ContainerLabel_PodUID  = "_pod_uid"
+	// pause容器相关的
+	ContainerLabel_IfPause       = "_if_pause"
+	ContainerLabel_IfPause_True  = "_true"
+	ContainerLabel_IfPause_False = "_false"
+
+	// namespace相关的
+	ContainerLabel_PodNamespace = "_namespace"
 )

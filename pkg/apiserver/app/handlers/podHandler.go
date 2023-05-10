@@ -82,7 +82,7 @@ func GetPods(c *gin.Context) {
 	logStr := fmt.Sprintf("GetPods: namespace = %s", namespace)
 	k8log.InfoLog("APIServer", logStr)
 
-	key := fmt.Sprintf("/registry/pods/%s/", namespace)
+	key := fmt.Sprintf(serverconfig.EtcdPodPath + "%s/", namespace)
 	res, err := etcdclient.EtcdStore.PrefixGet(key)
 	if err != nil {
 		c.JSON(500, gin.H{
@@ -135,7 +135,7 @@ func AddPod(c *gin.Context) {
 	}
 
 	// 检查name是否重复
-	key := fmt.Sprintf("/registry/pods/%s/%s", pod.GetPodNamespace(), newPodName)
+	key := fmt.Sprintf( serverconfig.EtcdPodPath + "%s/%s", pod.GetPodNamespace(), newPodName)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
 		c.JSON(500, gin.H{

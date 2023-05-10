@@ -93,7 +93,7 @@ func TestAddPod(t *testing.T) {
 }
 
 func TestGetPods(t *testing.T) {
-	// 创建一个新的gin引擎，并注册GetService处理函数。
+	// 创建一个新的gin引擎，并注册GetPod处理函数。
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())
@@ -123,4 +123,41 @@ func TestGetPods(t *testing.T) {
 		}
 		t.Log(w.Body.String())
 	}
+}
+
+func TestDeletePod(t *testing.T) {
+	// // 创建一个新的gin引擎，并注册DeletePod处理函数。
+	// r := gin.Default()
+	// // 把r的输出重定向到null
+	// r.Use(gin.LoggerWithWriter(io.Discard))
+	// 创建一个新的gin引擎，并注册GetPod处理函数。
+	gin.SetMode(gin.ReleaseMode)
+	r := gin.New()
+	r.Use(gin.Recovery())
+	r.Use(gin.LoggerWithConfig(gin.LoggerConfig{
+		Output: io.Discard, // 将输出重定向到 ioutil.Discard，即丢弃
+	}))
+	r.DELETE(config.PodSpecURL, DeletePod)
+
+	for i := 1; i <= 2; i++ {
+		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/namespaces/:namespace/pods"。
+		uri := config.PodsURL + "/pod-example" + fmt.Sprint(i)
+		req, err := http.NewRequest("DELETE", uri, nil)
+		req.Header.Set("Content-Type", "application/json")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// 创建响应写入器
+		w := httptest.NewRecorder()
+
+		r.ServeHTTP(w, req)
+
+		// 检查响应状态码和响应体
+		if w.Code != http.StatusNoContent {
+			t.Errorf("expected status %v but got %v", http.StatusOK, w.Code)
+		}
+		t.Log(w.Body.String())
+	}
+
 }

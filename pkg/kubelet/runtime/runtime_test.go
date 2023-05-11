@@ -117,17 +117,17 @@ func TestCreatePodAndSaveToEtcd(t *testing.T) {
 // 	}
 // }
 
-// func TestDeletePod(t *testing.T) {
-// 	// 创建一个runtimeManager
-// 	r := NewRuntimeManager()
+func TestDeletePod(t *testing.T) {
+	// 创建一个runtimeManager
+	r := NewRuntimeManager()
 
-// 	// 删除pod
-// 	err := r.DeletePod(&testPod)
+	// 删除pod
+	err := r.DeletePod(&testPod)
 
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
-// }
+	if err != nil {
+		t.Error(err)
+	}
+}
 
 // Spec: apiObject.PodSpec{
 // 	Containers: []apiObject.Container{},

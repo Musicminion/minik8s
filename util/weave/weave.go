@@ -5,6 +5,7 @@ import (
 	"miniK8s/pkg/k8log"
 	"os/exec"
 	"regexp"
+	"strings"
 )
 
 //TODO: weave的ip返回值
@@ -37,18 +38,21 @@ func WeaveAttach(containerID, ip string) (string, error) {
 
 	if ip == "" {
 		out, err := exec.Command("weave", "attach", containerID).Output()
+		trimedStr := strings.TrimRight(string(out), "\n")
 		if err != nil {
 			k8log.DebugLog("Weave_util", "weave attach err: "+err.Error()+string(out))
-			return string(out), err
+			return trimedStr, err
 		}
-		return string(out), err
+		return trimedStr, err
 	}
 
 	if out, err := exec.Command("weave", "attach", ip, containerID).Output(); err != nil {
+		trimedStr := strings.TrimRight(string(out), "\n")
 		k8log.DebugLog("Weave_util", "weave attach err: "+err.Error()+string(out))
-		return string(out), err
+		return trimedStr, err
 	} else {
+		trimedStr := strings.TrimRight(string(out), "\n")
 		k8log.DebugLog("Weave_util", "weave attach out: "+string(out))
-		return string(out), err
+		return trimedStr, err
 	}
 }

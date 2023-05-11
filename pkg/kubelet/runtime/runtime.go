@@ -53,7 +53,7 @@ func (r *runtimeManager) CreatePod(pod *apiObject.PodStore) error {
 
 	LogStr := "[Runtime Manager] create pod success" + pod.GetPodName()
 	k8log.InfoLog("kubelet", LogStr)
-	// TODO:
+	// TODO:  send pod info to apiserver
 	return nil
 }
 

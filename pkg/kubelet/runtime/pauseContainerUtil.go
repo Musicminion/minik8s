@@ -183,6 +183,9 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 		return "", err
 	}
 
+	// TODO: add podIp to pod status
+	pod.Status.PodIP = res
+
 	k8log.DebugLog("WeaveAttach", "WeaveAttach res "+res)
 
 	return ID, nil

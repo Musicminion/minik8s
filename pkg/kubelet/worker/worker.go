@@ -3,6 +3,7 @@ package worker
 import (
 	"errors"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 )
 
 // 隔壁的接口：RunTimeManager
@@ -47,25 +48,27 @@ func (p *PodWorker) Run() {
 }
 
 func (p *PodWorker) RunTask(task WorkTask) {
+	k8log.DebugLog("[Pod Worker]", "run task, task type is "+ string(task.TaskType))
 	switch task.TaskType {
 	case Task_AddPod:
-		// p.AddPodHandler(task.TaskArgs.Pod)
+		p.AddPodHandler(task.TaskArgs.(Task_AddPodArgs).Pod)
 	case Task_DelPod:
-		// p.DelPodHandler(task.TaskArgs.Pod)
+		p.DelPodHandler(task.TaskArgs.(Task_DelPodArgs).Pod)
 	case Task_Start:
-		// p.StartPodHandler(task.TaskArgs.Pod)
+		p.StartPodHandler(task.TaskArgs.(Task_StartPodArgs).Pod)
 	case Task_Stop:
-		// p.StopPodHandler(task.TaskArgs.Pod)
+		p.StopPodHandler(task.TaskArgs.(Task_StopPodArgs).Pod)
 	case Task_Restart:
-		// p.RestartPodHandler(task.TaskArgs.Pod)
+		p.RestartPodHandler(task.TaskArgs.(Task_RestartPodArgs).Pod)
 	default:
-		// log.Error("unknown task type")
+		k8log.ErrorLog("[Pod Worker]", "unknown task type")
 	}
 }
 
 // Worker添加任务
 func (p *PodWorker) AddTask(task WorkTask) error {
 	// TODO: 这里需要考虑任务队列满的情况
+	k8log.DebugLog("[Pod Worker]", "add task, task type is "+string(task.TaskType))
 
 	// 检查队列是否已经满了
 	if len(p.TaskQueue) == WorkerChannelBufferSize {

@@ -6,6 +6,11 @@ import (
 	"miniK8s/util/rediscache"
 )
 
+// StatusManager 状态管理器功能介绍
+// 1. 用于管理缓存，和Redis打交道
+// 2. 和API Server打交道，发布自己的Node的状态信息，
+// 3. 获取Pod的状态信息，发布Pod的状态信息
+
 type StatusManager interface {
 	// AddPodToCache 将Pod的存储对象添加到缓存中
 	AddPodToCache(pod *apiObject.PodStore) error
@@ -21,11 +26,6 @@ type statusManager struct {
 	cache          rediscache.RedisCache
 	runtimeManager runtime.RuntimeManager
 }
-
-const (
-	// 缓存在Redis里面的数据库的ID编号，用于区分不同的缓存数据库
-	CacheDBID_PodCache = 0
-)
 
 func NewStatusManager() StatusManager {
 	return &statusManager{
@@ -55,10 +55,13 @@ func (s *statusManager) DelPodFromCache(podUUID string) error {
 
 func (s *statusManager) UpdatePodToCache(pod *apiObject.PodStore) error {
 	return s.cache.Update(pod.GetPodUUID(), pod)
+
 }
 
 // ************************************************************
 
-// func (s *statusManager) run() {
+func (s *statusManager) run() {
 
-// }
+	// go executor.Period(time.Second * 1, )
+
+}

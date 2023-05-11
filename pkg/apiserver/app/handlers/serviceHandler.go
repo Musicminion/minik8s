@@ -8,12 +8,9 @@ import (
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
-	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
-	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
-	"path"
 
 	"github.com/gin-gonic/gin"
 )

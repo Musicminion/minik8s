@@ -73,9 +73,17 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.Service.GetName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.Service.GetNamespace())
+
+	jsonBytes, err := json.Marshal(serviceUpdate)
+	if err != nil {
+		return err
+	}
+	// serviceUpdateReader := bytes.NewReader(jsonBytes)
+	// change serviceUpdateReader to string
+
 	message := message.Message{
 		Type:         message.PUT,
-		Content:      serviceUpdate.ServiceTarget.Service.GetName(),
+		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: serviceUpdate.ServiceTarget.Service.GetName(),
 	}

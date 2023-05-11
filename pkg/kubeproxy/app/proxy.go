@@ -21,21 +21,21 @@ type KubeProxy struct {
 	endpointUpdates chan *entity.EndpointUpdate
 	iptableManager  *IptableManager
 }
-       
+
 func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
-    lw, err := listwatcher.NewListWatcher(lsConfig)
-    if err != nil {
-        k8log.ErrorLog("KubeProxy", "NewKubeProxy: new watcher failed")
-    }
-    // TODO: health check server
+	lw, err := listwatcher.NewListWatcher(lsConfig)
+	if err != nil {
+		k8log.ErrorLog("KubeProxy", "NewKubeProxy: new watcher failed")
+	}
+	// TODO: health check server
 	iptableManager := New()
 	proxy := &KubeProxy{
-        lw: lw,
-		iptableManager: iptableManager,
-        stopChannel: make(<-chan struct{}),
-        serviceUpdates: make(chan *entity.ServiceUpdate, 10),
-        endpointUpdates: make(chan *entity.EndpointUpdate, 10),
-    }
+		lw:              lw,
+		iptableManager:  iptableManager,
+		stopChannel:     make(<-chan struct{}),
+		serviceUpdates:  make(chan *entity.ServiceUpdate, 10),
+		endpointUpdates: make(chan *entity.EndpointUpdate, 10),
+	}
 	return proxy
 }
 
@@ -78,15 +78,15 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 	k8log.InfoLog("KubeProxy", "syncLoopIteration: Sync loop Iteration")
 
 	select {
-		
+
 	case serviceUpdate := <-serviceUpdates:
 		switch serviceUpdate.Action {
 		case entity.CREATE:
 			k8log.InfoLog("KubeProxy", "syncLoopIteration: create Service action")
 			proxy.iptableManager.CreateService(serviceUpdate)
-            
+
 		case entity.UPDATE:
-			
+
 		case entity.DELETE:
 		}
 	case endpointUpdate := <-endpointUpdates:
@@ -100,13 +100,15 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 	return true
 }
 
-
 func (proxy *KubeProxy) Run() {
-
-    
-	go proxy.lw.WatchQueue_Block("ServiceUpdate", proxy.HandleServiceUpdate, make(chan struct{}))
-	go proxy.lw.WatchQueue_Block("EndpointUpdate", proxy.HandleEndpointUpdate, make(chan struct{}))
-    // 持续监听serviceUpdates和endpointUpdates的channel
-    for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.endpointUpdates) {
+	go proxy.lw.WatchQueue_Block("serviceUpdate", proxy.HandleServiceUpdate, make(chan struct{}))
+	go proxy.lw.WatchQueue_Block("endpointUpdate", proxy.HandleEndpointUpdate, make(chan struct{}))
+	// 持续监听serviceUpdates和endpointUpdates的channel
+	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.endpointUpdates) {
 	}
+
+}
+
+func (proxy *KubeProxy) Stop() {
+	// TODO: stop
 }

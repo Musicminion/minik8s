@@ -6,12 +6,10 @@ import (
 	"fmt"
 	"io"
 	"miniK8s/pkg/apiObject"
-	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
-	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/stringutil"
-	"miniK8s/util/uuid"
+	"miniK8s/util/testutil"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -20,45 +18,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"gopkg.in/yaml.v3"
 )
-
-func AddPodToEtcd() {
-	for i := 1; i <= 2; i++ {
-		path := "./testFile/yamlFile/Pod-" + fmt.Sprint(i) + ".yaml"
-		file, _ := os.Open(path)
-
-		// 读取文件内容
-		content, err := io.ReadAll(file)
-
-		// 将文件内容转换为Pod对象
-		// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
-		pod := &apiObject.Pod{}
-		err = yaml.Unmarshal(content, pod)
-	
-		// 检查name是否重复
-		newPodName := pod.GetPodName()
-		key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
-		res, err := etcdclient.EtcdStore.Get(key)
-		if len(res) != 0 {
-			k8log.ErrorLog("APIServer", "AddPod: pod name has exist")
-			return
-		}
-		if err != nil {
-			k8log.ErrorLog("APIServer", "AddPod: get pod failed "+err.Error())
-			return
-		}
-		pod.Metadata.UUID = uuid.NewUUID()
-
-		// 把Pod转化为PodStore
-		podStore := pod.ToStore()
-
-		// 把PodStore转化为json
-		podStoreJson, err := json.Marshal(podStore)
-		key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
-
-		// 将pod存储到etcd中
-		err = etcdclient.EtcdStore.Put(key, podStoreJson)
-	}
-}
 
 func TestAddService(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
@@ -201,7 +160,6 @@ func TestDeleteService(t *testing.T) {
 
 }
 
-
 func TestAddServiceWithEndpoints(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	// 创建一个新的gin引擎，并注册AddService处理函数。
@@ -214,7 +172,7 @@ func TestAddServiceWithEndpoints(t *testing.T) {
 	r.POST(config.ServiceURL, AddService)
 
 	// 确保当前etcd中有含有label的Pod
-	AddPodToEtcd()
+	testutil.AddPodToEtcd()
 
 	// 读取文件"./testFile/yamlFile/Service-i.yaml"，将文件内容作为请求体。
 	// 打开文件

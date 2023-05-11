@@ -39,6 +39,7 @@ func (r *runtimeManager) CreatePod(pod *apiObject.PodStore) error {
 	pauseID, err := r.createPauseContainer(pod)
 
 	if err != nil {
+		k8log.DebugLog("[Runtime Manager]", err.Error())
 		return err
 	}
 
@@ -46,6 +47,7 @@ func (r *runtimeManager) CreatePod(pod *apiObject.PodStore) error {
 	_, err = r.createPodAllContainer(pod, pauseID)
 
 	if err != nil {
+		k8log.ErrorLog("[Runtime Manager]", err.Error())
 		return err
 	}
 

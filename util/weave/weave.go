@@ -38,16 +38,17 @@ func WeaveAttach(containerID, ip string) (string, error) {
 	if ip == "" {
 		out, err := exec.Command("weave", "attach", containerID).Output()
 		if err != nil {
+			k8log.DebugLog("Weave_util", "weave attach err: "+err.Error()+string(out))
 			return string(out), err
 		}
 		return string(out), err
 	}
 
 	if out, err := exec.Command("weave", "attach", ip, containerID).Output(); err != nil {
-		k8log.DebugLog("Weave_util", "weave attch err: "+err.Error()+string(out))
+		k8log.DebugLog("Weave_util", "weave attach err: "+err.Error()+string(out))
 		return string(out), err
 	} else {
-		k8log.DebugLog("Weave_util", "weave attch out: "+string(out))
+		k8log.DebugLog("Weave_util", "weave attach out: "+string(out))
 		return string(out), err
 	}
 }

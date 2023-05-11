@@ -141,6 +141,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	// [镜像检查] 检查pause镜像是否存在，不存在则拉取
 	_, err := r.imageManager.PullImageWithPolicy(PauseContainerImage, minik8sTypes.PullIfNotPresent)
 	if err != nil {
+		k8log.ErrorLog("[Pause Container]", err.Error())
 		return "", err
 	}
 
@@ -148,6 +149,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	pauseConfig, err := r.getPauseContainerConfig(pod)
 
 	if err != nil {
+		k8log.ErrorLog("[Pause Container]", err.Error())
 		return "", err
 	}
 
@@ -162,6 +164,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	ID, err := r.containerManager.CreateContainer(newPauseName, pauseConfig)
 
 	if err != nil {
+		k8log.ErrorLog("[Pause Container]", err.Error())
 		return "", err
 	}
 
@@ -169,12 +172,14 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	_, err = r.containerManager.StartContainer(ID)
 
 	if err != nil {
+		k8log.ErrorLog("[Pause Container]", err.Error())
 		return "", err
 	}
 
 	// [Weave网络] 为pause容器添加网络
 	res, err := weave.WeaveAttach(ID, pod.Status.PodIP)
 	if err != nil {
+		k8log.ErrorLog("[Pause Container]", err.Error())
 		return "", err
 	}
 

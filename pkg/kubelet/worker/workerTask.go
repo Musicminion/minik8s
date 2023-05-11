@@ -43,13 +43,14 @@ type Task_AddPodArgs struct {
 	Pod *apiObject.PodStore
 }
 
-// 对于一个PodWorker来说，它包含了人物
+// 对于一个PodWorker来说，它包含了任务
 type WorkTask struct {
 	// 任务类型
 	TaskType TypeOfTask
 
 	TaskArgs interface{}
 }
+
 
 // TypeOfTask 任务类型
 type TypeOfTask string

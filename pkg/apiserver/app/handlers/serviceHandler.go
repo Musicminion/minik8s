@@ -8,12 +8,9 @@ import (
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
-	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
-	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
-	"path"
 
 	"github.com/gin-gonic/gin"
 )
@@ -100,9 +97,10 @@ func AddService(c *gin.Context) {
 	// TODO: scan etcd and find all endpoints of this service
 	for key, value := range service.Spec.Selector {
 		func(key, value string) {
+			// TODO: 更改为endpoint的实现
 			// 替换可变参 namespace
-			etcdURL := path.Join(config.ServiceURL, key, value, service.Metadata.UUID)
-			etcdURL = stringutil.Replace(etcdURL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
+			// etcdURL := path.Join(config.ServiceURL, key, value, service.Metadata.UUID)
+			// etcdURL = stringutil.Replace(etcdURL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
 			res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
 			// if err := etcdclient.EtcdStore.Put(etcdURL, serviceJson); err != nil {
 			// 	c.JSON(500, gin.H{

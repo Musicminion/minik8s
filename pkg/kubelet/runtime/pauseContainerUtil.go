@@ -231,6 +231,7 @@ func (r *runtimeManager) startPauseContainer(pod *apiObject.PodStore) (string, e
 
 // stopPauseContainer
 func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, error) {
+	k8log.InfoLog("[Pause Container]", "stopPauseContainer")
 	var filter = make(map[string][]string)
 	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
 	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
@@ -241,6 +242,7 @@ func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, er
 	res, err := r.containerManager.ListContainersWithOpt(filter)
 
 	if err != nil {
+		k8log.ErrorLog("[Pause Container]", err.Error())
 		return "", err
 	}
 
@@ -249,6 +251,7 @@ func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, er
 	for _, container := range res {
 		retID = container.ID
 		if _, err := r.containerManager.StopContainer(container.ID); err != nil {
+			k8log.DebugLog("[Pause Container]", err.Error())
 			return "", err
 		}
 	}

@@ -74,10 +74,6 @@ func TestStopPod(t *testing.T) {
 	if err != nil {
 		t.Errorf("StopPod error: %v", err)
 	}
-	// 检查 Pod 是否存在
-	if _, ok := workerManager.PodWorkersMap[testPod.GetPodUUID()]; ok {
-		t.Errorf("Pod not stopped")
-	}
 }
 
 

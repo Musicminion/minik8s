@@ -78,7 +78,7 @@ func (p *podWorkerManager) AddPod(pod *apiObject.PodStore) error {
 // DeletePod 删除pod
 func (p *podWorkerManager) DeletePod(pod *apiObject.PodStore) error {
 	podUUID := pod.GetPodUUID()
-	// 遍历PodWorkersMap，如果不存在podUUID对应的PodWorker，则直接返回
+	// 遍历PodWorkersMap，如果不存在podUUID对应的PodWorker，则直接返回``
 	if _, ok := p.PodWorkersMap[podUUID]; !ok {
 		return errors.New("pod not exists")
 	}
@@ -99,6 +99,8 @@ func (p *podWorkerManager) DeletePod(pod *apiObject.PodStore) error {
 	if err != nil {
 		return err
 	}
+	// 删除对应的podWorkersMap
+	delete(p.PodWorkersMap, podUUID)
 
 	return nil
 }
@@ -121,6 +123,7 @@ func (p *podWorkerManager) StartPod(pod *apiObject.PodStore) error {
 
 	// 把任务添加到PodWorker的任务队列中
 	err := p.PodWorkersMap[podUUID].AddTask(task)
+	time.Sleep(1 * time.Second)
 	if err != nil {
 		return err
 	}
@@ -146,6 +149,7 @@ func (p *podWorkerManager) StopPod(pod *apiObject.PodStore) error {
 
 	// 把任务添加到PodWorker的任务队列中
 	err := p.PodWorkersMap[podUUID].AddTask(task)
+	time.Sleep(1 * time.Second)
 	if err != nil {
 		return err
 	}
@@ -171,12 +175,15 @@ func (p *podWorkerManager) RestartPod(pod *apiObject.PodStore) error {
 
 	// 把任务添加到PodWorker的任务队列中
 	err := p.PodWorkersMap[podUUID].AddTask(task)
+	time.Sleep(1 * time.Second)
 	if err != nil {
 		return err
 	}
 
 	return nil
 }
+
+
 
 // ************************************************************
 // 这里写PodWorker的函数

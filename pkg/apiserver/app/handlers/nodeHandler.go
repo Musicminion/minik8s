@@ -5,8 +5,10 @@ import (
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/serverconfig"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/uuid"
+	"net/http"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -82,7 +84,8 @@ func GetNodes(c *gin.Context) {
 // 删除Node信息
 func DeleteNode(c *gin.Context) {
 	// 尝试解析请求里面的name
-	name := c.Params.ByName("name")
+	// name := c.Params.ByName("name")
+	name := c.Params.ByName(config.URL_PARAM_NAME)
 	// 如果解析成功，删除对应的Node信息
 	if name != "" {
 		// log
@@ -184,7 +187,8 @@ func AddNode(c *gin.Context) {
 // 所以用户如果要追加，需要自行通过GET获取信息然后再PUT！这种扔给调用者自己处理
 func UpdateNode(c *gin.Context) {
 	// 这个是PUT请求，解析请求URI里面的name
-	name := c.Params.ByName("name")
+	// name := c.Params.ByName("name")
+	name := c.Params.ByName(config.URL_PARAM_NAME)
 	if name != "" {
 		// log
 		logStr := "UpdateNode: name = " + name
@@ -325,7 +329,9 @@ func selectiveUpdateNode(oldNode *apiObject.NodeStore, postNode *apiObject.NodeS
 // 获取Node所有的Pod
 // NodeAllPodsURL = "/api/v1/nodes/:name/pods"
 func GetNodePods(c *gin.Context) {
-	nodeName := c.Params.ByName("name")
+	// nodeName := c.Params.ByName("name")
+
+	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
 	if nodeName == "" {
 		c.JSON(404, gin.H{
 			"error": "name is empty",
@@ -365,5 +371,174 @@ func GetNodePods(c *gin.Context) {
 	c.JSON(200, gin.H{
 		"data": pods,
 	})
+
+}
+
+// *************************************************************************************************
+// 节点状态的增删改查，放在这里
+// /api/v1/nodes/:name/status
+func GetNodeStatus(c *gin.Context) {
+	// nodeName := c.Params.ByName("name")
+	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
+	if nodeName == "" {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "name is empty",
+		})
+		return
+	}
+
+	// 先从etcd中获取Node信息
+	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath + nodeName)
+	if err != nil {
+		k8log.DebugLog("APIServer", "GetNodeStatus: get node failed "+err.Error())
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "get node failed " + err.Error(),
+		})
+		return
+	}
+
+	// 检测获取到的Node信息是否为空
+	if len(res) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "node not found",
+		})
+		return
+	}
+
+	// 遍历res，获取Node信息
+	var node apiObject.NodeStore
+	for _, v := range res {
+		err = json.Unmarshal([]byte(v.Value), &node)
+		if err != nil {
+			k8log.DebugLog("APIServer", "GetNodeStatus: unmarshal node failed "+err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "unmarshal node failed " + err.Error(),
+			})
+			return
+		}
+	}
+
+	// 返回200处理成功
+	c.JSON(http.StatusOK, gin.H{
+		"data": node.Status,
+	})
+}
+
+// /api/v1/nodes/:name/status
+func UpdateNodeStatus(c *gin.Context) {
+	// nodeName := c.Params.ByName("name")
+	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
+	if nodeName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "name is empty",
+		})
+		return
+	}
+	// 先从etcd中获取Node信息
+	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath + nodeName)
+	if err != nil {
+		k8log.DebugLog("APIServer", "UpdateNodeStatus: get node failed "+err.Error())
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "get node failed " + err.Error(),
+		})
+		return
+	}
+
+	// 解析PUT请求的请求体，转化为NodeStore
+	putNodeStatus := apiObject.NodeStatus{}
+	if err := c.ShouldBind(&putNodeStatus); err != nil {
+		k8log.DebugLog("APIServer", "UpdateNodeStatus: bind put node failed "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "bind put node failed " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "node not found",
+		})
+		return
+	}
+
+	if len(res) > 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "node is not unique",
+		})
+		return
+	}
+
+	// 遍历res，获取Node信息
+	var oldNode apiObject.NodeStore
+	for _, v := range res {
+		err = json.Unmarshal([]byte(v.Value), &oldNode)
+		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNodeStatus: unmarshal node failed "+err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "unmarshal node failed " + err.Error(),
+			})
+			return
+		}
+
+		// 更新Node的Status
+		selectiveUpdateNodeStatus(&oldNode, &putNodeStatus)
+
+		// 将更新后的Node信息写入etcd
+		nodeJson, err := json.Marshal(oldNode)
+		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNodeStatus: marshal node failed "+err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "marshal node failed " + err.Error(),
+			})
+			return
+		}
+
+		// 将更新后的Node信息写入etcd
+		err = etcdclient.EtcdStore.Put(serverconfig.EtcdNodePath+nodeName, nodeJson)
+		if err != nil {
+			k8log.DebugLog("APIServer", "UpdateNodeStatus: put node failed "+err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "put node failed " + err.Error(),
+			})
+			return
+		}
+
+		// 返回200处理成功
+		c.JSON(http.StatusOK, gin.H{
+			"message": "update node status success",
+		})
+
+	}
+
+}
+
+func selectiveUpdateNodeStatus(oldNode *apiObject.NodeStore, putNodeStatus *apiObject.NodeStatus) {
+	// 只有当putNodeStatus中的字段不为空时，才更新oldNode中的字段
+	if putNodeStatus.Hostname != "" {
+		oldNode.Status.Hostname = putNodeStatus.Hostname
+	}
+
+	if putNodeStatus.Ip != "" {
+		oldNode.Status.Ip = putNodeStatus.Ip
+	}
+
+	if putNodeStatus.Condition != "" {
+		oldNode.Status.Condition = putNodeStatus.Condition
+	}
+
+	if putNodeStatus.CpuPercent != 0 {
+		oldNode.Status.CpuPercent = putNodeStatus.CpuPercent
+	}
+
+	if putNodeStatus.MemPercent != 0 {
+		oldNode.Status.MemPercent = putNodeStatus.MemPercent
+	}
+
+	if putNodeStatus.NumPods != 0 {
+		oldNode.Status.NumPods = putNodeStatus.NumPods
+	}
+
+	// 手动设置UpdateTime
+	oldNode.Status.UpdateTime = time.Now()
 
 }

@@ -17,6 +17,9 @@ func Period(delay time.Duration, waitTime []time.Duration, callback callback, if
 		return
 	}
 
+	// 阻塞当前的进度
+	<-time.After(delay)
+
 	if ifLoop {
 		for {
 			for _, v := range waitTime {

@@ -1,5 +1,7 @@
 package apiObject
 
+import "time"
+
 type ContainerPort struct {
 	Name          string `yaml:"name"`
 	HostPort      string `yaml:"hostPort"`
@@ -183,7 +185,8 @@ type PodStatus struct {
 	Phase string `json:"phase" yaml:"phase"`
 
 	// 最新的更新时间
-	UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+	// UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+	UpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 }
 
 // PodStore是用来存储Pod的设定和他的状态的

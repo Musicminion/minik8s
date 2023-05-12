@@ -45,7 +45,6 @@ type ResponseData struct {
 	Data interface{} `json:"data"`
 }
 
-
 func (s *apiServer) Run() {
 	k8log.InfoLog("APIServer", "Watcher try to connect to RabbitMQ")
 	go s.lw.WatchQueue_Block("apiServer", handlers.MessageHandler, make(chan struct{}))
@@ -66,7 +65,6 @@ func (s *apiServer) Run() {
 	s.router.Run("0.0.0.0:8090")
 }
 
-
 func (s *apiServer) bind() {
 
 	// Rest风格的api
@@ -78,6 +76,10 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.NodeSpecURL, handlers.UpdateNode)
 	s.router.DELETE(config.NodeSpecURL, handlers.DeleteNode)
 
+	// 对于节点的状态
+	s.router.GET(config.NodeSpecStatusURL, handlers.GetNodeStatus)
+	s.router.PUT(config.NodeSpecStatusURL, handlers.UpdateNodeStatus)
+
 	// Pod相关的api
 
 	s.router.GET(config.PodsURL, handlers.GetPods)         // 所有pod
@@ -86,10 +88,13 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)    // 更新Pod
 	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
 
-	// Service相关的api
-	s.router.POST(config.ServiceURL, handlers.AddService)   // 创建service
-	s.router.GET(config.ServiceURL, handlers.GetServices)   // 获取所有service
-	s.router.GET(config.ServiceSpecURL, handlers.GetService) // 获取单个service
-	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService)   // 更新service
-}
+	// PodStatus相关的api
+	s.router.GET(config.PodSpecStatusURL, handlers.GetPodStatus)    // 获取PodStatus
+	s.router.PUT(config.PodSpecStatusURL, handlers.UpdatePodStatus) // 更新PodStatus
 
+	// Service相关的api
+	s.router.POST(config.ServiceURL, handlers.AddService)       // 创建service
+	s.router.GET(config.ServiceURL, handlers.GetServices)       // 获取所有service
+	s.router.GET(config.ServiceSpecURL, handlers.GetService)    // 获取单个service
+	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService) // 更新service
+}

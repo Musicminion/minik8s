@@ -6,7 +6,6 @@ import (
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
-
 	"github.com/streadway/amqp"
 	"sync"
 	"time"

@@ -31,6 +31,7 @@ func GetAPIObjectTypeFromYamlFile(fileContent []byte) (string, error) {
 func ParseAPIObjectFromYamlfileContent(fileContent []byte, obj interface{}) error {
 	err := yaml.Unmarshal(fileContent, obj)
 	if err != nil {
+		k8log.ErrorLog("Kubectl", "ParseAPIObjectFromYamlfileContent: Unmarshal object failed "+err.Error())
 		return err
 	}
 	return err
@@ -42,10 +43,11 @@ func PostAPIObjectToServer(URL string, obj interface{}) error {
 	// 发送到服务器
 	code, res, err := netrequest.PostRequestByTarget(URL, obj)
 	if err != nil {
+		k8log.ErrorLog("Kubectl", "ParseAPIObjectFromYamlfileContent: Unmarshal object failed "+err.Error())
 		return err
 	}
 
-	fmt.Print("code: ", code, "\n")
+	fmt.Println("code: ", code)
 	bodyBytes, err := json.Marshal(res)
 	if err != nil {
 		return err

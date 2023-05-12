@@ -11,11 +11,17 @@ var TestContainerURLs = []string{
 	"docker.io/library/redis:latest",
 }
 
+// 遍历启动所有的容器
+var opt = map[string][]string{
+	"test": {"test"},
+}
+
 // 测试之前执行的方法
 func TestMain(m *testing.M) {
 	// 先列出所有的容器，然后删除所有的容器
 	cm := &ContainerManager{}
-	containers, err := cm.ListContainers()
+
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		panic(err)
 	}
@@ -41,6 +47,7 @@ func TestCreateContainer(t *testing.T) {
 			Image:           url,
 			Env:             []string{"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"},
 			ImagePullPolicy: minik8stypes.PullIfNotPresent,
+			Labels:          map[string]string{"test": "test"},
 		}
 		containerName := "test" + strconv.Itoa(id)
 		ID, err := cm.CreateContainer(containerName, option)
@@ -57,7 +64,7 @@ func TestListContainers(t *testing.T) {
 	// 创建一个容器管理器对象
 	cm := &ContainerManager{}
 	// 调用列出所有容器的方法
-	containers, err := cm.ListContainers()
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,7 +79,7 @@ func TestGetContainerStats(t *testing.T) {
 	// 创建一个容器管理器对象
 	cm := &ContainerManager{}
 	// 调用列出所有容器的方法
-	containers, err := cm.ListContainers()
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		t.Error(err)
 	}
@@ -92,7 +99,7 @@ func TestGetContainerInspectInfo(t *testing.T) {
 	// 创建一个容器管理器对象
 	cm := &ContainerManager{}
 	// 遍历获取所有容器的信息
-	containers, err := cm.ListContainers()
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		t.Error(err)
 	}
@@ -110,7 +117,7 @@ func TestStopContainer(t *testing.T) {
 	// 创建一个容器管理器对象
 	cm := &ContainerManager{}
 	// 遍历停止所有的容器
-	containers, err := cm.ListContainers()
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		t.Error(err)
 	}
@@ -127,7 +134,10 @@ func TestStartContainer(t *testing.T) {
 	// 创建一个容器管理器对象
 	cm := &ContainerManager{}
 	// 遍历启动所有的容器
-	containers, err := cm.ListContainers()
+	opt := map[string][]string{}
+	opt["test"] = []string{"test"}
+
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		t.Error(err)
 	}
@@ -144,7 +154,7 @@ func TestRemoveContainer(t *testing.T) {
 	// 创建一个容器管理器对象
 	cm := &ContainerManager{}
 	// 遍历删除所有的容器
-	containers, err := cm.ListContainers()
+	containers, err := cm.ListContainersWithOpt(opt)
 	if err != nil {
 		t.Error(err)
 	}

@@ -23,7 +23,7 @@ then
     echo "Go尚未安装。正在安装Go 1.20.3..."
 
     # 下载Go 1.20.3版本的二进制文件
-    wget -q https://golang.org/dl/go1.20.3.linux-amd64.tar.gz -O /tmp/go.tar.gz
+    wget -c --tries=0 --timeout=300 --waitretry=5 --read-timeout=20 -O /tmp/go.tar.gz https://mirrors.aliyun.com/golang/go1.20.3.linux-amd64.tar.gz
 
     # 解压缩二进制文件到/usr/local目录
     sudo tar -C /usr/local -xzf /tmp/go.tar.gz
@@ -173,4 +173,19 @@ else
     sudo systemctl enable redis-server
     # 启动Redis服务
     sudo systemctl start redis-server
+fi
+
+# 安装Weave网络插件
+if command -v weave &> /dev/null
+then
+    echo "Weave已安装"
+else
+    # 如果Weave没有安装，则安装它
+    echo "Weave未安装，开始安装..."
+    # 下载Weave二进制文件
+    sudo wget -O /usr/local/bin/weave https://raw.githubusercontent.com/zettio/weave/master/weave && sudo chmod +x /usr/local/bin/weave
+
+    # 启动Weave网络
+    sudo weave launch
+    echo "Weave安装完成"
 fi

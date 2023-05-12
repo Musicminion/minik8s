@@ -45,3 +45,4 @@ func (ls *Listwatcher) WatchQueue_NoBlock(queueName string, handleFunc func(amqp
 
 	return cancelFunc, nil
 }
+

@@ -3,6 +3,7 @@ module miniK8s
 go 1.20
 
 require (
+	github.com/coreos/go-iptables v0.6.0
 	github.com/docker/docker v20.10.20+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/fatih/color v1.15.0
@@ -13,6 +14,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/streadway/amqp v1.0.0
 	go.etcd.io/etcd/client/v3 v3.5.8
+	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

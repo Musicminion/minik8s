@@ -28,7 +28,7 @@ func TestAddNode(t *testing.T) {
 	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddNode方法。
 	r.POST(config.NodesURL, AddNode)
 
-	// 读取文件"./testFile/yamlFile/node-i.yaml"，将文件内容作为请求体。
+	// 读取文件"./testFile/yamlFile/Node-i.yaml"，将文件内容作为请求体。
 	// 打开文件
 
 	for i := 1; i <= 2; i++ {
@@ -100,7 +100,7 @@ func TestGetNodes(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/nodes"。
-		uri := config.NodesURL + "testNode-" + fmt.Sprint(i)
+		uri := config.NodesURL + "/testNode-" + fmt.Sprint(i)
 		req, err := http.NewRequest("GET", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
@@ -136,7 +136,7 @@ func TestDeleteNode(t *testing.T) {
 
 	for i := 1; i <= 2; i++ {
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/nodes"。
-		uri := config.NodesURL + "testNode" + fmt.Sprint(i)
+		uri := config.NodesURL + "/testNode" + fmt.Sprint(i)
 		req, err := http.NewRequest("DELETE", uri, nil)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {

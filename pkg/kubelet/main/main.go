@@ -24,6 +24,10 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 	return k, nil
 }
 
+func main() {
+
+}
+
 // type Kubelet struct {
 // 	config *config.KubeletConfig
 // }

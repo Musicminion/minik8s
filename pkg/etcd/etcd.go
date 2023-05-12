@@ -84,12 +84,6 @@ func (s *Store) Get(key string) ([]ListRes, error) {
 	}
 
 	return res, nil
-	// return []ListRes{ListRes{
-	// 	ResourceVersion: response.Kvs[0].ModRevision,
-	// 	CreateVersion:   response.Kvs[0].CreateRevision,
-	// 	Key:             string(response.Kvs[0].Key),
-	// 	Value:           string(response.Kvs[0].Value),
-	// }}, nil
 }
 
 // 值得注意的是，多次Put一个相同的key，会覆盖之前的值！

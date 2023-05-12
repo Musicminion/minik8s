@@ -45,27 +45,6 @@ type ResponseData struct {
 	Data interface{} `json:"data"`
 }
 
-func (s *apiServer) bind() {
-
-	// Rest风格的api
-	// 在Kubernetes API中，节点（Node）的标识符是其名称，因此在API URI中，
-	// 节点的名称用于区分不同的节点。例如，获取名为node-1的节点的状态，可以使用以下URI：
-	s.router.GET(config.NodesURL, handlers.GetNodes)
-	s.router.GET(config.NodeSpecURL, handlers.GetNode)
-	s.router.POST(config.NodesURL, handlers.AddNode)
-	s.router.PUT(config.NodeSpecURL, handlers.UpdateNode)
-	s.router.DELETE(config.NodeSpecURL, handlers.DeleteNode)
-
-	// Pod相关的api
-
-	s.router.GET(config.PodsURL, handlers.GetPods)         // 所有pod
-	s.router.GET(config.PodSpecURL, handlers.GetPod)       // 单个pod
-	s.router.POST(config.PodsURL, handlers.AddPod)         // 创建pod
-	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)    // 更新Pod
-	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
-
-}
-
 func (s *apiServer) Run() {
 	k8log.InfoLog("APIServer", "Watcher try to connect to RabbitMQ")
 	go s.lw.WatchQueue_Block("apiServer", handlers.MessageHandler, make(chan struct{}))
@@ -86,45 +65,36 @@ func (s *apiServer) Run() {
 	s.router.Run("0.0.0.0:8090")
 }
 
-// func (s *apiServer) posting(c *gin.Context) {
+func (s *apiServer) bind() {
 
-// }
+	// Rest风格的api
+	// 在Kubernetes API中，节点（Node）的标识符是其名称，因此在API URI中，
+	// 节点的名称用于区分不同的节点。例如，获取名为node-1的节点的状态，可以使用以下URI：
+	s.router.GET(config.NodesURL, handlers.GetNodes)
+	s.router.GET(config.NodeSpecURL, handlers.GetNode)
+	s.router.POST(config.NodesURL, handlers.AddNode)
+	s.router.PUT(config.NodeSpecURL, handlers.UpdateNode)
+	s.router.DELETE(config.NodeSpecURL, handlers.DeleteNode)
 
-// func (s *apiServer) putting(c *gin.Context) {}
+	// 对于节点的状态
+	s.router.GET(config.NodeSpecStatusURL, handlers.GetNodeStatus)
+	s.router.PUT(config.NodeSpecStatusURL, handlers.UpdateNodeStatus)
 
-// func (s *apiServer) deleting(c *gin.Context) {
-// 	key := c.Param("key")
-// 	err := s.etcdStore.Del(key)
-// 	if err != nil {
-// 		c.JSON(http.StatusInternalServerError, gin.H{
-// 			"error": err.Error(),
-// 		})
-// 		return
-// 	}
-// }
+	// Pod相关的api
 
-// func (s *apiServer) getting(c *gin.Context) {
-// key := c.Param("key")
-// val, err := s.etcdStore.Get(key)
-// if err != nil {
-// 	c.JSON(http.StatusInternalServerError, gin.H{
-// 		"error": err.Error(),
-// 	})
-// 	return
-// }
-// response := ResponseData{
-// 	Data: val,
-// }
-// print(response.Data)
-// c.JSON(http.StatusOK, response)
-// }
+	s.router.GET(config.PodsURL, handlers.GetPods)         // 所有pod
+	s.router.GET(config.PodSpecURL, handlers.GetPod)       // 单个pod
+	s.router.POST(config.PodsURL, handlers.AddPod)         // 创建pod
+	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)    // 更新Pod
+	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
 
-// 不同的url, for test only
-// s.router.GET("/get/:key", s.getting)
-// s.router.POST("/post/:key", s.posting)
-// s.router.PUT("/put/:key", s.putting)
-// s.router.DELETE("/del/:key", s.deleting)
+	// PodStatus相关的api
+	s.router.GET(config.PodSpecStatusURL, handlers.GetPodStatus)    // 获取PodStatus
+	s.router.PUT(config.PodSpecStatusURL, handlers.UpdatePodStatus) // 更新PodStatus
 
-// s.router.GET("/pods",)
-// s.router.GET("/", handlers.TestHandler1)
-// s.router.GET(config.NodeURLWithSpecifiedName, handlers.TestHandler2)
+	// Service相关的api
+	s.router.POST(config.ServiceURL, handlers.AddService)       // 创建service
+	s.router.GET(config.ServiceURL, handlers.GetServices)       // 获取所有service
+	s.router.GET(config.ServiceSpecURL, handlers.GetService)    // 获取单个service
+	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService) // 更新service
+}

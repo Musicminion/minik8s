@@ -13,6 +13,11 @@ const (
 	ScheduleResult = "ScheduleResult"
 )
 
+const (
+	PUT string = "PUT"
+	DELETE string = "DELETE"
+)
+
 type Message struct {
 	// 消息对应事件的类型,用来区别不同的事件
 	Type string `json:"type"`

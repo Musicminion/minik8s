@@ -7,12 +7,12 @@ import (
 )
 
 func Execute() {
-	if err := commnads.Execute(); err != nil {
+	if err := commands.Execute(); err != nil {
 		fmt.Println(err.Error())
 	}
 }
 
-var commnads = &cobra.Command{
+var commands = &cobra.Command{
 	Use:   "kubectl",
 	Short: "Kubectl is a tool for controlling minik8s cluster.",
 	Long:  `Kubectl is a tool for controlling minik8s cluster. To see the help of a specific command, use: kubectl [command] --help`,
@@ -20,7 +20,7 @@ var commnads = &cobra.Command{
 }
 
 func init() {
-	commnads.AddCommand(applyCmd)
+	commands.AddCommand(applyCmd)
 }
 
 func runRoot(cmd *cobra.Command, args []string) {

@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
@@ -63,8 +64,9 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 		return "", err
 	}
 
+	// 将容器的ID返回
 	return result.ID, nil
-	// return nil
+
 }
 
 // 启动一个容器，返回容器的ID和错误
@@ -163,7 +165,8 @@ func (c *ContainerManager) ListContainersWithOpt(filter map[string][]string) ([]
 	listFliter := filters.NewArgs()
 	for key, valVec := range filter {
 		for _, val := range valVec {
-			listFliter.Add(key, val)
+			// listFliter.Add(key, val)
+			listFliter.Add("label", fmt.Sprint(key, "=", val))
 		}
 	}
 
@@ -222,6 +225,23 @@ func (c *ContainerManager) GetContainerInspectInfo(containerID string) (*types.C
 	}
 
 	return &containerInfo, nil
+}
+
+// 重启一个容器，返回容器的ID和错误
+func (c *ContainerManager) RestartContainer(containerID string) (string, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	err = client.ContainerRestart(ctx, containerID, nil)
+	if err != nil {
+		return "", err
+	}
+
+	return containerID, nil
 }
 
 // import (

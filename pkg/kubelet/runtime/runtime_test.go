@@ -6,6 +6,7 @@ import (
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/serverconfig"
+	"miniK8s/pkg/kubelet/runtime/container"
 	"testing"
 )
 
@@ -79,6 +80,22 @@ func TestCreatePodAndSaveToEtcd(t *testing.T) {
 		t.Error(err)
 	}
 	etcdclient.EtcdStore.Put(key, podStoreJson)
+
+	// 创建一个容器管理器对象
+	cm := &container.ContainerManager{}
+	var opt = map[string][]string{
+		"test": {"test"},
+	}
+	containers, err := cm.ListContainersWithOpt(opt)
+	if err != nil {
+		t.Error(err)
+	}
+	for _, container := range containers {
+		_, err := cm.RemoveContainer(container.ID)
+		if err != nil {
+			t.Error(err)
+		}
+	}
 }
 
 // func TestStopPod(t *testing.T) {

@@ -13,6 +13,9 @@ type RuntimeManager interface {
 	StartPod(pod *apiObject.PodStore) error
 	StopPod(pod *apiObject.PodStore) error
 	RestartPod(pod *apiObject.PodStore) error
+
+	// GetRuntimeNodeStatus 获取运行时Node的状态信息
+	GetRuntimeNodeStatus() (*apiObject.NodeStatus, error)
 }
 
 type runtimeManager struct {

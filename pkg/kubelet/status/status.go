@@ -60,8 +60,9 @@ func (s *statusManager) UpdatePodToCache(pod *apiObject.PodStore) error {
 
 // ************************************************************
 
-func (s *statusManager) run() {
+// run 用于启动状态管理器
+// func (s *statusManager) run() {
 
-	// go executor.Period(time.Second * 1, )
+// 	// go executor.Period(time.Second * 1, )
 
-}
+// }

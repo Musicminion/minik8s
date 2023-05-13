@@ -27,6 +27,8 @@ func TestRedisCache_Put(t *testing.T) {
 
 	testRedisCache.Put("test-1", "test-String")
 	testRedisCache.Put("test-2", testStruct)
+	testRedisCache.Put("test-3", testStruct)
+
 }
 
 func TestRedisCache_Get(t *testing.T) {
@@ -43,6 +45,24 @@ func TestRedisCache_Get(t *testing.T) {
 
 	t.Log(newObj)
 	t.Log(obj)
+}
+
+func TestRedisCache_GetAllObjet(t *testing.T) {
+	// 创建一个空的testStruct类型的结构体
+	newObj := testStruct{}
+	// 获取所有的对象
+	result, err := testRedisCache.GetAllObject(&newObj)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for k, v := range result {
+		t.Log(k)
+		// 把v转化成testStruct类型
+		newObj := *v.(*testStruct)
+		t.Log(newObj.Age)
+		t.Log(newObj.Name)
+	}
 }
 
 func TestRedisCache_Update(t *testing.T) {

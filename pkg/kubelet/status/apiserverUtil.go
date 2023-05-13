@@ -8,6 +8,7 @@ import (
 	"miniK8s/pkg/k8log"
 	netrequest "miniK8s/util/netRequest"
 	"miniK8s/util/stringutil"
+	"net/http"
 )
 
 // 这个文件主要存放和APIServer打交道的函数
@@ -25,7 +26,7 @@ func (s *statusManager) PushNodeStatus() error {
 	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URI_PARAM_NAME_PART, nodeStatus.Hostname)
 
 	// 发送PUT请求
-	code, res, err := netrequest.PutRequestByTarget(targetURL, nodeStatus)
+	code, res, err := netrequest.PostRequestByTarget(targetURL, nodeStatus)
 
 	if err != nil {
 		return err
@@ -43,28 +44,31 @@ func (s *statusManager) PushNodeStatus() error {
 
 // PodSpecStatusURL = "/api/v1/namespaces/:namespace/pods/:name/status"
 // 更新Pod的状态信息，发送给APIServer
-func (s *statusManager) PushNodePodStatus() {
+func (s *statusManager) PushNodePodStatus() error {
 	// TODO: 向APIServer推送Pod的状态信息
-	allPodStatus, allPodToName, allPodToNamespace, err := s.runtimeManager.GetRuntimeAllPodStatus()
+	allPodStatus, err := s.runtimeManager.GetRuntimeAllPodStatus()
 	if err != nil {
-		return
+		return err
 	}
 
-	// 遍历allPod
-	for podUUID, podStatus := range allPodStatus {
-		curPodName := allPodToName[podUUID]
-		curPodNamespace := allPodToNamespace[podUUID]
+	errorMsgAll := ""
+
+	// 遍历allPodStatus
+	for _, podStatus := range allPodStatus {
+		curPodName := podStatus.PodName
+		curPodNamespace := podStatus.PodNamespace
 
 		// 获取Pod的状态信息的URL
 		targetURL := stringutil.Replace(config.PodSpecStatusURL, config.URI_PARAM_NAME_PART, curPodName)
 		targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAMESPACE_PART, curPodNamespace)
 
-		// 发送PUT请求
-		code, res, err := netrequest.PutRequestByTarget(targetURL, podStatus)
+		// 发送POST请求
+		code, res, err := netrequest.PostRequestByTarget(targetURL, podStatus)
 
 		if err != nil {
 			logStr := "Push Pod Status Error: " + err.Error()
 			k8log.ErrorLog("kubelet", logStr)
+			errorMsgAll += logStr
 		}
 
 		if code != 200 {
@@ -76,10 +80,16 @@ func (s *statusManager) PushNodePodStatus() {
 
 			logStr := "Update Pod Status Error: " + string(bodyBytes)
 			k8log.ErrorLog("kubelet", logStr)
-		}
 
+			errorMsgAll += logStr
+		}
 	}
 
+	if errorMsgAll != "" {
+		return errors.New(errorMsgAll)
+	}
+
+	return nil
 }
 
 // NodeAllPodsURL = "/api/v1/nodes/:name/pods"
@@ -111,4 +121,116 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 	}
 
 	return pods, nil
+}
+
+// 这个函数用于向APIserver查询Node是否已经注册
+// const config.NodeSpecURL untyped string = "/api/v1/nodes/:name"
+
+func (s *statusManager) CheckIfRegisterd() bool {
+	nodeName := s.runtimeManager.GetRuntimeNodeName()
+
+	// 获取Node的状态信息的URL
+	targetURL := stringutil.Replace(config.NodeSpecURL, config.URI_PARAM_NAME_PART, nodeName)
+
+	// 创建一个NodeStore对象
+	var nodeStore apiObject.NodeStore
+
+	// 发送GET请求
+	code, err := netrequest.GetRequestByTarget(targetURL, nodeStore, "data")
+
+	if err != nil {
+		return false
+	}
+
+	if code == http.StatusOK {
+		k8log.InfoLog("kubelet", "Node has been registered before")
+		return true
+	}
+
+	k8log.InfoLog("kubelet", "Node has not been registered before, run register node")
+	return false
+}
+
+// RegisterNode 和 UnRegisterNode 两个函数用来注册和注销Node到APIServer
+// 注册的时候会检查是否已经注册，如果已经注册，则不需要再注册
+// 反注册的时候，会告诉APIServer节点下线。这个函数需要在Kubelet生命周期结束的时候调用
+// 这个函数用于注册Node到APIServer，只需要在Node初次启动的时候发起一次，即可
+// API  "/api/v1/nodes"
+func (s *statusManager) RegisterNode() error {
+	// 检查是否已经注册
+	if s.CheckIfRegisterd() {
+		return nil
+	}
+
+	// 没有注册过，就执行全新的注册流程
+	nodeIP, err := s.runtimeManager.GetRuntimeNodeIP()
+	if err != nil {
+		return err
+	}
+
+	// 组装一个Node的数据
+	node := apiObject.Node{
+		NodeBasic: apiObject.NodeBasic{
+			APIVersion: "v1",
+			Kind:       "Node",
+			NodeMetadata: apiObject.NodeMetadata{
+				Name: s.runtimeManager.GetRuntimeNodeName(),
+			},
+		},
+		IP: nodeIP,
+	}
+
+	// 发送POST请求
+	code, res, err := netrequest.PostRequestByTarget(config.NodesURL, node)
+
+	if err != nil {
+		// 打印日志
+		logStr := "Register Node Error: " + err.Error()
+		k8log.ErrorLog("kubelet", logStr)
+	}
+
+	if code != http.StatusCreated {
+		bodyBytes, err := json.Marshal(res)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(bodyBytes))
+	}
+
+	return nil
+}
+
+// 这个函数用于注销Node到APIServer，只需要在Node停止的时候调用一次，即可
+// API  "/api/v1/nodes/:name"
+// 函数实现是直接更新Node状态信息为不活跃
+func (s *statusManager) UnRegisterNode() error {
+	// 获取Node的状态信息的URL
+	nodeStatus, err := s.runtimeManager.GetRuntimeNodeStatus()
+
+	if err != nil {
+		return err
+	}
+
+	// 设置Node的状态为不活跃
+	nodeStatus.Condition = apiObject.NodeCondition(apiObject.Unknown)
+
+	// 获取Node的状态信息的URL
+	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URI_PARAM_NAME_PART, nodeStatus.Hostname)
+
+	// 发送PUT请求
+	code, res, err := netrequest.PostRequestByTarget(targetURL, nodeStatus)
+
+	if err != nil {
+		return err
+	}
+
+	if code != 200 {
+		bodyBytes, err := json.Marshal(res)
+		if err != nil {
+			return err
+		}
+		return errors.New(string(bodyBytes))
+	}
+
+	return nil
 }

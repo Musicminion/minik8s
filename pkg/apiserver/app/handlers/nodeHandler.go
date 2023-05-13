@@ -175,8 +175,9 @@ func AddNode(c *gin.Context) {
 		})
 		return
 	}
+
 	// 返回201处理成功
-	c.JSON(201, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "create node success",
 	})
 }

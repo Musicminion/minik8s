@@ -3,9 +3,11 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
+	"path"
 	"strconv"
 
 	"miniK8s/pkg/apiserver/app/etcdclient"
+	"miniK8s/pkg/apiserver/app/helper"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/entity"
@@ -99,53 +101,30 @@ func AddService(c *gin.Context) {
 		func(key, value string) {
 			// TODO: 更改为endpoint的实现
 			// 替换可变参 namespace
-			// etcdURL := path.Join(config.ServiceURL, key, value, service.Metadata.UUID)
-			// etcdURL = stringutil.Replace(etcdURL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
-			res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
-			// if err := etcdclient.EtcdStore.Put(etcdURL, serviceJson); err != nil {
-			// 	c.JSON(500, gin.H{
-			// 		"error": "add service to etcd failed" + err.Error(),
-			// 	})
-			// 	return
-			// }
-			// if endpoints, err := helper.GetEndpoints(key, value); err != nil {
-			// 	c.JSON(500, gin.H{
-			// 		"error": "get endpoints failed" + err.Error(),
-			// 	})
-			// 	return
-			// } else {
-			// 	serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
-			// }
+			svcSelectorURL := path.Join(serverconfig.EtcdServiceSelectorPath, key, value, service.Metadata.UUID)
 
-			if err != nil {
+			// 为每个service的每个selector创建一个etcd url，方便后续的查找
+			if err := etcdclient.EtcdStore.Put(svcSelectorURL, serviceJson); err != nil {
+				c.JSON(500, gin.H{
+					"error": "add service to etcd failed" + err.Error(),
+				})
+				return
+			}
+			var endpoints []apiObject.Endpoint
+			if endpoints, err = helper.GetEndpoints(key, value); err != nil {
 				c.JSON(500, gin.H{
 					"error": "get endpoints failed" + err.Error(),
 				})
 				return
 			} else {
-				// iterate res
-				for _, r := range res {
-					// pod to endpoint
-					pod := &apiObject.PodStore{}
-					if err := json.Unmarshal([]byte(r.Value), pod); err != nil {
-						c.JSON(500, gin.H{
-							"error": "unmarshal pod failed" + err.Error(),
-						})
-						return
-					}
-					endpoint := apiObject.Endpoint{}
-					endpoint.Metadata.Name = pod.GetPodName()
-					endpoint.Metadata.Namespace = pod.GetPodNamespace()
-					endpoint.Metadata.UUID = pod.Metadata.UUID
-					endpoint.Metadata.Labels = pod.Metadata.Labels
-					endpoint.Metadata.Annotations = pod.Metadata.Annotations
-					endpoint.IP = pod.Status.PodIP
-					// add endpoint to serviceUpdate.ServiceTarget.Endpoints
-					serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoint)
-				}
-				k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Endpoints)))
-				// serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
+				serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
 			}
+
+			// 添加Endpoints到service
+			serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
+
+			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Endpoints)))
+
 		}(key, value)
 	}
 	// publishServiceUpdate(serviceUpdate)

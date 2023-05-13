@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"io"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/app/handlers"
+	"miniK8s/pkg/apiserver/serverconfig"
 
 	// apiserver "miniK8s/pkg/apiserver/app/server"
 	"miniK8s/pkg/config"
@@ -59,6 +61,10 @@ func TestParseAPIObjectFromYamlfileContent(t *testing.T) {
 }
 
 func TestPostAPIObjectToServer(t *testing.T) {
+	// 清空etcd
+	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
+	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
+
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 	r.Use(gin.Recovery())

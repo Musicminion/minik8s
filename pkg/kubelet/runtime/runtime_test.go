@@ -94,6 +94,54 @@ func TestDeletePod(t *testing.T) {
 	}
 }
 
+// func TestCreatePodAndSaveToEtcd(t *testing.T) {
+// 	// 创建一个runtimeManager
+// 	r := NewRuntimeManager()
+
+// 	r.DeletePod(&testPod)
+// 	// 创建pod
+// 	err := r.CreatePod(&testPod)
+
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	// 把PodStore转化为json
+// 	podStoreJson, err := json.Marshal(testPod)
+// 	if err != nil {
+// 		return
+// 	}
+
+// 	// 将pod存储到etcd中
+// 	// 持久化
+// 	// key = stringutil.Replace(serverconfig.DefaultPod, config.URI_PARAM_NAME_PART, newPodName)
+
+// 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", testPod.GetPodNamespace(), testPod.GetPodName())
+
+// 	// 将pod存储到etcd中
+// 	err = etcdclient.EtcdStore.Put(key, podStoreJson)
+
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	etcdclient.EtcdStore.Put(key, podStoreJson)
+
+// 	// 创建一个容器管理器对象
+// 	cm := &container.ContainerManager{}
+// 	var opt = map[string][]string{
+// 		"test": {"test"},
+// 	}
+// 	containers, err := cm.ListContainersWithOpt(opt)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
+// 	for _, container := range containers {
+// 		_, err := cm.RemoveContainer(container.ID)
+// 		if err != nil {
+// 			t.Error(err)
+// 		}
+// 	}
+// }
+
 // Spec: apiObject.PodSpec{
 // 	Containers: []apiObject.Container{},
 // },

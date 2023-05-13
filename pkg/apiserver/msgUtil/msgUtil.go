@@ -71,7 +71,7 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 // }
 
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
-	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.Service.GetName())
+	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.Service.GetName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.Service.GetNamespace())
 
 	jsonBytes, err := json.Marshal(serviceUpdate)
@@ -95,4 +95,31 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 	}
 
 	return PublishMsg("serviceUpdate", jsonMsg)
+}
+
+func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
+	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URI_PARAM_NAME_PART, endpointUpdate.ServiceTarget.Service.GetName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, endpointUpdate.ServiceTarget.Service.GetNamespace())
+
+	jsonBytes, err := json.Marshal(endpointUpdate)
+	if err != nil {
+		return err
+	}
+	// serviceUpdateReader := bytes.NewReader(jsonBytes)
+	// change serviceUpdateReader to string
+
+	message := message.Message{
+		Type:         message.PUT,
+		Content:      string(jsonBytes),
+		ResourceURI:  resourceURI,
+		ResourceName: endpointUpdate.ServiceTarget.Service.GetName(),
+	}
+
+	jsonMsg, err := json.Marshal(message)
+
+	if err != nil {
+		return err
+	}
+
+	return PublishMsg("endpointUpdate", jsonMsg)
 }

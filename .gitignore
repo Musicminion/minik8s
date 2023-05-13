@@ -19,3 +19,5 @@ build/
 # should NOT be excluded as they contain compiler settings and other important
 # information for Eclipse / Flash Builder.
 build/kubelet/kubelet
+
+**/test-save-iptables

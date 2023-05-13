@@ -12,6 +12,10 @@ var runtimeManager = runtime.NewRuntimeManager()
 
 type PodWorkerManager interface {
 	AddPod(pod *apiObject.PodStore) error
+	DeletePod(pod *apiObject.PodStore) error
+	StartPod(pod *apiObject.PodStore) error
+	StopPod(pod *apiObject.PodStore) error
+	RestartPod(pod *apiObject.PodStore) error
 }
 
 type podWorkerManager struct {
@@ -26,7 +30,7 @@ type podWorkerManager struct {
 	RestartPodHandler func(pod *apiObject.PodStore) error
 }
 
-func NewPodWorkerManager() *podWorkerManager {
+func NewPodWorkerManager() PodWorkerManager {
 	return &podWorkerManager{
 		PodWorkersMap:     make(map[string]*PodWorker),
 		AddPodHandler:     runtimeManager.CreatePod,
@@ -52,8 +56,6 @@ func (p *podWorkerManager) AddPod(pod *apiObject.PodStore) error {
 	// 启动PodWorker
 	go podWorker.Run()
 
-	
-
 	// 创建任务
 	task := WorkTask{
 		TaskType: Task_AddPod,
@@ -70,7 +72,6 @@ func (p *podWorkerManager) AddPod(pod *apiObject.PodStore) error {
 	if err != nil {
 		return err
 	}
-
 
 	return nil
 }
@@ -91,7 +92,7 @@ func (p *podWorkerManager) DeletePod(pod *apiObject.PodStore) error {
 		},
 	}
 
-	k8log.DebugLog("[Pod Worker]", "delete pod, task type is "+ string(task.TaskType))
+	k8log.DebugLog("[Pod Worker]", "delete pod, task type is "+string(task.TaskType))
 
 	// 把任务添加到PodWorker的任务队列中
 	err := p.PodWorkersMap[podUUID].AddTask(task)
@@ -182,8 +183,6 @@ func (p *podWorkerManager) RestartPod(pod *apiObject.PodStore) error {
 
 	return nil
 }
-
-
 
 // ************************************************************
 // 这里写PodWorker的函数

@@ -26,6 +26,9 @@ type StatusManager interface {
 
 	// resetCache 重置缓存
 	ResetCache() error
+
+	// Run 运行状态管理器
+	Run()
 }
 
 type statusManager struct {
@@ -92,8 +95,8 @@ func (s *statusManager) ResetCache() error {
 // ************************************************************
 
 // run 用于启动状态管理器
-// func (s *statusManager) run() {
+func (s *statusManager) Run() {
 
-// 	// go executor.Period(time.Second * 1, )
+	// go executor.Period(time.Second * 1, )
 
-// }
+}

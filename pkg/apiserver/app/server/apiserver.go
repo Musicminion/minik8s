@@ -80,8 +80,10 @@ func (s *apiServer) bind() {
 	s.router.GET(config.NodeSpecStatusURL, handlers.GetNodeStatus)
 	s.router.PUT(config.NodeSpecStatusURL, handlers.UpdateNodeStatus)
 
-	// Pod相关的api
+	// 节点的Pod
+	s.router.GET(config.NodeAllPodsURL, handlers.GetNodePods)
 
+	// Pod相关的api
 	s.router.GET(config.PodsURL, handlers.GetPods)         // 所有pod
 	s.router.GET(config.PodSpecURL, handlers.GetPod)       // 单个pod
 	s.router.POST(config.PodsURL, handlers.AddPod)         // 创建pod

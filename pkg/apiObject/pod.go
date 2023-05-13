@@ -1,6 +1,10 @@
 package apiObject
 
-import "time"
+import (
+	"time"
+
+	"github.com/docker/docker/api/types"
+)
 
 type ContainerPort struct {
 	Name          string `yaml:"name"`
@@ -165,6 +169,9 @@ type Pod struct {
 	Spec  PodSpec `json:"spec" yaml:"spec"`
 }
 
+// PodStatus是用来存储Pod的状态的，同时也存储了Pod的一些元数据
+// type ContainerStatus
+
 // PodStatus是用来存储Pod的状态的
 // 参考官方文档：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#podstatus-v1-core
 type PodStatus struct {
@@ -183,6 +190,9 @@ type PodStatus struct {
 	// Unknown（未知）	 因为某些原因无法取得 Pod 的状态。这种情况通常是因为与 Pod 所在主机通信失败。
 	// Terminating（需要终止） Pod 已被请求终止，但是该终止请求还没有被发送到底层容器。Pod 仍然在运行。
 	Phase string `json:"phase" yaml:"phase"`
+
+	// 容器的状态数组
+	ContainerStatuses []types.ContainerState `json:"containerStatuses" yaml:"containerStatuses"`
 
 	// 最新的更新时间
 	// UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`

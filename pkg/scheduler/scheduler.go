@@ -2,19 +2,22 @@ package scheduler
 
 import (
 	"encoding/json"
+	"math/rand"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
-	"github.com/streadway/amqp"
 	"sync"
 	"time"
-	"math/rand"
+
+	"github.com/streadway/amqp"
 )
 
 type SchedulePolicy string
+
 var globalCount int
 var lock sync.Mutex
+
 const (
 	RoundRobin SchedulePolicy = "RoundRobin" // 轮询调度策略
 	Random     SchedulePolicy = "Random"     // Random调度,产生一个随机数
@@ -88,7 +91,7 @@ func schRandom(nodes []apiObject.NodeStore) string {
 	}
 	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
 	rand.Seed(seconds)           //播种随机生成器
-	idx := rand.Intn(cnt) //生成一个介于0和cnt-1之间的整数
+	idx := rand.Intn(cnt)        //生成一个介于0和cnt-1之间的整数
 	return nodes[idx].GetName()
 }
 func schLeastPod(nodes []apiObject.NodeStore) string {
@@ -121,14 +124,15 @@ func schLeastMem(nodes []apiObject.NodeStore) string {
 	//to do
 	return ""
 }
+
 /*********************************************************************/
 /*********************************************************************/
 // 从所有的节点里面选择一个节点
 func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 	if len(nodes) == 0 {
-        return ""
-    }
-    switch sch.polocy {
+		return ""
+	}
+	switch sch.polocy {
 	case RoundRobin:
 		return schRoundRobin(nodes)
 	case Random:
@@ -140,7 +144,7 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 	case LeastMem:
 		return schLeastMem(nodes)
 	default:
-	}	
+	}
 	// TODO
 	return "ubuntu"
 }
@@ -201,3 +205,5 @@ func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
 func (sch *Scheduler) Run() {
 	sch.lw.WatchQueue_Block("scheduler", sch.MsgHandler, make(chan struct{}))
 }
+
+//list watch 在观察的资源发生变化的时候，可以接收到通知

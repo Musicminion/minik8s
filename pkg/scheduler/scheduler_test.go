@@ -1,5 +1,10 @@
 package scheduler
 
+import (
+	"reflect"
+	"testing"
+)
+
 // func TestGetAllNode(t *testing.T) {
 // 	code, res, err := netrequest.GetRequest("http://localhost:8090/api/v1/nodes")
 // 	if err != nil {
@@ -45,3 +50,25 @@ package scheduler
 // 		t.Log(node.GetAPIVersion())
 // 	}
 // }
+
+func TestNewScheduler(t *testing.T) {
+	tests := []struct {
+		name    string
+		want    *Scheduler
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := NewScheduler()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("NewScheduler() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewScheduler() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

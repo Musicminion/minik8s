@@ -1,6 +1,7 @@
 package stringutil
 
 import (
+	"fmt"
 	"math/rand"
 	"strings"
 	"time"
@@ -17,8 +18,12 @@ func GenerateRandomStr(length int) string {
 	return string(b)
 }
 
-
 // replace 将 URL 中的 toChangeStr 替换为newStr
 func Replace(URL string, toChangeStr string, newStr string) string {
 	return strings.Replace(URL, toChangeStr, newStr, -1)
+}
+
+func StringSliceToJsonArray(data []string) string {
+	jsonDatas := strings.Join(data, ",")
+	return fmt.Sprint("[", jsonDatas, "]")
 }

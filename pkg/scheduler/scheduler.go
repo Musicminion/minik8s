@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"math/rand"
 	"miniK8s/pkg/apiObject"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
@@ -152,18 +153,18 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 // 处理调度请求的消息
 func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	// TODO
-	k8log.DebugLog("scheduler", "收到调度请求消息"+parsedMsg.Content)
+	k8log.DebugLog("[Scheduler]", "收到调度请求消息"+parsedMsg.Content)
 
 	nodes, err := sch.GetAllNodes()
 
 	if err != nil {
-		k8log.ErrorLog("scheduler", "获取所有节点失败"+err.Error())
+		k8log.ErrorLog("[Scheduler]", "获取所有节点失败"+err.Error())
 	}
 
 	scheduledNode := sch.ChooseFromNodes(nodes)
 
 	if scheduledNode == "" {
-		k8log.ErrorLog("scheduler", "没有可用的节点")
+		k8log.ErrorLog("[Scheduler]", "没有可用的节点")
 		return
 	}
 
@@ -177,8 +178,10 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	// JSOn序列化
 	result, err := json.Marshal(respMessage)
 	if err != nil {
-		k8log.ErrorLog("scheduler", "序列化消息失败")
+		k8log.ErrorLog("[Scheduler]", "序列化消息失败")
 	}
+
+	// TODO: 将podUpdate发送给对应的Node
 
 	sch.publisher.Publish("apiServer", message.ContentTypeJson, result)
 }
@@ -187,7 +190,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
-		k8log.ErrorLog("scheduler", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("[Scheduler]", "消息格式错误,无法转换为Message")
 	}
 
 	switch parsedMsg.Type {
@@ -203,7 +206,7 @@ func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
 
 // 启动调度器
 func (sch *Scheduler) Run() {
-	sch.lw.WatchQueue_Block("scheduler", sch.MsgHandler, make(chan struct{}))
+	sch.lw.WatchQueue_Block(msgutil.NodeSchedule, sch.MsgHandler, make(chan struct{}))
 }
 
 //list watch 在观察的资源发生变化的时候，可以接收到通知

@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"miniK8s/pkg/apiserver/serverconfig"
+	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func GetPod(c *gin.Context) {
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	name := c.Param(config.URL_PARAM_NAME)
 	if namespace == "" || name == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace or name is empty",
 		})
 		return
@@ -40,14 +41,14 @@ func GetPod(c *gin.Context) {
 	key := fmt.Sprintf("/registry/pods/%s/%s", namespace, name)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod failed " + err.Error(),
 		})
 		return
 	}
 
 	if len(res) == 0 {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "get pod err, not find pod",
 		})
 		return
@@ -55,7 +56,7 @@ func GetPod(c *gin.Context) {
 
 	// 处理Res，如果有多个返回的，报错
 	if len(res) != 1 {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod err, find more than one pod",
 		})
 		return
@@ -74,7 +75,7 @@ func GetPods(c *gin.Context) {
 
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	if namespace == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace is empty",
 		})
 		return
@@ -87,14 +88,14 @@ func GetPods(c *gin.Context) {
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/", namespace)
 	res, err := etcdclient.EtcdStore.PrefixGet(key)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pods failed " + err.Error(),
 		})
 		return
 	}
 
 	if len(res) == 0 {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "get pods err, not find pods",
 		})
 		return
@@ -102,11 +103,15 @@ func GetPods(c *gin.Context) {
 
 	// 遍历res，返回对应的Node信息
 	targetPods := make([]string, 0)
-	for _, pod := range res {
+	for i, pod := range res {
 		targetPods = append(targetPods, pod.Value)
+		if i < len(res) - 1 {
+			targetPods = append(targetPods, ",")
+		} 
 	}
-	c.JSON(200, gin.H{
-		"data": targetPods,
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": stringutil.StringSliceToJsonArray(targetPods),
 	})
 }
 
@@ -118,7 +123,7 @@ func AddPod(c *gin.Context) {
 	// 从body中获取pod的信息
 	var pod apiObject.Pod
 	if err := c.ShouldBind(&pod); err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parser pod failed " + err.Error(),
 		})
 
@@ -129,7 +134,7 @@ func AddPod(c *gin.Context) {
 	// 检查名字是否为空
 	newPodName := pod.Metadata.Name
 	if newPodName == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "pod name is empty",
 		})
 		k8log.ErrorLog("APIServer", "AddPod: pod name is empty")
@@ -138,7 +143,7 @@ func AddPod(c *gin.Context) {
 
 	// 判断PodNamespace是否为空
 	if pod.GetPodNamespace() == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "pod namespace is empty",
 		})
 		k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
@@ -149,14 +154,14 @@ func AddPod(c *gin.Context) {
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod failed " + err.Error(),
 		})
 		return
 	}
 
 	if len(res) != 0 {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "pod name has exist",
 		})
 		k8log.ErrorLog("APIServer", "AddPod: pod name has exist")
@@ -173,7 +178,7 @@ func AddPod(c *gin.Context) {
 	// 把PodStore转化为json
 	podStoreJson, err := json.Marshal(podStore)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parser pod to json failed " + err.Error(),
 		})
 		return
@@ -188,7 +193,7 @@ func AddPod(c *gin.Context) {
 	// 将pod存储到etcd中
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put pod to etcd failed " + err.Error(),
 		})
 		return
@@ -218,7 +223,7 @@ func DeletePod(c *gin.Context) {
 
 	// 检查参数是否为空
 	if namespace == "" || name == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace or name is empty",
 		})
 		return
@@ -230,7 +235,7 @@ func DeletePod(c *gin.Context) {
 	err := etcdclient.EtcdStore.Del(fmt.Sprintf("/registry/pods/%s/%s", namespace, name))
 
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "delete pod failed " + err.Error(),
 		})
 		return

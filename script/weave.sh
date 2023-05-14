@@ -13,8 +13,7 @@ After=network.target
 [Service]
 EnvironmentFile=/etc/weave.env
 ExecStart=/usr/local/bin/weave launch
-#ExecStartPost=/usr/local/bin/weave launch-router --password=weaver --nickname=$(hostname -s) --ipalloc-range=192.168.0.0/16
-Restart=always
+
 RestartSec=10
 StartLimitInterval=0
 

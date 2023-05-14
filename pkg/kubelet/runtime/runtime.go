@@ -18,10 +18,13 @@ type RuntimeManager interface {
 	GetRuntimeNodeStatus() (*apiObject.NodeStatus, error)
 
 	// GetRuntimeAllPodStatus 获取运行时Pod的状态信息
-	GetRuntimeAllPodStatus() (map[string]*apiObject.PodStatus, map[string]string, map[string]string, error)
+	GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus, error)
 
 	// GetRuntimePodStatus 获取运行时Node的名字
 	GetRuntimeNodeName() string
+
+	// GetRuntimeNodeIp 获取运行时Node的IP
+	GetRuntimeNodeIP() (string, error)
 }
 
 type runtimeManager struct {

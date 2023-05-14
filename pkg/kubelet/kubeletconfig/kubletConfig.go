@@ -1,6 +1,7 @@
 package kubeletconfig
 
 import (
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/listwatcher"
 	"strconv"
 )
@@ -21,6 +22,23 @@ func DefaultKubeletConfig() *KubeletConfig {
 	apiserverPort := 8090
 	apiserverScheme := "http://"
 	apiserverURLPrefix := apiserverScheme + apiserverIP + ":" + strconv.Itoa(apiserverPort)
+	lwconf := listwatcher.DefaultListwatcherConfig()
+
+	return &KubeletConfig{
+		IfDebug:            false,
+		APIServerIP:        apiserverIP,
+		APIServerPort:      apiserverPort,
+		APIServerScheme:    apiserverScheme,
+		APIServerURLPrefix: apiserverURLPrefix,
+		LWConf:             lwconf,
+	}
+}
+
+func ProductionKubeletConfig() *KubeletConfig {
+	apiserverIP := config.API_Server_IP
+	apiserverPort := config.API_Server_Port
+	apiserverScheme := config.API_Server_Scheme
+	apiserverURLPrefix := config.API_Server_URL_Prefix
 	lwconf := listwatcher.DefaultListwatcherConfig()
 
 	return &KubeletConfig{

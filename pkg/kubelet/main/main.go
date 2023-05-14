@@ -1,13 +1,26 @@
 package main
 
 import (
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
+	"miniK8s/pkg/kubelet/status"
+	"miniK8s/pkg/kubelet/worker"
 	"miniK8s/pkg/listwatcher"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 )
 
 type Kubelet struct {
-	config *kubeletconfig.KubeletConfig
-	lw     *listwatcher.Listwatcher
+	config        *kubeletconfig.KubeletConfig
+	lw            *listwatcher.Listwatcher
+	workManager   worker.PodWorkerManager
+	statusManager status.StatusManager
+
+	// 用来同步的
+	wg sync.WaitGroup
 }
 
 func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
@@ -17,16 +30,88 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 	}
 
 	k := &Kubelet{
-		config: conf,
-		lw:     newlw,
+		config:        conf,
+		lw:            newlw,
+		workManager:   worker.NewPodWorkerManager(),
+		statusManager: status.NewStatusManager(conf.APIServerURLPrefix),
 	}
 
 	return k, nil
 }
 
-func main() {
-
+func (k *Kubelet) RegisterNode() {
+	k8log.InfoLog("Kubelet", "Try to register node")
+	registerResult := k.statusManager.RegisterNode()
+	if registerResult != nil {
+		k8log.ErrorLog("Kubelet", "Register node failed, for "+registerResult.Error())
+		// 开一个协程，每隔一段时间重试一次
+		k.wg.Add(1)
+		go func() {
+			for {
+				registerResult := k.statusManager.RegisterNode()
+				if registerResult == nil {
+					k8log.InfoLog("Kubelet", "Register node success")
+					break
+				}
+				time.Sleep(30 * time.Second)
+				k8log.ErrorLog("Kubelet", "Register node failed, for "+registerResult.Error())
+			}
+			k.wg.Done()
+		}()
+	}
+	k8log.InfoLog("Kubelet", "Register node success")
 }
+
+func (k *Kubelet) UnRegisterNode() {
+	k8log.InfoLog("Kubelet", "Try to unregister node")
+	unregisterResult := k.statusManager.UnRegisterNode()
+	if unregisterResult != nil {
+		k8log.ErrorLog("Kubelet", "Unregister node failed, for "+unregisterResult.Error())
+	}
+	k8log.InfoLog("Kubelet", "Unregister node success")
+}
+
+func (k *Kubelet) Run() {
+	k8log.InfoLog("Kubelet", "Launch Kubelet")
+	k.RegisterNode()
+
+	// 创建一个通道来接收信号
+	sigs := make(chan os.Signal, 10)
+	// 注册一个信号接收函数，将接收到的信号发送到通道
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	// 启动所有的Manager
+	k.statusManager.Run()
+
+	<-sigs
+	k.UnRegisterNode()
+}
+
+func main() {
+	KubeleConfig := kubeletconfig.DefaultKubeletConfig()
+	Kubelet, err := NewKubelet(KubeleConfig)
+	if err != nil {
+		k8log.FatalLog("Kublet", "NewKubelet failed, for "+err.Error())
+		return
+	}
+
+	Kubelet.Run()
+}
+
+// func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
+// 	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
+// 	select {
+// 	case podUpdate := <-updates:
+// 		// pod := &podUpdate.PodTarget
+// 		// pUUID := pod.GetPodUUID()
+// 		switch podUpdate.Action {
+// 		case entity.CREATE:
+// 		case entity.UPDATE:
+// 		case entity.DELETE:
+// 		}
+// 	}
+// 	return true
+// }
 
 // type Kubelet struct {
 // 	config *config.KubeletConfig

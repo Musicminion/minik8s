@@ -17,6 +17,7 @@ type RedisCache interface {
 	Delete(key string) error
 	Get(key string) (string, error)
 	GetObject(key string, valueType interface{}) (interface{}, error)
+	GetAllObject(valueType interface{}) (map[string]interface{}, error)
 	Update(key string, value interface{}) error
 
 	// 判断是否存在Redis缓存里面
@@ -96,6 +97,10 @@ func (r *rediscache) GetObject(key string, valueType interface{}) (interface{}, 
 	ctx := context.Background()
 	result := r.redisClient.Get(ctx, key)
 	if result.Err() != nil {
+		// // 如果没有查找到对象，那么不返回错误，直接返回nil
+		if result.Err() == redis.Nil {
+			return nil, nil
+		}
 		return nil, result.Err()
 	}
 	jsonStr, err := result.Result()
@@ -105,6 +110,51 @@ func (r *rediscache) GetObject(key string, valueType interface{}) (interface{}, 
 	} else {
 		err := json.Unmarshal([]byte(jsonStr), valueType)
 		return valueType, err
+	}
+}
+
+// 获取所有的对象
+// - 特别注意：这个函数的用法,需要再valeType里面传递一组集合的类型，比如[]People, 就需要在valueType传递一个People的类型
+// 但是返回的时候，返回的是一个[]People类型的对象，所以需要慎重使用
+// 此外，如果json解析失败，会直接跳过这个对象，不会报错
+func (r *rediscache) GetAllObject(valueType interface{}) (map[string]interface{}, error) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+	ctx := context.Background()
+	result := r.redisClient.Keys(ctx, "*")
+	if result.Err() != nil {
+		return nil, result.Err()
+	}
+	keys, err := result.Result()
+
+	if err != nil {
+		return nil, err
+	} else {
+		// 遍历所有的key，然后获取所有的对象
+		allObject := make(map[string]interface{})
+		for _, key := range keys {
+			// // 获取所有的对象
+			// value, err := r.GetObject(key, valueType)
+
+			innerCtx := context.Background()
+			getKeyResult := r.redisClient.Get(innerCtx, key)
+			if getKeyResult.Err() != nil {
+				return nil, getKeyResult.Err()
+			}
+			jsonStr, err := getKeyResult.Result()
+
+			if err != nil {
+				return nil, err
+			} else {
+				// 创建一个valueType类型的对象，valueType是一个指针类型
+				err := json.Unmarshal([]byte(jsonStr), valueType)
+				if err != nil {
+					continue
+				}
+				allObject[key] = valueType
+			}
+		}
+		return allObject, nil
 	}
 }
 

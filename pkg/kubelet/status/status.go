@@ -2,7 +2,9 @@ package status
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime"
+	"miniK8s/util/executor"
 	"miniK8s/util/rediscache"
 )
 
@@ -16,21 +18,42 @@ type StatusManager interface {
 	AddPodToCache(pod *apiObject.PodStore) error
 	// GetPodFromCache 从缓存中获取Pod的存储对象
 	GetPodFromCache(podUUID string) (*apiObject.PodStore, error)
+	// GetAllPodFromCache 从缓存中获取所有Pod的存储对象
+	GetAllPodFromCache() (map[string]*apiObject.PodStore, error)
+
 	// DelPodFromCache 从缓存中删除Pod的存储对象
 	DelPodFromCache(podUUID string) error
 	// UpdatePodToCache 更新缓存中的Pod的存储对象
 	UpdatePodToCache(pod *apiObject.PodStore) error
+
+	// resetCache 重置缓存
+	ResetCache() error
+
+	// 获取运行时候的Pod的状态信息
+	GetAllPodFromRuntime() (map[string]*runtime.RunTimePodStatus, error)
+
+	// 注册和反注册的功能
+	// 注册节点
+	RegisterNode() error
+	// 注销节点
+	UnRegisterNode() error
+
+	// Run 运行状态管理器
+	Run()
 }
 
 type statusManager struct {
 	cache          rediscache.RedisCache
 	runtimeManager runtime.RuntimeManager
+	// apiserverURLPrefix API Server的URL前缀
+	apiserverURLPrefix string
 }
 
-func NewStatusManager() StatusManager {
+func NewStatusManager(apiserverURLPrefix string) StatusManager {
 	return &statusManager{
-		cache:          rediscache.NewRedisCache(CacheDBID_PodCache),
-		runtimeManager: runtime.NewRuntimeManager(),
+		cache:              rediscache.NewRedisCache(CacheDBID_PodCache),
+		runtimeManager:     runtime.NewRuntimeManager(),
+		apiserverURLPrefix: apiserverURLPrefix,
 	}
 }
 
@@ -40,12 +63,18 @@ func (s *statusManager) AddPodToCache(pod *apiObject.PodStore) error {
 	return s.cache.Put(pod.GetPodUUID(), pod)
 }
 
+// 查找到不存在的Pod，只会返回nil，不会返回error
 func (s *statusManager) GetPodFromCache(podUUID string) (*apiObject.PodStore, error) {
 	var parsedPod apiObject.PodStore
-	_, err := s.cache.GetObject(podUUID, &parsedPod)
+	res, err := s.cache.GetObject(podUUID, &parsedPod)
 	if err != nil {
 		return nil, err
 	}
+
+	if res == nil {
+		return nil, nil
+	}
+
 	return &parsedPod, nil
 }
 
@@ -55,14 +84,50 @@ func (s *statusManager) DelPodFromCache(podUUID string) error {
 
 func (s *statusManager) UpdatePodToCache(pod *apiObject.PodStore) error {
 	return s.cache.Update(pod.GetPodUUID(), pod)
+}
 
+func (s *statusManager) GetAllPodFromCache() (map[string]*apiObject.PodStore, error) {
+	var podObj apiObject.PodStore
+	res, err := s.cache.GetAllObject(&podObj)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var pods = make(map[string]*apiObject.PodStore)
+	for k, v := range res {
+		pods[k] = v.(*apiObject.PodStore)
+	}
+
+	return pods, nil
+}
+
+func (s *statusManager) ResetCache() error {
+	return s.cache.InitCache()
 }
 
 // ************************************************************
 
+func (s *statusManager) GetAllPodFromRuntime() (map[string]*runtime.RunTimePodStatus, error) {
+	result, err := s.runtimeManager.GetRuntimeAllPodStatus()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // run 用于启动状态管理器
-// func (s *statusManager) run() {
+func (s *statusManager) Run() {
+	registerWrap := func() {
+		k8log.InfoLog("Kubelet-StatusManager", "Send Node HeartBeat")
+		res := s.PushNodeStatus()
+		if res != nil {
+			k8log.ErrorLog("Register Node Error: ", res.Error())
+		}
+	}
 
-// 	// go executor.Period(time.Second * 1, )
+	go executor.Period(NodeHeartBeatDelay, NodeHeartBeatInterval, registerWrap, NodeHeartBeatLoop)
+	// go executor.Period(time.Second * 1, )
 
-// }
+	// go executor.Period()
+}

@@ -91,8 +91,8 @@ func (s *apiServer) bind() {
 	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
 
 	// PodStatus相关的api
-	s.router.GET(config.PodSpecStatusURL, handlers.GetPodStatus)    // 获取PodStatus
-	s.router.PUT(config.PodSpecStatusURL, handlers.UpdatePodStatus) // 更新PodStatus
+	s.router.GET(config.PodSpecStatusURL, handlers.GetPodStatus)     // 获取PodStatus
+	s.router.POST(config.PodSpecStatusURL, handlers.UpdatePodStatus) // 更新PodStatus
 
 	// Service相关的api
 	s.router.POST(config.ServiceURL, handlers.AddService)       // 创建service

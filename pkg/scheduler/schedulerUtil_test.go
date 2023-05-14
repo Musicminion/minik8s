@@ -1,63 +1,83 @@
 package scheduler
 
 import (
+	"encoding/json"
+	"fmt"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/apiserver/app/etcdclient"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/k8log"
-	"miniK8s/pkg/listwatcher"
-	"miniK8s/pkg/message"
-	"reflect"
+	"miniK8s/util/uuid"
 	"testing"
 )
 
-func TestScheduler_GetAllNodes(t *testing.T) {
-	type fields struct {
-		lw            *listwatcher.Listwatcher
-		publisher     *message.Publisher
-		polocy        SchedulePolicy
-		apiServerHost string
-		apiServerPort int
-	}
-	tests := []struct {
-		name      string
-		fields    fields
-		wantNodes []apiObject.NodeStore
-		wantErr   bool
-	}{
-		// TODO: Add test cases.
-		{
-			name: "test1",
-			fields: fields{
-				lw:            nil,
-				publisher:     nil,
-				polocy:        "RoundRobin",
-				apiServerHost: "localhost",
-				apiServerPort: 8090,
-			},
-			wantNodes: []apiObject.NodeStore{
-			},
-			wantErr: false,
+var testNode1 = apiObject.Node{
+	NodeBasic: apiObject.NodeBasic{
+		APIVersion: "v1",
+		Kind:       "Node",
+		NodeMetadata: apiObject.NodeMetadata{
+			Name: "node1",
+			UUID: uuid.NewUUID(),
 		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			sch := &Scheduler{
-				lw:            tt.fields.lw,
-				publisher:     tt.fields.publisher,
-				polocy:        tt.fields.polocy,
-				apiServerHost: tt.fields.apiServerHost,
-				apiServerPort: tt.fields.apiServerPort,
-			}
-			gotNodes, err := sch.GetAllNodes()
-			k8log.DebugLog("scheduler", "gotNodes: "+gotNodes[len(gotNodes)-1].GetName())
+	},
+	IP: "192.168.1.1",
+}
 
-			k8log.DebugLog("scheduler", "gotNodes: ")
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Scheduler.GetAllNodes() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(gotNodes, tt.wantNodes) {
-				t.Errorf("Scheduler.GetAllNodes() = %v, want %v", gotNodes, tt.wantNodes)
-			}
-		})
+var testNode2 = apiObject.Node{
+	NodeBasic: apiObject.NodeBasic{
+		APIVersion: "v1",
+		Kind:       "Node",
+		NodeMetadata: apiObject.NodeMetadata{
+			Name: "node2",
+			UUID: uuid.NewUUID(),
+		},
+	},
+	IP: "192.168.2.1",
+}
+
+func TestGetAllNodes(t *testing.T) {
+
+	// 将testNode1 marshal
+	testNodeBytes, err := json.Marshal(testNode1)
+	if err != nil {
+		t.Error(err)
 	}
+
+	// 向etcd中添加node1
+	err = etcdclient.EtcdStore.Put(serverconfig.EtcdNodePath+testNode1.GetName(), (testNodeBytes))
+	if err != nil {
+		t.Error(err)
+	}
+
+	// 将testNode2 marshal
+	testNodeBytes, err = json.Marshal(testNode2)
+	if err != nil {
+		t.Error(err)
+	}
+
+	// 向etcd中添加node2
+	err = etcdclient.EtcdStore.Put(serverconfig.EtcdNodePath+testNode2.GetName(), (testNodeBytes))
+	if err != nil {
+		t.Error(err)
+	}
+
+	sch := &Scheduler{
+		apiServerHost: "127.0.0.1",
+		apiServerPort: 8090,
+	}
+
+	nodes, err := sch.GetAllNodes()
+
+	k8log.InfoLog("scheduler", "nodes: "+fmt.Sprint(nodes))
+
+	if err != nil {
+		t.Error(err)
+	}
+
+	// 验证node的信息是否正确
+
+	if nodes == nil || len(nodes) == 0 {
+		t.Error("nodes is nil or len is wrong")
+	}
+
 }

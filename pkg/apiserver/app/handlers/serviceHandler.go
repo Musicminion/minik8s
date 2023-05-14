@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
+	"net/http"
 	"path"
 	"strconv"
 
@@ -26,7 +27,7 @@ func AddService(c *gin.Context) {
 	// POST请求，获取请求体
 	var service apiObject.Service
 	if err := c.ShouldBind(&service); err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parser service failed " + err.Error(),
 		})
 
@@ -37,7 +38,7 @@ func AddService(c *gin.Context) {
 	// 检查name是否重复
 	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + service.Metadata.Name)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get service failed " + err.Error(),
 		})
 		k8log.ErrorLog("APIServer", "AddService: get service failed "+err.Error())
@@ -45,7 +46,7 @@ func AddService(c *gin.Context) {
 	}
 
 	if len(res) != 0 {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "service name already exist",
 		})
 		k8log.ErrorLog("APIServer", "AddService: service name already exist")
@@ -53,7 +54,7 @@ func AddService(c *gin.Context) {
 	}
 	// 检查Service的kind是否正确
 	if service.Kind != "Service" {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "service kind is not Service",
 		})
 		k8log.ErrorLog("APIServer", "AddService: service kind is not Service")
@@ -69,7 +70,7 @@ func AddService(c *gin.Context) {
 	// 把serviceStore转化为json
 	serviceJson, err := json.Marshal(serviceStore)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "service marshal to json failed" + err.Error(),
 		})
 		return
@@ -79,7 +80,7 @@ func AddService(c *gin.Context) {
 	etcdURL := serverconfig.EtcdServicePath + service.Metadata.Name
 	err = etcdclient.EtcdStore.Put(etcdURL, serviceJson)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put service to etcd failed" + err.Error(),
 		})
 		return
@@ -106,14 +107,14 @@ func AddService(c *gin.Context) {
 
 			// 为每个service的每个selector创建一个etcd url，方便后续的查找
 			if err := etcdclient.EtcdStore.Put(svcSelectorURL, serviceJson); err != nil {
-				c.JSON(500, gin.H{
+				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "add service to etcd failed" + err.Error(),
 				})
 				return
 			}
 			var endpoints []apiObject.Endpoint
 			if endpoints, err = helper.GetEndpoints(key, value); err != nil {
-				c.JSON(500, gin.H{
+				c.JSON(http.StatusInternalServerError, gin.H{
 					"error": "get endpoints failed" + err.Error(),
 				})
 				return
@@ -146,14 +147,14 @@ func GetService(c *gin.Context) {
 	if name != "" {
 		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + name)
 		if err != nil {
-			c.JSON(400, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "get service failed " + err.Error(),
 			})
 			return
 		}
 		// 没找到
 		if len(res) == 0 {
-			c.JSON(404, gin.H{
+			c.JSON(http.StatusNotFound, gin.H{
 				"error": "get service err, not find service",
 			})
 			return
@@ -161,7 +162,7 @@ func GetService(c *gin.Context) {
 
 		// 处理res，如果发现有多个Service，返回错误
 		if len(res) != 1 {
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "get service err, find more than one service",
 			})
 			return
@@ -173,7 +174,7 @@ func GetService(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return
@@ -184,7 +185,7 @@ func GetService(c *gin.Context) {
 func GetServices(c *gin.Context) {
 	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath)
 	if err != nil {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "get services failed " + err.Error(),
 		})
 		return
@@ -212,7 +213,7 @@ func DeleteService(c *gin.Context) {
 
 		err := etcdclient.EtcdStore.Del(serverconfig.EtcdServicePath + name)
 		if err != nil {
-			c.JSON(400, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "delete service failed " + err.Error(),
 			})
 			return
@@ -222,7 +223,7 @@ func DeleteService(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return

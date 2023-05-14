@@ -28,14 +28,14 @@ func GetNode(c *gin.Context) {
 	if name != "" {
 		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath + name)
 		if err != nil {
-			c.JSON(400, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "get node failed " + err.Error(),
 			})
 			return
 		}
 		// 没找到
 		if len(res) == 0 {
-			c.JSON(404, gin.H{
+			c.JSON(http.StatusNotFound, gin.H{
 				"error": "get node err, not find node",
 			})
 			return
@@ -43,7 +43,7 @@ func GetNode(c *gin.Context) {
 
 		// 处理res，如果发现有多个Node，返回错误
 		if len(res) != 1 {
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "get node err, find more than one node",
 			})
 			return
@@ -55,7 +55,7 @@ func GetNode(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return
@@ -66,7 +66,7 @@ func GetNode(c *gin.Context) {
 func GetNodes(c *gin.Context) {
 	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath)
 	if err != nil {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "get nodes failed " + err.Error(),
 		})
 		return
@@ -96,7 +96,7 @@ func DeleteNode(c *gin.Context) {
 
 		err := etcdclient.EtcdStore.Del(serverconfig.EtcdNodePath + name)
 		if err != nil {
-			c.JSON(400, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "delete node failed " + err.Error(),
 			})
 			return
@@ -106,7 +106,7 @@ func DeleteNode(c *gin.Context) {
 		})
 		return
 	} else {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return
@@ -120,7 +120,7 @@ func AddNode(c *gin.Context) {
 	// POST请求，获取请求体
 	var node apiObject.Node
 	if err := c.ShouldBind(&node); err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parser node failed " + err.Error(),
 		})
 
@@ -131,7 +131,7 @@ func AddNode(c *gin.Context) {
 	// 检查name是否重复
 	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath + node.NodeMetadata.Name)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get node failed " + err.Error(),
 		})
 		k8log.ErrorLog("APIServer", "AddNode: get node failed "+err.Error())
@@ -139,7 +139,7 @@ func AddNode(c *gin.Context) {
 	}
 
 	if len(res) != 0 {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "node name already exist",
 		})
 		k8log.ErrorLog("APIServer", "AddNode: node name already exist")
@@ -147,7 +147,7 @@ func AddNode(c *gin.Context) {
 	}
 	// 检查Node的kind是否正确
 	if node.Kind != "Node" {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "node kind is not Node",
 		})
 		k8log.ErrorLog("APIServer", "AddNode: node kind is not Node")
@@ -163,7 +163,7 @@ func AddNode(c *gin.Context) {
 	// 把nodeStore转化为json
 	nodeJson, err := json.Marshal(nodeStore)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "node marshal to json failed" + err.Error(),
 		})
 		return
@@ -172,7 +172,7 @@ func AddNode(c *gin.Context) {
 	// 将Node信息写入etcd
 	err = etcdclient.EtcdStore.Put(serverconfig.EtcdNodePath+node.NodeMetadata.Name, nodeJson)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put node to etcd failed" + err.Error(),
 		})
 		return
@@ -201,7 +201,7 @@ func UpdateNode(c *gin.Context) {
 		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath + name)
 		if err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: get node failed "+err.Error())
-			c.JSON(400, gin.H{
+			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "get node failed " + err.Error(),
 			})
 			return
@@ -210,7 +210,7 @@ func UpdateNode(c *gin.Context) {
 		// 处理res，如果发现有多个Node，返回错误
 		if len(res) != 1 {
 			k8log.DebugLog("APIServer", "UpdateNode: find more than one node")
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "get node err, find more than one node",
 			})
 			return
@@ -220,7 +220,7 @@ func UpdateNode(c *gin.Context) {
 		newNode := apiObject.NodeStore{}
 		if err := c.ShouldBind(&newNode); err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: parser post node failed "+err.Error())
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "parser post node failed " + err.Error(),
 			})
 			return
@@ -231,7 +231,7 @@ func UpdateNode(c *gin.Context) {
 		err = json.Unmarshal([]byte(res[0].Value), &oldNode)
 		if err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: unmarshal old node failed "+err.Error())
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "unmarshal old node failed " + err.Error(),
 			})
 			return
@@ -244,7 +244,7 @@ func UpdateNode(c *gin.Context) {
 		nodeJson, err := json.Marshal(oldNode)
 		if err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: marshal node failed "+err.Error())
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "marshal node failed " + err.Error(),
 			})
 			return
@@ -254,7 +254,7 @@ func UpdateNode(c *gin.Context) {
 		err = etcdclient.EtcdStore.Put(serverconfig.EtcdNodePath+name, nodeJson)
 		if err != nil {
 			k8log.DebugLog("APIServer", "UpdateNode: put node to etcd failed "+err.Error())
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "put node to etcd failed " + err.Error(),
 			})
 			return
@@ -267,7 +267,7 @@ func UpdateNode(c *gin.Context) {
 		})
 
 	} else {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return
@@ -336,7 +336,7 @@ func GetNodePods(c *gin.Context) {
 
 	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
 	if nodeName == "" {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return
@@ -347,7 +347,7 @@ func GetNodePods(c *gin.Context) {
 
 	if err != nil {
 		k8log.DebugLog("APIServer", "GetNodePods: get pod failed "+err.Error())
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "get pod failed " + err.Error(),
 		})
 		return
@@ -360,7 +360,7 @@ func GetNodePods(c *gin.Context) {
 		err = json.Unmarshal([]byte(v.Value), &pod)
 		if err != nil {
 			k8log.DebugLog("APIServer", "GetNodePods: unmarshal pod failed "+err.Error())
-			c.JSON(500, gin.H{
+			c.JSON(http.StatusInternalServerError, gin.H{
 				"error": "unmarshal pod failed " + err.Error(),
 			})
 			return

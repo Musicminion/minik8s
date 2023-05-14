@@ -28,7 +28,7 @@ func GetPod(c *gin.Context) {
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	name := c.Param(config.URL_PARAM_NAME)
 	if namespace == "" || name == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace or name is empty",
 		})
 		return
@@ -48,7 +48,7 @@ func GetPod(c *gin.Context) {
 	}
 
 	if len(res) == 0 {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "get pod err, not find pod",
 		})
 		return
@@ -75,7 +75,7 @@ func GetPods(c *gin.Context) {
 
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	if namespace == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace is empty",
 		})
 		return
@@ -131,7 +131,7 @@ func AddPod(c *gin.Context) {
 	// 检查名字是否为空
 	newPodName := pod.Metadata.Name
 	if newPodName == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "pod name is empty",
 		})
 		k8log.ErrorLog("APIServer", "AddPod: pod name is empty")
@@ -140,7 +140,7 @@ func AddPod(c *gin.Context) {
 
 	// 判断PodNamespace是否为空
 	if pod.GetPodNamespace() == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "pod namespace is empty",
 		})
 		k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
@@ -158,7 +158,7 @@ func AddPod(c *gin.Context) {
 	}
 
 	if len(res) != 0 {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "pod name has exist",
 		})
 		k8log.ErrorLog("APIServer", "AddPod: pod name has exist")
@@ -220,7 +220,7 @@ func DeletePod(c *gin.Context) {
 
 	// 检查参数是否为空
 	if namespace == "" || name == "" {
-		c.JSON(400, gin.H{
+		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace or name is empty",
 		})
 		return

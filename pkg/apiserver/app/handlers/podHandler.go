@@ -103,8 +103,11 @@ func GetPods(c *gin.Context) {
 
 	// 遍历res，返回对应的Node信息
 	targetPods := make([]string, 0)
-	for _, pod := range res {
+	for i, pod := range res {
 		targetPods = append(targetPods, pod.Value)
+		if i < len(res) - 1 {
+			targetPods = append(targetPods, ",")
+		} 
 	}
 
 	c.JSON(http.StatusOK, gin.H{

@@ -119,11 +119,9 @@ func AddService(c *gin.Context) {
 				})
 				return
 			} else {
+				// 添加Endpoints到service
 				serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
 			}
-
-			// 添加Endpoints到service
-			serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
 
 			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Endpoints)))
 
@@ -192,8 +190,11 @@ func GetServices(c *gin.Context) {
 	}
 	// 遍历res，返回对应的Service信息
 	var services []string
-	for _, service := range res {
+	for i, service := range res {
 		services = append(services, service.Value)
+		if i < len(res)-1 {
+			services = append(services, ",")
+		}
 	}
 
 	c.JSON(200, gin.H{
@@ -232,5 +233,5 @@ func DeleteService(c *gin.Context) {
 
 // 更新Service信息
 func UpdateService(c *gin.Context) {
-
+	
 }

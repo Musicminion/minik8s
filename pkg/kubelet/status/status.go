@@ -30,6 +30,12 @@ type StatusManager interface {
 	// 获取运行时候的Pod的状态信息
 	GetAllPodFromRuntime() (map[string]*runtime.RunTimePodStatus, error)
 
+	// 注册和反注册的功能
+	// 注册节点
+	RegisterNode() error
+	// 注销节点
+	UnRegisterNode() error
+
 	// Run 运行状态管理器
 	Run()
 }
@@ -37,12 +43,15 @@ type StatusManager interface {
 type statusManager struct {
 	cache          rediscache.RedisCache
 	runtimeManager runtime.RuntimeManager
+	// apiserverURLPrefix API Server的URL前缀
+	apiserverURLPrefix string
 }
 
-func NewStatusManager() StatusManager {
+func NewStatusManager(apiserverURLPrefix string) StatusManager {
 	return &statusManager{
-		cache:          rediscache.NewRedisCache(CacheDBID_PodCache),
-		runtimeManager: runtime.NewRuntimeManager(),
+		cache:              rediscache.NewRedisCache(CacheDBID_PodCache),
+		runtimeManager:     runtime.NewRuntimeManager(),
+		apiserverURLPrefix: apiserverURLPrefix,
 	}
 }
 

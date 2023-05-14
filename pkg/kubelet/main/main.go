@@ -6,6 +6,11 @@ import (
 	"miniK8s/pkg/kubelet/status"
 	"miniK8s/pkg/kubelet/worker"
 	"miniK8s/pkg/listwatcher"
+	"os"
+	"os/signal"
+	"sync"
+	"syscall"
+	"time"
 )
 
 type Kubelet struct {
@@ -13,6 +18,9 @@ type Kubelet struct {
 	lw            *listwatcher.Listwatcher
 	workManager   worker.PodWorkerManager
 	statusManager status.StatusManager
+
+	// 用来同步的
+	wg sync.WaitGroup
 }
 
 func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
@@ -25,15 +33,46 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 		config:        conf,
 		lw:            newlw,
 		workManager:   worker.NewPodWorkerManager(),
-		statusManager: status.NewStatusManager(),
+		statusManager: status.NewStatusManager(conf.APIServerURLPrefix),
 	}
 
 	return k, nil
 }
 
-func (k *Kubelet) Run() {
-	go k.statusManager.Run()
+func (k *Kubelet) RegisterNode() {
+	k8log.InfoLog("Kubelet", "Try to register node")
+	registerResult := k.statusManager.RegisterNode()
+	if registerResult != nil {
+		k8log.ErrorLog("Kubelet", "Register node failed, for "+registerResult.Error())
+		// 开一个协程，每隔一段时间重试一次
+		k.wg.Add(1)
+		go func() {
+			for {
+				registerResult := k.statusManager.RegisterNode()
+				if registerResult == nil {
+					k8log.InfoLog("Kubelet", "Register node success")
+					break
+				}
+				time.Sleep(30 * time.Second)
+				k8log.ErrorLog("Kubelet", "Register node failed, for "+registerResult.Error())
+			}
+			k.wg.Done()
+		}()
+	}
+	k8log.InfoLog("Kubelet", "Register node success")
+}
 
+func (k *Kubelet) Run() {
+	k8log.InfoLog("Kubelet", "Launch Kubelet")
+	k.RegisterNode()
+
+	// 创建一个通道来接收信号
+	sigs := make(chan os.Signal, 1)
+	// 注册一个信号接收函数，将接收到的信号发送到通道
+	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+
+	<-sigs
+	k.statusManager.UnRegisterNode()
 }
 
 func main() {

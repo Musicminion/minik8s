@@ -25,6 +25,9 @@ func (s *statusManager) PushNodeStatus() error {
 	// 获取Node的状态信息的URL
 	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URI_PARAM_NAME_PART, nodeStatus.Hostname)
 
+	// 给targetURL添加前缀
+	targetURL = s.apiserverURLPrefix + targetURL
+
 	// 发送PUT请求
 	code, res, err := netrequest.PostRequestByTarget(targetURL, nodeStatus)
 
@@ -61,6 +64,7 @@ func (s *statusManager) PushNodePodStatus() error {
 		// 获取Pod的状态信息的URL
 		targetURL := stringutil.Replace(config.PodSpecStatusURL, config.URI_PARAM_NAME_PART, curPodName)
 		targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAMESPACE_PART, curPodNamespace)
+		targetURL = s.apiserverURLPrefix + targetURL
 
 		// 发送POST请求
 		code, res, err := netrequest.PostRequestByTarget(targetURL, podStatus)
@@ -99,6 +103,7 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 	nodeName := s.runtimeManager.GetRuntimeNodeName()
 
 	targetURL := stringutil.Replace(config.NodeAllPodsURL, config.URI_PARAM_NAME_PART, nodeName)
+	targetURL = s.apiserverURLPrefix + targetURL
 
 	var pods []apiObject.PodStore
 	// 发送GET请求
@@ -154,7 +159,7 @@ func (s *statusManager) UpdatePulledPodsToCache(remotePodsMap map[string]*apiObj
 	errorInfo := ""
 
 	// 遍历localPodsMap，如果remotePodsMap中没有，就删除
-	for uuid, _ := range localPodsMap {
+	for uuid, localPod := range localPodsMap {
 		if _, ok := remotePodsMap[uuid]; !ok {
 			result := s.DelPodFromCache(uuid)
 			if result != nil {
@@ -163,11 +168,9 @@ func (s *statusManager) UpdatePulledPodsToCache(remotePodsMap map[string]*apiObj
 		} else {
 			// 如果remotePodsMap中有，就比较两者的事件戳，如果remotePodsMap中的事件戳比较新，就更新
 			remotePod := remotePodsMap[uuid]
-			localPod := localPodsMap[uuid]
 
 			// remotePod.Status.UpdateTime > localPod.Status.UpdateTime
 			if remotePod.Status.UpdateTime.After(localPod.Status.UpdateTime) {
-
 				result := s.UpdatePodToCache(remotePod)
 				if result != nil {
 					errorInfo += result.Error() + "\n"
@@ -201,6 +204,9 @@ func (s *statusManager) CheckIfRegisterd() bool {
 
 	// 获取Node的状态信息的URL
 	targetURL := stringutil.Replace(config.NodeSpecURL, config.URI_PARAM_NAME_PART, nodeName)
+
+	// 拼接URL
+	targetURL = s.apiserverURLPrefix + targetURL
 
 	// 创建一个NodeStore对象
 	var nodeStore apiObject.NodeStore
@@ -250,8 +256,11 @@ func (s *statusManager) RegisterNode() error {
 		IP: nodeIP,
 	}
 
+	targetURL := config.NodesURL
+	targetURL = s.apiserverURLPrefix + targetURL
+
 	// 发送POST请求
-	code, res, err := netrequest.PostRequestByTarget(config.NodesURL, node)
+	code, res, err := netrequest.PostRequestByTarget(targetURL, node)
 
 	if err != nil {
 		// 打印日志
@@ -287,7 +296,10 @@ func (s *statusManager) UnRegisterNode() error {
 	// 获取Node的状态信息的URL
 	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URI_PARAM_NAME_PART, nodeStatus.Hostname)
 
-	// 发送PUT请求
+	// 补充URL前缀
+	targetURL = s.apiserverURLPrefix + targetURL
+
+	// 发送POST请求
 	code, res, err := netrequest.PostRequestByTarget(targetURL, nodeStatus)
 
 	if err != nil {

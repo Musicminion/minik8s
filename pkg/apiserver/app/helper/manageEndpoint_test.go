@@ -93,6 +93,7 @@ func TestGetEndpoints(t *testing.T) {
 	// 清空etcd
 	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
 	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
+	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
 
 }
 
@@ -124,5 +125,6 @@ func TestAddEndPoints(t *testing.T) {
 	// 清空etcd
 	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
 	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
+	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
 
 }

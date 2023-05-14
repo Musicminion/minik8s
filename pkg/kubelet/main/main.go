@@ -1,6 +1,8 @@
 package main
 
 import (
+	"miniK8s/pkg/entity"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
 	"miniK8s/pkg/listwatcher"
 )
@@ -26,6 +28,21 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 
 func main() {
 
+}
+
+func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
+	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
+	select {
+	case podUpdate := <-updates:
+		// pod := &podUpdate.PodTarget
+		// pUUID := pod.GetPodUUID()
+		switch podUpdate.Action {
+		case entity.CREATE:
+		case entity.UPDATE:
+		case entity.DELETE:
+		}
+	}
+	return true
 }
 
 // type Kubelet struct {

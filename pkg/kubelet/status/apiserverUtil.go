@@ -212,9 +212,10 @@ func (s *statusManager) CheckIfRegisterd() bool {
 	var nodeStore apiObject.NodeStore
 
 	// 发送GET请求
-	code, err := netrequest.GetRequestByTarget(targetURL, nodeStore, "data")
+	code, err := netrequest.GetRequestByTarget(targetURL, &nodeStore, "data")
 
 	if err != nil {
+		k8log.DebugLog("kubelet", "CheckIfRegisterd Error, get data failed: "+err.Error())
 		return false
 	}
 

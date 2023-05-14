@@ -47,6 +47,21 @@ func main() {
 	Kubelet.Run()
 }
 
+// func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
+// 	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
+// 	select {
+// 	case podUpdate := <-updates:
+// 		// pod := &podUpdate.PodTarget
+// 		// pUUID := pod.GetPodUUID()
+// 		switch podUpdate.Action {
+// 		case entity.CREATE:
+// 		case entity.UPDATE:
+// 		case entity.DELETE:
+// 		}
+// 	}
+// 	return true
+// }
+
 // type Kubelet struct {
 // 	config *config.KubeletConfig
 // }

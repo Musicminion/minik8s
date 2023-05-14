@@ -64,6 +64,7 @@ func TestPostAPIObjectToServer(t *testing.T) {
 	// 清空etcd
 	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
 	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
+	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()

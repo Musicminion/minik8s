@@ -40,7 +40,7 @@ func GetPod(c *gin.Context) {
 	key := fmt.Sprintf("/registry/pods/%s/%s", namespace, name)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod failed " + err.Error(),
 		})
 		return
@@ -55,7 +55,7 @@ func GetPod(c *gin.Context) {
 
 	// 处理Res，如果有多个返回的，报错
 	if len(res) != 1 {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod err, find more than one pod",
 		})
 		return
@@ -87,14 +87,14 @@ func GetPods(c *gin.Context) {
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/", namespace)
 	res, err := etcdclient.EtcdStore.PrefixGet(key)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pods failed " + err.Error(),
 		})
 		return
 	}
 
 	if len(res) == 0 {
-		c.JSON(404, gin.H{
+		c.JSON(http.StatusNotFound, gin.H{
 			"error": "get pods err, not find pods",
 		})
 		return
@@ -105,8 +105,17 @@ func GetPods(c *gin.Context) {
 	for _, pod := range res {
 		targetPods = append(targetPods, pod.Value)
 	}
-	c.JSON(200, gin.H{
-		"data": targetPods,
+
+	targetPodsJson, err := json.Marshal(targetPods)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "json marshal pods failed " + err.Error(),
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": string(targetPodsJson),
 	})
 }
 
@@ -118,7 +127,7 @@ func AddPod(c *gin.Context) {
 	// 从body中获取pod的信息
 	var pod apiObject.Pod
 	if err := c.ShouldBind(&pod); err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parser pod failed " + err.Error(),
 		})
 
@@ -149,7 +158,7 @@ func AddPod(c *gin.Context) {
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod failed " + err.Error(),
 		})
 		return
@@ -173,7 +182,7 @@ func AddPod(c *gin.Context) {
 	// 把PodStore转化为json
 	podStoreJson, err := json.Marshal(podStore)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "parser pod to json failed " + err.Error(),
 		})
 		return
@@ -188,7 +197,7 @@ func AddPod(c *gin.Context) {
 	// 将pod存储到etcd中
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put pod to etcd failed " + err.Error(),
 		})
 		return
@@ -230,7 +239,7 @@ func DeletePod(c *gin.Context) {
 	err := etcdclient.EtcdStore.Del(fmt.Sprintf("/registry/pods/%s/%s", namespace, name))
 
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "delete pod failed " + err.Error(),
 		})
 		return

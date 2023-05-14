@@ -114,18 +114,88 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 
 	// TODO: 这里需要做一些处理，比如将Pod的状态信息存储到本地
 
-	// 遍历pods，将Pod的状态信息存储到本地
-	for _, pod := range pods {
-		// 将Pod的状态信息存储到本地
-		s.UpdatePodToCache(&pod)
+	// // 遍历pods，将Pod的状态信息存储到本地
+	// for _, pod := range pods {
+	// 	// 将Pod的状态信息存储到本地
+	// 	s.UpdatePodToCache(&pod)
+	// }
+	// 先把拉取到的Pod的状态信息转化为map
+
+	remotePodsMap := s.PodsArrayToMap(&pods)
+	// 然后条件性更新本地缓存，跟新的规则是：如果本地缓存中没有这个Pod，就添加，如果远端的Pod没有这个Pod，就删除
+	updateResult := s.UpdatePulledPodsToCache(remotePodsMap)
+
+	if updateResult != nil {
+		return pods, updateResult
 	}
 
 	return pods, nil
 }
 
+// 把一个Pod的数组转化为map[UUID]->Pod的映射
+func (s *statusManager) PodsArrayToMap(pods *[]apiObject.PodStore) map[string]*apiObject.PodStore {
+	podMap := make(map[string]*apiObject.PodStore)
+
+	for _, pod := range *pods {
+		podMap[pod.GetPodUUID()] = &pod
+	}
+
+	return podMap
+}
+
+func (s *statusManager) UpdatePulledPodsToCache(remotePodsMap map[string]*apiObject.PodStore) error {
+	// 把本地缓存所有的Pod的状态信息全部拉出来
+	localPodsMap, err := s.GetAllPodFromCache()
+
+	if err != nil {
+		return err
+	}
+
+	errorInfo := ""
+
+	// 遍历localPodsMap，如果remotePodsMap中没有，就删除
+	for uuid, _ := range localPodsMap {
+		if _, ok := remotePodsMap[uuid]; !ok {
+			result := s.DelPodFromCache(uuid)
+			if result != nil {
+				errorInfo += result.Error() + "\n"
+			}
+		} else {
+			// 如果remotePodsMap中有，就比较两者的事件戳，如果remotePodsMap中的事件戳比较新，就更新
+			remotePod := remotePodsMap[uuid]
+			localPod := localPodsMap[uuid]
+
+			// remotePod.Status.UpdateTime > localPod.Status.UpdateTime
+			if remotePod.Status.UpdateTime.After(localPod.Status.UpdateTime) {
+
+				result := s.UpdatePodToCache(remotePod)
+				if result != nil {
+					errorInfo += result.Error() + "\n"
+				}
+			}
+		}
+	}
+
+	// 遍历remotePodsMap，如果localPodsMap中没有，就添加
+	for uuid, pod := range remotePodsMap {
+		if _, ok := localPodsMap[uuid]; !ok {
+			result := s.UpdatePodToCache(pod)
+			if result != nil {
+				errorInfo += result.Error() + "\n"
+			}
+
+		}
+	}
+
+	if errorInfo != "" {
+		return errors.New(errorInfo)
+	}
+
+	return nil
+}
+
 // 这个函数用于向APIserver查询Node是否已经注册
 // const config.NodeSpecURL untyped string = "/api/v1/nodes/:name"
-
 func (s *statusManager) CheckIfRegisterd() bool {
 	nodeName := s.runtimeManager.GetRuntimeNodeName()
 

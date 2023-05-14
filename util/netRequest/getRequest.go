@@ -15,19 +15,19 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	code, res, err := GetRequest(uri)
 
 	if err != nil {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
 		return 0, err
 	}
 
 	if code != 200 {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
 		return 0, err
 	}
 
 	// 尝试在res中获取key对应的值
 	data, ok := res[key]
 	if !ok {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
 		return 0, err
 	}
 
@@ -40,7 +40,7 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	err = json.Unmarshal([]byte(dataStr), target)
 
 	if err != nil {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error())
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error())
 		return 0, err
 	}
 

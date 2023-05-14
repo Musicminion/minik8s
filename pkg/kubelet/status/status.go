@@ -27,6 +27,9 @@ type StatusManager interface {
 	// resetCache 重置缓存
 	ResetCache() error
 
+	// 获取运行时候的Pod的状态信息
+	GetAllPodFromRuntime() (map[string]*runtime.RunTimePodStatus, error)
+
 	// Run 运行状态管理器
 	Run()
 }
@@ -49,7 +52,7 @@ func (s *statusManager) AddPodToCache(pod *apiObject.PodStore) error {
 	return s.cache.Put(pod.GetPodUUID(), pod)
 }
 
-// 查找到不存在的Pod，也会出错
+// 查找到不存在的Pod，只会返回nil，不会返回error
 func (s *statusManager) GetPodFromCache(podUUID string) (*apiObject.PodStore, error) {
 	var parsedPod apiObject.PodStore
 	res, err := s.cache.GetObject(podUUID, &parsedPod)
@@ -93,6 +96,14 @@ func (s *statusManager) ResetCache() error {
 }
 
 // ************************************************************
+
+func (s *statusManager) GetAllPodFromRuntime() (map[string]*runtime.RunTimePodStatus, error) {
+	result, err := s.runtimeManager.GetRuntimeAllPodStatus()
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
+}
 
 // run 用于启动状态管理器
 func (s *statusManager) Run() {

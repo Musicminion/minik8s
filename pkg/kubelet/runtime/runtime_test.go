@@ -35,10 +35,15 @@ var testPod = apiObject.PodStore{
 
 func TestCreatePod(t *testing.T) {
 	// 创建一个runtimeManager
+	
 	r := NewRuntimeManager()
+	err := r.DeletePod(&testPod)
+	if err != nil {
+		t.Error(err)
+	}
 
 	// 创建pod
-	err := r.CreatePod(&testPod)
+	err = r.CreatePod(&testPod)
 
 	if err != nil {
 		t.Error(err)

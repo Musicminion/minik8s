@@ -7,6 +7,7 @@ import (
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"net/http"
 	"time"
@@ -76,17 +77,8 @@ func GetNodes(c *gin.Context) {
 		nodes = append(nodes, node.Value)
 	}
 
-	nodesJson, err := json.Marshal(nodes)
-
-	if err != nil {
-		c.JSON(500, gin.H{
-			"error": "get nodes failed " + err.Error(),
-		})
-		return
-	}
-
 	c.JSON(200, gin.H{
-		"data": string(nodesJson),
+		"data": stringutil.StringSliceToJsonArray(nodes),
 	})
 	// c.JSON(200, nodes)
 }

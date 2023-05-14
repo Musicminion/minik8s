@@ -65,14 +65,21 @@ func (p *plegManager) DeletePodRecord(podID string) error {
 }
 
 func (p *plegManager) checkAllPod() error {
-	//
+	// 获取运行时的Pod的状态
 	runtimePodStatuses, err := p.statusManager.GetAllPodFromRuntime()
 
 	if err != nil {
 		return err
 	}
 
+	// 获取缓存的Pod的状态
 	cachePods, err := p.statusManager.GetAllPodFromCache()
+	if err != nil {
+		return err
+	}
+
+	// 更新podStatus
+	err = p.updatePlegRecord(runtimePodStatuses, cachePods)
 	if err != nil {
 		return err
 	}

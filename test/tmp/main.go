@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	data := []string{"1", "2"}
+	data := []string{"123", "123"}
 	// data := []int{1, 2, 3}
 
 	jsonDatas, err := json.Marshal(data)
@@ -25,6 +25,11 @@ func main() {
 		"data": jsonDatasStr,
 	}
 
+	result2 := gin.H{
+		"data": data,
+	}
+
 	fmt.Println(result)
+	fmt.Println(result2)
 
 }

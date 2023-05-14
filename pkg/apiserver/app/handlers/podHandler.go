@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"miniK8s/pkg/apiserver/serverconfig"
+	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -106,16 +107,8 @@ func GetPods(c *gin.Context) {
 		targetPods = append(targetPods, pod.Value)
 	}
 
-	targetPodsJson, err := json.Marshal(targetPods)
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "json marshal pods failed " + err.Error(),
-		})
-		return
-	}
-
 	c.JSON(http.StatusOK, gin.H{
-		"data": string(targetPodsJson),
+		"data": stringutil.StringSliceToJsonArray(targetPods),
 	})
 }
 

@@ -3,7 +3,6 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	"net/http"
 	"path"
 	"strconv"
 
@@ -13,6 +12,7 @@ import (
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
+	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 
 	"github.com/gin-gonic/gin"
@@ -195,17 +195,8 @@ func GetServices(c *gin.Context) {
 		services = append(services, service.Value)
 	}
 
-	servicesJson, err := json.Marshal(services)
-
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "services marshal to json failed" + err.Error(),
-		})
-		return
-	}
-
 	c.JSON(200, gin.H{
-		"data": string(servicesJson),
+		"data": stringutil.StringSliceToJsonArray(services),
 	})
 }
 

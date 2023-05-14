@@ -29,13 +29,13 @@ func (r *runtimeManager) GetRuntimeNodeStatus() (*apiObject.NodeStatus, error) {
 		return nil, err
 	}
 
-	runPods, _, _, err := r.GetRuntimeAllPodStatus()
+	runTimePodStatus, err := r.GetRuntimeAllPodStatus()
 
 	if err != nil {
 		return nil, err
 	}
 
-	nodePodNum := len(runPods)
+	nodePodNum := len(runTimePodStatus)
 
 	nodeStatus := apiObject.NodeStatus{
 		Hostname:   hostname,
@@ -52,18 +52,22 @@ func (r *runtimeManager) GetRuntimeNodeStatus() (*apiObject.NodeStatus, error) {
 
 // 获取运行时Pod的状态信息
 // 返回的参数是(map[podUUID]->PodStatus, map[podUUID]->PodName, map[PodUUID]->PodNamespace)
-func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*apiObject.PodStatus, map[string]string, map[string]string, error) {
+func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus, error) {
 	containers, err := r.containerManager.ListContainers()
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, err
 	}
 
 	// 创建一个map，从podID到一组容器的映射
 	podIDToContainers := make(map[string][]types.Container)
-	// 创建一个map，从podID到PodName的映射
-	podIDToPodName := make(map[string]string)
-	// 创建一个map，从podID到PodNamespace的映射
-	podIDToPodNamespace := make(map[string]string)
+
+	// 创建一个map，从podID到PodStatus的映射,这个将会作为返回值
+	podIDToPodStatus := make(map[string]*RunTimePodStatus)
+
+	// // 创建一个map，从podID到PodName的映射
+	// podIDToPodName := make(map[string]string)
+	// // 创建一个map，从podID到PodNamespace的映射
+	// podIDToPodNamespace := make(map[string]string)
 
 	// 遍历所有容器，将容器按照podID进行分类
 	for _, container := range containers {
@@ -88,13 +92,18 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*apiObject.PodStat
 
 		// 最后一块写入
 		podIDToContainers[podID] = append(podIDToContainers[podID], container)
-		podIDToPodName[podID] = container.Labels[minik8stypes.ContainerLabel_PodName]
-		podIDToPodNamespace[podID] = container.Labels[minik8stypes.ContainerLabel_PodNamespace]
+		podIDToPodStatus[podID] = &RunTimePodStatus{
+			PodID:        podID,
+			PodName:      podName,
+			PodNamespace: podNamespace,
+			PodStatus:    apiObject.PodStatus{},
+		}
 
+		// // 将Pod的名字和命名空间写入
+
+		// podIDToPodName[podID] = container.Labels[minik8stypes.ContainerLabel_PodName]
+		// podIDToPodNamespace[podID] = container.Labels[minik8stypes.ContainerLabel_PodNamespace]
 	}
-
-	// 创建一个map，从podID到PodStatus的映射
-	podIDToPodStatus := make(map[string]*apiObject.PodStatus)
 
 	// // 遍历所有的Pod，将Pod的状态信息填充到podIDToPodStatus中
 	for podID, containers := range podIDToContainers {
@@ -110,17 +119,25 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*apiObject.PodStat
 			containerStatus := r.ParseInspectInfoToContainerState(res)
 
 			if err != nil {
-				return nil, nil, nil, err
+				return nil, err
 			}
 
 			podStatus.ContainerStatuses = append(podStatus.ContainerStatuses, *containerStatus)
 		}
 
 		// 将Pod的状态信息填充到podIDToPodStatus中
-		podIDToPodStatus[podID] = &podStatus
+		// podIDToPodStatus[podID]
+		// 检查podIDToPodStatus里面是否有这个podID
+		// 如果有，就直接写入，反之忽略
+		_, ok := podIDToPodStatus[podID]
+
+		if ok {
+			podIDToPodStatus[podID].PodStatus = podStatus
+		}
 	}
 
-	return podIDToPodStatus, nil, nil, nil
+	// 组装返回值
+	return podIDToPodStatus, nil
 }
 
 func (r *runtimeManager) ParseInspectInfoToContainerState(inspectInfo *types.ContainerJSON) *types.ContainerState {
@@ -146,4 +163,13 @@ func (r *runtimeManager) ParseInspectInfoToContainerState(inspectInfo *types.Con
 func (r *runtimeManager) GetRuntimeNodeName() string {
 	hostname := host.GetHostName()
 	return hostname
+}
+
+func (r *runtimeManager) GetRuntimeNodeIP() (string, error) {
+	nodeIp, err := host.GetHostIp()
+
+	if err != nil {
+		return "", err
+	}
+	return nodeIp, nil
 }

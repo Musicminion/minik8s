@@ -1,15 +1,18 @@
 package main
 
 import (
-	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
+	"miniK8s/pkg/kubelet/status"
+	"miniK8s/pkg/kubelet/worker"
 	"miniK8s/pkg/listwatcher"
 )
 
 type Kubelet struct {
-	config *kubeletconfig.KubeletConfig
-	lw     *listwatcher.Listwatcher
+	config        *kubeletconfig.KubeletConfig
+	lw            *listwatcher.Listwatcher
+	workManager   worker.PodWorkerManager
+	statusManager status.StatusManager
 }
 
 func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
@@ -19,31 +22,45 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 	}
 
 	k := &Kubelet{
-		config: conf,
-		lw:     newlw,
+		config:        conf,
+		lw:            newlw,
+		workManager:   worker.NewPodWorkerManager(),
+		statusManager: status.NewStatusManager(),
 	}
 
 	return k, nil
 }
 
+func (k *Kubelet) Run() {
+	go k.statusManager.Run()
+
+}
+
 func main() {
-
-}
-
-func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
-	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
-	select {
-	case podUpdate := <-updates:
-		// pod := &podUpdate.PodTarget
-		// pUUID := pod.GetPodUUID()
-		switch podUpdate.Action {
-		case entity.CREATE:
-		case entity.UPDATE:
-		case entity.DELETE:
-		}
+	KubeleConfig := kubeletconfig.DefaultKubeletConfig()
+	Kubelet, err := NewKubelet(KubeleConfig)
+	if err != nil {
+		k8log.FatalLog("Kublet", "NewKubelet failed, for "+err.Error())
+		return
 	}
-	return true
+
+	Kubelet.Run()
 }
+
+// func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
+// 	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
+// 	select {
+// 	case podUpdate := <-updates:
+// 		// pod := &podUpdate.PodTarget
+// 		// pUUID := pod.GetPodUUID()
+// 		switch podUpdate.Action {
+// 		case entity.CREATE:
+// 		case entity.UPDATE:
+// 		case entity.DELETE:
+// 		}
+// 	}
+// 	return true
+// }
 
 // type Kubelet struct {
 // 	config *config.KubeletConfig

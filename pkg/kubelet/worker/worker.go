@@ -6,7 +6,7 @@ import (
 	"miniK8s/pkg/k8log"
 )
 
-// 隔壁的接口：RunTimeManager
+// 接口：RunTimeManager
 // CreatePod(pod *apiObject.PodStore) error
 // DeletePod(pod *apiObject.PodStore) error
 // StartPod(pod *apiObject.PodStore) error
@@ -48,7 +48,7 @@ func (p *PodWorker) Run() {
 }
 
 func (p *PodWorker) RunTask(task WorkTask) {
-	k8log.DebugLog("[Pod Worker]", "run task, task type is "+ string(task.TaskType))
+	k8log.DebugLog("[Pod Worker]", "run task, task type is "+string(task.TaskType))
 	switch task.TaskType {
 	case Task_AddPod:
 		p.AddPodHandler(task.TaskArgs.(Task_AddPodArgs).Pod)

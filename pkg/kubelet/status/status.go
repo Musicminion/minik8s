@@ -38,7 +38,7 @@ type StatusManager interface {
 	// 注销节点
 	UnRegisterNode() error
 
-	// Run 运行状态管理器
+	// Run 运行状态管理器，函数不会阻塞
 	Run()
 }
 
@@ -116,18 +116,39 @@ func (s *statusManager) GetAllPodFromRuntime() (map[string]*runtime.RunTimePodSt
 	return result, nil
 }
 
-// run 用于启动状态管理器
+// run 用于启动状态管理器，这个函数会启动一个goroutine，用于定时向API Server发送心跳
+// 函数不会阻塞
 func (s *statusManager) Run() {
 	registerWrap := func() {
-		k8log.InfoLog("Kubelet-StatusManager", "Send Node HeartBeat")
+		k8log.DebugLog("Kubelet-StatusManager", "Send Node HeartBeat")
 		res := s.PushNodeStatus()
 		if res != nil {
 			k8log.ErrorLog("Register Node Error: ", res.Error())
 		}
 	}
 
-	go executor.Period(NodeHeartBeatDelay, NodeHeartBeatInterval, registerWrap, NodeHeartBeatLoop)
-	// go executor.Period(time.Second * 1, )
+	// pushPodStatusWrap := func() {
+	// 	k8log.DebugLog("Kubelet-StatusManager", "Push Pod Status")
+	// 	res := s.PushNodePodStatus()
+	// 	if res != nil {
+	// 		k8log.ErrorLog("Push Pod Status Error: ", res.Error())
+	// 	}
+	// }
 
-	// go executor.Period()
+	pullPodWrap := func() {
+		k8log.DebugLog("Kubelet-StatusManager", "Pull Pod Status")
+		_, res := s.PullNodeAllPods()
+		if res != nil {
+			k8log.ErrorLog("Pull Pod Status Error: ", res.Error())
+		}
+	}
+
+	// Node心跳的协程
+	go executor.Period(NodeHeartBeatDelay, NodeHeartBeatInterval, registerWrap, NodeHeartBeatLoop)
+
+	// // Pod状态更新到API Server的协程
+	// go executor.Period(PodStatusUpdateDelay, PodStatusUpdateInterval, pushPodStatusWrap, PodStatusUpdateLoop)
+
+	// Pod最新数据拉取到缓存的协程
+	go executor.Period(PodPullDelay, PodPullInterval, pullPodWrap, PodPullIfLoop)
 }

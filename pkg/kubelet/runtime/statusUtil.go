@@ -51,7 +51,7 @@ func (r *runtimeManager) GetRuntimeNodeStatus() (*apiObject.NodeStatus, error) {
 }
 
 // 获取运行时Pod的状态信息
-// 返回的参数是(map[podUUID]->PodStatus, map[podUUID]->PodName, map[PodUUID]->PodNamespace)
+// 返回的参数是map[string]*RunTimePodStatus
 func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus, error) {
 	containers, err := r.containerManager.ListContainers()
 	if err != nil {
@@ -132,6 +132,11 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus,
 		_, ok := podIDToPodStatus[podID]
 
 		if ok {
+			podStatus.UpdateTime = time.Now()
+			// TODO:还需要添加Pod的其他信息
+
+			// ****************** TODO ******************
+
 			podIDToPodStatus[podID].PodStatus = podStatus
 		}
 	}

@@ -3,6 +3,7 @@ package main
 import (
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
+	"miniK8s/pkg/kubelet/pleg"
 	"miniK8s/pkg/kubelet/status"
 	"miniK8s/pkg/kubelet/worker"
 	"miniK8s/pkg/listwatcher"
@@ -19,6 +20,11 @@ type Kubelet struct {
 	workManager   worker.PodWorkerManager
 	statusManager status.StatusManager
 
+	// plegManager用来管理pod的生命周期
+	plegManager pleg.PlegManager
+	// kubelet通过这个通道来接收plegManager发送的事件，然后发送给WorkManager
+	plegChan chan *pleg.PodLifecycleEvent
+
 	// 用来同步的
 	wg sync.WaitGroup
 }
@@ -29,11 +35,16 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 		return nil, err
 	}
 
+	Kubelet_StatusManager := status.NewStatusManager(conf.APIServerURLPrefix)
+	Kubelet_PlegChan := make(chan *pleg.PodLifecycleEvent)
+
 	k := &Kubelet{
 		config:        conf,
 		lw:            newlw,
 		workManager:   worker.NewPodWorkerManager(),
-		statusManager: status.NewStatusManager(conf.APIServerURLPrefix),
+		statusManager: Kubelet_StatusManager,
+		plegChan:      Kubelet_PlegChan,
+		plegManager:   pleg.NewPlegManager(Kubelet_StatusManager, Kubelet_PlegChan),
 	}
 
 	return k, nil
@@ -82,6 +93,7 @@ func (k *Kubelet) Run() {
 
 	// 启动所有的Manager
 	k.statusManager.Run()
+	k.plegManager.Run()
 
 	<-sigs
 	k.UnRegisterNode()
@@ -198,7 +210,7 @@ func main() {
 
 // 	} else {
 // 		k8log.DebugLog("APIServer", "寄"+fmt.Sprint(code))
-// 		k8log.DebugLog("APIServer", "寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄")
+// 		k8log.DebugLog("APIServer", "")
 // 	}
 
 // 	return nil

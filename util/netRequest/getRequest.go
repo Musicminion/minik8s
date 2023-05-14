@@ -2,6 +2,7 @@ package netrequest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"miniK8s/pkg/k8log"
 
@@ -10,7 +11,6 @@ import (
 
 // Get请求
 // GetRequest 从指定的uri获取数据，并将数据反序列化到target指向的对象中
-// 例如返回的
 func GetRequestByTarget(uri string, target interface{}, key string) (int, error) {
 	code, res, err := GetRequest(uri)
 
@@ -29,6 +29,11 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	if !ok {
 		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
 		return 0, err
+	}
+
+	// 如果data为nil，直接返回
+	if data == nil {
+		return code, errors.New("resp[key] is nil")
 	}
 
 	// 将data转化为字符串

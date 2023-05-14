@@ -50,7 +50,7 @@ func GetNode(c *gin.Context) {
 		}
 		// 遍历res，返回对应的Node信息
 		targetNode := res[0].Value
-		c.JSON(200, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"data": targetNode,
 		})
 		return
@@ -77,10 +77,10 @@ func GetNodes(c *gin.Context) {
 		nodes = append(nodes, node.Value)
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"data": stringutil.StringSliceToJsonArray(nodes),
 	})
-	// c.JSON(200, nodes)
+	// c.JSON(http.StatusOK, nodes)
 }
 
 // 删除Node信息
@@ -260,8 +260,8 @@ func UpdateNode(c *gin.Context) {
 			return
 		}
 
-		// 返回200处理成功
-		c.JSON(200, gin.H{
+		// 返回http.StatusOK处理成功
+		c.JSON(http.StatusOK, gin.H{
 			"message": "update node success",
 			"data":    oldNode,
 		})
@@ -370,8 +370,14 @@ func GetNodePods(c *gin.Context) {
 		}
 	}
 
-	// 返回200处理成功
-	c.JSON(200, gin.H{
+	if len(pods) == 0 {
+		c.JSON(http.StatusOK, gin.H{
+			"data": "[]",
+		})
+	}
+
+	// 返回http.StatusOK处理成功
+	c.JSON(http.StatusOK, gin.H{
 		"data": pods,
 	})
 
@@ -423,7 +429,7 @@ func GetNodeStatus(c *gin.Context) {
 		}
 	}
 
-	// 返回200处理成功
+	// 返回http.StatusOK处理成功
 	c.JSON(http.StatusOK, gin.H{
 		"data": node.Status,
 	})
@@ -509,7 +515,7 @@ func UpdateNodeStatus(c *gin.Context) {
 			return
 		}
 
-		// 返回200处理成功
+		// 返回http.StatusOK处理成功
 		c.JSON(http.StatusOK, gin.H{
 			"message": "update node status success",
 		})

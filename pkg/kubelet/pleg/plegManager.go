@@ -34,13 +34,21 @@ func NewPlegManager(statusManager status.StatusManager, plegchan chan *PodLifecy
 // ************************************************************
 // 这里都是podStatus的增删改查函数
 func (p *plegManager) UpdatePodRecord(podID string, newStatus *runtime.RunTimePodStatus) error {
-	// 遍历podStatus，找到podID对应的podRecord
-	for _, podRecord := range p.podStatus {
-		if podRecord.old.PodID == podID {
-			podRecord.old = podRecord.current
-			podRecord.current = newStatus
-			return nil
-		}
+	// // 遍历podStatus，找到podID对应的podRecord
+	// for _, podRecord := range p.podStatus {
+	// 	if podRecord.old.PodID == podID {
+	// 		podRecord.old = podRecord.current
+	// 		podRecord.current = newStatus
+	// 		return nil
+	// 	}
+	// }
+
+	// 如果在podStatus里面存在podID对应的podRecord，就更新podRecord
+	tryFindPodRecord, ok := p.podStatus[podID]
+	if ok && tryFindPodRecord != nil {
+		tryFindPodRecord.old = tryFindPodRecord.current
+		tryFindPodRecord.current = newStatus
+		return nil
 	}
 
 	// 如果没有找到，就创建一个新的podRecord
@@ -65,6 +73,8 @@ func (p *plegManager) DeletePodRecord(podID string) error {
 }
 
 func (p *plegManager) checkAllPod() error {
+	k8log.WarnLog("plegManager", "checkAllPod")
+
 	// 获取运行时的Pod的状态
 	runtimePodStatuses, err := p.statusManager.GetAllPodFromRuntime()
 
@@ -72,19 +82,22 @@ func (p *plegManager) checkAllPod() error {
 		return err
 	}
 
-	// 获取缓存的Pod的状态
+	for _, podStatus := range runtimePodStatuses {
+		k8log.DebugLog("plegManager", fmt.Sprintf("runtimePodStatuses is: %v", podStatus))
+	}
+
 	cachePods, err := p.statusManager.GetAllPodFromCache()
+
 	if err != nil {
 		return err
+	}
+
+	for _, podStatus := range cachePods {
+		k8log.DebugLog("plegManager", fmt.Sprintf("cachePods is: : %v", podStatus))
 	}
 
 	// 更新podStatus
 	err = p.updatePlegRecord(runtimePodStatuses, cachePods)
-	if err != nil {
-		return err
-	}
-
-	err = p.plegGenerator(runtimePodStatuses, cachePods)
 
 	if err != nil {
 		return err
@@ -96,6 +109,7 @@ func (p *plegManager) checkAllPod() error {
 // ************************************************************
 func (p *plegManager) Run() {
 	routineJob := func() {
+		k8log.DebugLog("plegManager", "plegManager Run")
 		result := p.checkAllPod()
 		if result != nil {
 			logStr := fmt.Sprintf("plegManager checkAllPod error: %v", result)
@@ -105,5 +119,6 @@ func (p *plegManager) Run() {
 
 	// 每隔一段时间，就检查一次所有的Pod
 	// 这个函数会阻塞在这里！
-	executor.Period(PlegFirstRunDelay, PlegRunPeriod, routineJob, PlegRunRoutine)
+	go executor.Period(PlegFirstRunDelay, PlegRunPeriod, routineJob, PlegRunRoutine)
+
 }

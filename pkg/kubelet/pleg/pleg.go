@@ -8,26 +8,14 @@ import (
 type PodLifeCycleEventType string
 
 const (
-	// ContainerStarted - event type when the new state of container is running.
-	// 容器新的状态是启动的
-	ContainerStarted PodLifeCycleEventType = "ContainerStarted"
-
-	// ContainerDied - event type when the new state of container is exited.
-	// 容器新的状态是退出的
-	ContainerDied PodLifeCycleEventType = "ContainerDied"
-
-	// ContainerRemoved - event type when the old state of container is exited.
-	// 容器旧的状态是退出的
-	ContainerRemoved PodLifeCycleEventType = "ContainerRemoved"
-
-	// PodSync is used to trigger syncing of a pod when the observed change of
-	// the state of the pod cannot be captured by any single event above.
+	ContainerNeedStart   PodLifeCycleEventType = "ContainerNeedStart"   // 容器需要启动
+	ContainerNeedCreate  PodLifeCycleEventType = "ContainerNeedCreate"  // 容器需要创建
+	ContainerNeedReStart PodLifeCycleEventType = "ContainerNeedReStart" // 容器需要重新启动
+	ContainerNeedStop    PodLifeCycleEventType = "ContainerNeedStop"    // 容器需要停止
+	ContainerNeedDelete  PodLifeCycleEventType = "ContainerNeedDelete"  // 容器需要删除
+	ContainerNeedUpdate  PodLifeCycleEventType = "ContainerNeedUpdate"  // 容器需要更新
 	// 不是上面的任何一个事件，就是PodSync
 	PodSync PodLifeCycleEventType = "PodSync"
-
-	// ContainerChanged - event type when the new state of container is unknown.
-	// 容器新的状态是未知的
-	ContainerChanged PodLifeCycleEventType = "ContainerChanged"
 )
 
 type PodLifecycleEvent struct {
@@ -47,3 +35,24 @@ type podRecord struct {
 
 // podRecords是一个Pod的UUID到PodRecord的映射
 type podRecords map[string]*podRecord
+
+// // ContainerStarted - event type when the new state of container is running.
+// // 容器新的状态是启动的
+// ContainerStarted PodLifeCycleEventType = "ContainerStarted"
+
+// // ContainerDied - event type when the new state of container is exited.
+// // 容器新的状态是退出的
+// ContainerDied PodLifeCycleEventType = "ContainerDied"
+
+// // ContainerRemoved - event type when the old state of container is exited.
+// // 容器旧的状态是退出的
+// ContainerRemoved PodLifeCycleEventType = "ContainerRemoved"
+
+// // PodSync is used to trigger syncing of a pod when the observed change of
+// // the state of the pod cannot be captured by any single event above.
+// // 不是上面的任何一个事件，就是PodSync
+// PodSync PodLifeCycleEventType = "PodSync"
+
+// // ContainerChanged - event type when the new state of container is unknown.
+// // 容器新的状态是未知的
+// ContainerChanged PodLifeCycleEventType = "ContainerChanged"

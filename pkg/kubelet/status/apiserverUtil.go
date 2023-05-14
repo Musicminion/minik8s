@@ -16,6 +16,7 @@ import (
 
 // NodeSpecStatusURL = "/api/v1/nodes/:name/status"
 func (s *statusManager) PushNodeStatus() error {
+
 	// TODO: 向APIServer推送Node的状态信息
 	nodeStatus, err := s.runtimeManager.GetRuntimeNodeStatus()
 	if err != nil {
@@ -29,7 +30,7 @@ func (s *statusManager) PushNodeStatus() error {
 	targetURL = s.apiserverURLPrefix + targetURL
 
 	// 发送PUT请求
-	code, res, err := netrequest.PostRequestByTarget(targetURL, nodeStatus)
+	code, res, err := netrequest.PutRequestByTarget(targetURL, nodeStatus)
 
 	if err != nil {
 		return err
@@ -234,6 +235,7 @@ func (s *statusManager) CheckIfRegisterd() bool {
 // 这个函数用于注册Node到APIServer，只需要在Node初次启动的时候发起一次，即可
 // API  "/api/v1/nodes"
 func (s *statusManager) RegisterNode() error {
+
 	// 检查是否已经注册
 	if s.CheckIfRegisterd() {
 		return nil
@@ -300,8 +302,8 @@ func (s *statusManager) UnRegisterNode() error {
 	// 补充URL前缀
 	targetURL = s.apiserverURLPrefix + targetURL
 
-	// 发送POST请求
-	code, res, err := netrequest.PostRequestByTarget(targetURL, nodeStatus)
+	// 发送PUT请求
+	code, res, err := netrequest.PutRequestByTarget(targetURL, nodeStatus)
 
 	if err != nil {
 		return err

@@ -382,6 +382,7 @@ func GetNodeStatus(c *gin.Context) {
 	// nodeName := c.Params.ByName("name")
 	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
 	if nodeName == "" {
+		k8log.DebugLog("APIServer", "GetNodeStatus: name is empty")
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
@@ -400,6 +401,7 @@ func GetNodeStatus(c *gin.Context) {
 
 	// 检测获取到的Node信息是否为空
 	if len(res) == 0 {
+		k8log.DebugLog("APIServer", "GetNodeStatus: node not found")
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "node not found",
 		})
@@ -428,6 +430,7 @@ func GetNodeStatus(c *gin.Context) {
 // /api/v1/nodes/:name/status
 func UpdateNodeStatus(c *gin.Context) {
 	// nodeName := c.Params.ByName("name")
+	k8log.DebugLog("APIServer", "UpdateNodeStatus: start")
 	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
 	if nodeName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{

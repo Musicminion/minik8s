@@ -2,7 +2,9 @@ package status
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime"
+	"miniK8s/util/executor"
 	"miniK8s/util/rediscache"
 )
 
@@ -116,7 +118,16 @@ func (s *statusManager) GetAllPodFromRuntime() (map[string]*runtime.RunTimePodSt
 
 // run 用于启动状态管理器
 func (s *statusManager) Run() {
+	registerWrap := func() {
+		k8log.InfoLog("Kubelet-StatusManager", "Send Node HeartBeat")
+		res := s.PushNodeStatus()
+		if res != nil {
+			k8log.ErrorLog("Register Node Error: ", res.Error())
+		}
+	}
 
+	go executor.Period(NodeHeartBeatDelay, NodeHeartBeatInterval, registerWrap, NodeHeartBeatLoop)
 	// go executor.Period(time.Second * 1, )
 
+	// go executor.Period()
 }

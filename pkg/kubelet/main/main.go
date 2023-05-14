@@ -62,17 +62,28 @@ func (k *Kubelet) RegisterNode() {
 	k8log.InfoLog("Kubelet", "Register node success")
 }
 
+func (k *Kubelet) UnRegisterNode() {
+	k8log.InfoLog("Kubelet", "Try to unregister node")
+	unregisterResult := k.statusManager.UnRegisterNode()
+	if unregisterResult != nil {
+		k8log.ErrorLog("Kubelet", "Unregister node failed, for "+unregisterResult.Error())
+	}
+	k8log.InfoLog("Kubelet", "Unregister node success")
+}
+
 func (k *Kubelet) Run() {
 	k8log.InfoLog("Kubelet", "Launch Kubelet")
 	k.RegisterNode()
 
 	// 创建一个通道来接收信号
-	sigs := make(chan os.Signal, 1)
+	sigs := make(chan os.Signal, 10)
 	// 注册一个信号接收函数，将接收到的信号发送到通道
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	k.statusManager.Run()
+
 	<-sigs
-	k.statusManager.UnRegisterNode()
+	k.UnRegisterNode()
 }
 
 func main() {

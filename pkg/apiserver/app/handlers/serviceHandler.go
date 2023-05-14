@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
+	"net/http"
 	"path"
 	"strconv"
 
@@ -193,8 +194,18 @@ func GetServices(c *gin.Context) {
 	for _, service := range res {
 		services = append(services, service.Value)
 	}
+
+	servicesJson, err := json.Marshal(services)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "services marshal to json failed" + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(200, gin.H{
-		"data": services,
+		"data": string(servicesJson),
 	})
 }
 

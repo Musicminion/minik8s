@@ -80,6 +80,7 @@ func (k *Kubelet) Run() {
 	// 注册一个信号接收函数，将接收到的信号发送到通道
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
+	// 启动所有的Manager
 	k.statusManager.Run()
 
 	<-sigs

@@ -75,8 +75,18 @@ func GetNodes(c *gin.Context) {
 	for _, node := range res {
 		nodes = append(nodes, node.Value)
 	}
+
+	nodesJson, err := json.Marshal(nodes)
+
+	if err != nil {
+		c.JSON(500, gin.H{
+			"error": "get nodes failed " + err.Error(),
+		})
+		return
+	}
+
 	c.JSON(200, gin.H{
-		"data": nodes,
+		"data": string(nodesJson),
 	})
 	// c.JSON(200, nodes)
 }

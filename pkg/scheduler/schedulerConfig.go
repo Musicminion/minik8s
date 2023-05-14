@@ -12,7 +12,7 @@ type SchedulerConfig struct {
 func DefaultSchedulerConfig() *SchedulerConfig {
 	config := SchedulerConfig{
 		Policy:        RoundRobin,
-		ApiServerHost: "localhost",
+		ApiServerHost: "0.0.0.0",
 		ApiServerPort: 8090,
 	}
 	return &config

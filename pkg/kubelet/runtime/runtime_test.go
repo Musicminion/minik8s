@@ -28,6 +28,25 @@ func TestMain(m *testing.M) {
 		}
 	}
 
+	result, err = containerManager.ListContainers()
+	if err != nil {
+		panic(err)
+	}
+
+	// 遍历所有容器
+	for _, container := range result {
+		// 遍历 container.Names
+		for _, name := range container.Names {
+			if name == "testContainer-1" || name == "testContainer-2" {
+				// 删除容器
+				_, err := containerManager.RemoveContainer(container.ID)
+				if err != nil {
+					panic(err)
+				}
+			}
+		}
+	}
+
 	m.Run()
 }
 

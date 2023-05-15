@@ -2,6 +2,7 @@ package worker
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/entity"
 	"miniK8s/util/uuid"
 	"testing"
 	"time"
@@ -39,7 +40,12 @@ var workerManager = NewPodWorkerManager()
 // 以下所有测试存在顺序关系，请务必按照顺序依次执行
 func TestAddPod(t *testing.T) {
 	// 添加 Pod
-	err := workerManager.AddPod(&testPod)
+	podUpdate := &entity.PodUpdate{
+		Action: entity.CREATE,
+		PodTarget: testPod,
+		Node: "testNode",
+	} 
+	err := workerManager.AddPod(&podUpdate.PodTarget)
 	if err != nil {
 		if err.Error() != "pod already exists" {
 			t.Errorf("AddPod error: %v", err)

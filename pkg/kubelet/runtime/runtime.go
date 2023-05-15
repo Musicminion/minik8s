@@ -5,6 +5,7 @@ import (
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime/container"
 	"miniK8s/pkg/kubelet/runtime/image"
+	minik8sTypes "miniK8s/pkg/minik8sTypes"
 )
 
 type RuntimeManager interface {
@@ -13,6 +14,7 @@ type RuntimeManager interface {
 	StartPod(pod *apiObject.PodStore) error
 	StopPod(pod *apiObject.PodStore) error
 	RestartPod(pod *apiObject.PodStore) error
+	DelPodByPodID(podUUID string) error
 
 	// GetRuntimeNodeStatus 获取运行时Node的状态信息
 	GetRuntimeNodeStatus() (*apiObject.NodeStatus, error)
@@ -153,5 +155,35 @@ func (r *runtimeManager) RestartPod(pod *apiObject.PodStore) error {
 
 	LogStr := "[Runtime Manager] restart pod success" + pod.GetPodName()
 	k8log.InfoLog("kubelet", LogStr)
+	return nil
+}
+
+// DelPodByID 通过pod的UUID删除pod
+func (r *runtimeManager) DelPodByPodID(podUUID string) error {
+	// 通过podUUID获取pod
+	filter := make(map[string][]string)
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{podUUID}
+
+	// 根据容器的名字过滤器，过滤出来所有的容器
+	res, err := r.containerManager.ListContainersWithOpt(filter)
+
+	if err != nil {
+		k8log.ErrorLog("[Runtime Manager]", err.Error())
+		return err
+	}
+
+	// 遍历所有的容器，然后删除
+	for _, container := range res {
+		_, err := r.containerManager.RemoveContainer(container.ID)
+		if err != nil {
+			k8log.ErrorLog("[Runtime Manager]", err.Error())
+			return err
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
 	return nil
 }

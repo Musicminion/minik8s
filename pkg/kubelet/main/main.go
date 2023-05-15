@@ -1,17 +1,23 @@
 package main
 
 import (
+	"encoding/json"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
 	"miniK8s/pkg/kubelet/pleg"
 	"miniK8s/pkg/kubelet/status"
 	"miniK8s/pkg/kubelet/worker"
 	"miniK8s/pkg/listwatcher"
+	"miniK8s/pkg/message"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/streadway/amqp"
 )
 
 type Kubelet struct {
@@ -27,6 +33,9 @@ type Kubelet struct {
 
 	// 用来同步的
 	wg sync.WaitGroup
+
+	// 用来接收podUpdate消息的通道
+	podUpdates chan *entity.PodUpdate
 }
 
 func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
@@ -97,8 +106,45 @@ func (k *Kubelet) Run() {
 
 	go k.ListenChan()
 
+	// 监听 podUpdate 的消息队列
+	go k.lw.WatchQueue_Block(msgutil.PodUpdate, k.HandleServiceUpdate, make(chan struct{}))
+	for k.syncLoopIteration(k.podUpdates) {
+	}
 	<-sigs
 	k.UnRegisterNode()
+}
+
+func (k *Kubelet) HandleServiceUpdate(msg amqp.Delivery) {
+	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
+	if err != nil {
+		k8log.ErrorLog("[Kubelet]", "消息格式错误,无法转换为Message")
+	}
+	if parsedMsg.Type == message.PUT {
+		podUpdate := &entity.PodUpdate{}
+		err := json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
+		if err != nil {
+			k8log.ErrorLog("[Kubelet]", "HandlePodUpdate: failed to unmarshal")
+			return
+		}
+		k.podUpdates <- podUpdate
+	}
+}
+
+func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
+	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
+	podUpdate, ok := <-podUpdates
+	if !ok {
+		k8log.InfoLog("Kubelet", "syncLoopIteration: podUpdates channel closed")
+		return false
+	}
+
+	switch podUpdate.Action {
+	case entity.CREATE:
+		k.workManager.AddPod(&podUpdate.PodTarget)
+	case entity.UPDATE:
+	case entity.DELETE:
+	}
+	return true
 }
 
 func main() {
@@ -111,21 +157,6 @@ func main() {
 
 	Kubelet.Run()
 }
-
-// func (kl *Kubelet) syncLoopIteration(updates <-chan *entity.PodUpdate) bool {
-// 	k8log.InfoLog("Kubelet", "syncLoopIteration: Sync loop Iteration")
-// 	select {
-// 	case podUpdate := <-updates:
-// 		// pod := &podUpdate.PodTarget
-// 		// pUUID := pod.GetPodUUID()
-// 		switch podUpdate.Action {
-// 		case entity.CREATE:
-// 		case entity.UPDATE:
-// 		case entity.DELETE:
-// 		}
-// 	}
-// 	return true
-// }
 
 // type Kubelet struct {
 // 	config *config.KubeletConfig

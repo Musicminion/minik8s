@@ -16,6 +16,7 @@ type PodWorkerManager interface {
 	StartPod(pod *apiObject.PodStore) error
 	StopPod(pod *apiObject.PodStore) error
 	RestartPod(pod *apiObject.PodStore) error
+	DelPodByPodID(podUUID string) error
 }
 
 type podWorkerManager struct {
@@ -28,6 +29,7 @@ type podWorkerManager struct {
 	StartPodHandler   func(pod *apiObject.PodStore) error
 	StopPodHandler    func(pod *apiObject.PodStore) error
 	RestartPodHandler func(pod *apiObject.PodStore) error
+	DelPodByIDHandler func(podUUID string) error
 }
 
 func NewPodWorkerManager() PodWorkerManager {
@@ -38,12 +40,13 @@ func NewPodWorkerManager() PodWorkerManager {
 		StartPodHandler:   runtimeManager.StartPod,
 		StopPodHandler:    runtimeManager.StopPod,
 		RestartPodHandler: runtimeManager.RestartPod,
+		DelPodByIDHandler: runtimeManager.DelPodByPodID,
 	}
 }
 
 // AddPod 添加pod
-func (p *podWorkerManager) AddPod(pod *apiObject.PodStore) error {
-	podUUID := pod.GetPodUUID()
+func (p *podWorkerManager) AddPod(podStore *apiObject.PodStore) error {
+	podUUID := podStore.GetPodUUID()
 	// 遍历PodWorkersMap，如果存在podUUID对应的PodWorker，则直接返回
 	if _, ok := p.PodWorkersMap[podUUID]; ok {
 		return errors.New("pod already exists")
@@ -60,7 +63,7 @@ func (p *podWorkerManager) AddPod(pod *apiObject.PodStore) error {
 	task := WorkTask{
 		TaskType: Task_AddPod,
 		TaskArgs: Task_AddPodArgs{
-			Pod: pod,
+			Pod: podStore,
 		},
 	}
 
@@ -171,6 +174,31 @@ func (p *podWorkerManager) RestartPod(pod *apiObject.PodStore) error {
 		TaskType: Task_Restart,
 		TaskArgs: Task_RestartPodArgs{
 			Pod: pod,
+		},
+	}
+
+	// 把任务添加到PodWorker的任务队列中
+	err := p.PodWorkersMap[podUUID].AddTask(task)
+	time.Sleep(1 * time.Second)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// 根据pod的UUID删除pod，用来处理pleg的删除事件
+func (p *podWorkerManager) DelPodByPodID(podUUID string) error {
+	// 遍历PodWorkersMap，如果不存在podUUID对应的PodWorker，则直接返回
+	if _, ok := p.PodWorkersMap[podUUID]; !ok {
+		return errors.New("pod not exists")
+	}
+
+	// 创建任务
+	task := WorkTask{
+		TaskType: Task_DelPodByPodID,
+		TaskArgs: Task_DelPodByPodIDArgs{
+			PodUUID: podUUID,
 		},
 	}
 

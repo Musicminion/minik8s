@@ -22,21 +22,18 @@ func TestPublishUpdateService(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	var service apiObject.Service
-	err = yaml.Unmarshal(fileContent, &service)
+	var serviceStore apiObject.ServiceStore
+	err = yaml.Unmarshal(fileContent, &serviceStore)
 	if err != nil {
 		k8log.ErrorLog("Kubectl", "ParseAPIObjectFromYamlfileContent: Unmarshal object failed "+err.Error())
 		t.Error("Unmarshal service object failed")
 	}
 
-	fmt.Println("service Info:", service)
+	fmt.Println("service Info:", serviceStore)
 
 	serviceUpdate := &entity.ServiceUpdate{
 		Action: entity.CREATE,
-		ServiceTarget: entity.ServiceWithEndpoints{
-			Service:   service,
-			Endpoints: make([]apiObject.Endpoint, 0),
-		},
+		ServiceTarget: serviceStore,
 	}
 	PublishUpdateService(serviceUpdate)
 }

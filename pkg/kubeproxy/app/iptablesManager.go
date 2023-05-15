@@ -44,12 +44,13 @@ func New() *IptableManager {
 	return iptableManager
 }
 
+
 func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
-	clusterIp := serviceUpdate.ServiceTarget.Service.Spec.ClusterIP
-	seviceName := serviceUpdate.ServiceTarget.Service.Metadata.Name
-	ports := serviceUpdate.ServiceTarget.Service.Spec.Ports
+	clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
+	seviceName := serviceUpdate.ServiceTarget.Metadata.Name
+	ports := serviceUpdate.ServiceTarget.Spec.Ports
 	var pod_ip_list []string
-	for _, endpoint := range serviceUpdate.ServiceTarget.Endpoints {
+	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
 		pod_ip_list = append(pod_ip_list, endpoint.IP)
 	}
 
@@ -71,6 +72,17 @@ func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) {
 }
 
 func (im *IptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
+	// clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
+	// seviceName := serviceUpdate.ServiceTarget.Metadata.Name
+	// ports := serviceUpdate.ServiceTarget.Spec.Ports
+	// var pod_ip_list []string
+	// for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
+	// 	pod_ip_list = append(pod_ip_list, endpoint.IP)
+	// }
+
+	// if clusterIp == "" {
+	// 	clusterIp, _ = im.allocClusterIP()
+	// }
 
 }
 

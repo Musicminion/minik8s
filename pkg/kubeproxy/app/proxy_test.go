@@ -22,7 +22,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-
 func TestSyncLoopIteration_CreateService(t *testing.T) {
 	proxy := NewKubeProxy(listwatcher.DefaultListwatcherConfig())
 	go proxy.Run()
@@ -53,11 +52,8 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	// serviceStore := service.ToServiceStore()
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action: entity.CREATE,
-		ServiceTarget: entity.ServiceWithEndpoints{
-			Service:   *service,
-			Endpoints: make([]apiObject.Endpoint, 0),
-		},
+		Action:        entity.CREATE,
+		ServiceTarget: *&apiObject.ServiceStore{},
 	}
 
 	for key, value := range service.Spec.Selector {
@@ -85,9 +81,9 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 					endpoint.Metadata.Annotations = pod.Metadata.Annotations
 					endpoint.IP = pod.Status.PodIP
 					// add endpoint to serviceUpdate.ServiceTarget.Endpoints
-					serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoint)
+					serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoint)
 				}
-				k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Endpoints)))
+				k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
 				// serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
 			}
 		}(key, value)

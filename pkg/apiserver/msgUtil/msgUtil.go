@@ -71,8 +71,8 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 // }
 
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
-	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.Service.GetName())
-	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.Service.GetNamespace())
+	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.GetName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.GetNamespace())
 
 	jsonBytes, err := json.Marshal(serviceUpdate)
 	if err != nil {
@@ -85,7 +85,7 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 		Type:         message.PUT,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
-		ResourceName: serviceUpdate.ServiceTarget.Service.GetName(),
+		ResourceName: serviceUpdate.ServiceTarget.GetName(),
 	}
 
 	jsonMsg, err := json.Marshal(message)
@@ -124,7 +124,7 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 	return PublishMsg(EndpointUpdate, jsonMsg)
 }
 
-func PublishUpdatePod(podUpdate *entity.PodUpdate) error{
+func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, podUpdate.PodTarget.GetPodName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, podUpdate.PodTarget.GetPodNamespace())
 
@@ -132,7 +132,7 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error{
 	if err != nil {
 		return err
 	}
-	
+
 	message := message.Message{
 		Type:         message.PUT,
 		Content:      string(jsonBytes),

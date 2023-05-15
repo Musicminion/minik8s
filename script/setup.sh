@@ -191,14 +191,8 @@ else
 fi
 
 ### 以下内容用于格式化服务器的部分数据
-# 获取 etcd 中所有键值
-keys=$(etcdctl get --prefix / | awk -F'[:]' '{print $1}')
+# 删除 etcd 中所有内容
+. ./etcd_clear.sh /
 
-
-# 循环删除所有键值
-for key in $keys; do
-  echo  "Delete key: $key"
-  etcdctl del $key
-done
-
-echo "Clear ETCD Done!"
+# 删除除了weave之外的所有容器
+. ./container_clear.sh

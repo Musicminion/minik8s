@@ -1,9 +1,8 @@
 package entity
 
-import (
-)
+import "miniK8s/pkg/apiObject"
 
 type ServiceUpdate struct {
-	Action string
-	ServiceTarget ServiceWithEndpoints
+	Action        string
+	ServiceTarget apiObject.ServiceStore
 }

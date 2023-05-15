@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Node
+metadata:
+  name: testNode1
+  labels:
+    labelkey1: labelvalue1
+    labelkey2: labelvalue2
+  annotations:
+    annotationkey1: annotationvalue1
+    annotationkey2: annotationvalue2
+ip: 192.168.0.1

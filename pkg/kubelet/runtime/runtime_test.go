@@ -2,9 +2,34 @@ package runtime
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/kubelet/runtime/container"
+	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/util/uuid"
 	"testing"
 )
+
+func TestMain(m *testing.M) {
+	// 初始化containerManager
+	containerManager := container.ContainerManager{}
+	result, err := containerManager.ListContainers()
+
+	if err != nil {
+		panic(err)
+	}
+
+	// 遍历所有容器
+	for _, container := range result {
+		if container.Labels[minik8stypes.ContainerLabel_PodName] == "testPod" && container.Labels[minik8stypes.ContainerLabel_PodNamespace] == "testNamespace" {
+			// 删除容器
+			_, err := containerManager.RemoveContainer(container.ID)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	m.Run()
+}
 
 var testPod = apiObject.PodStore{
 	Basic: apiObject.Basic{
@@ -35,7 +60,7 @@ var testPod = apiObject.PodStore{
 
 func TestCreatePod(t *testing.T) {
 	// 创建一个runtimeManager
-	
+
 	r := NewRuntimeManager()
 	err := r.DeletePod(&testPod)
 	if err != nil {
@@ -96,6 +121,27 @@ func TestDeletePod(t *testing.T) {
 
 	if err != nil {
 		t.Error(err)
+	}
+}
+
+func TestCleanAll(t *testing.T) {
+	// 初始化containerManager
+	containerManager := container.ContainerManager{}
+	result, err := containerManager.ListContainers()
+
+	if err != nil {
+		panic(err)
+	}
+
+	// 遍历所有容器
+	for _, container := range result {
+		if container.Labels[minik8stypes.ContainerLabel_PodName] == "testPod" && container.Labels[minik8stypes.ContainerLabel_PodNamespace] == "testNamespace" {
+			// 删除容器
+			_, err := containerManager.RemoveContainer(container.ID)
+			if err != nil {
+				panic(err)
+			}
+		}
 	}
 }
 

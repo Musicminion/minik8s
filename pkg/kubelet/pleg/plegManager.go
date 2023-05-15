@@ -40,6 +40,11 @@ func (p *plegManager) UpdatePodRecord(podID string, newStatus *runtime.RunTimePo
 	if ok && tryFindPodRecord != nil {
 		tryFindPodRecord.old = tryFindPodRecord.current
 		tryFindPodRecord.current = newStatus
+
+		// 如果podRecord的old和current都是nil，就删除这个podRecord，回收垃圾
+		if tryFindPodRecord.old == nil && tryFindPodRecord.current == nil {
+			delete(p.podStatus, podID)
+		}
 		return nil
 	}
 
@@ -87,13 +92,6 @@ func (p *plegManager) checkAllPod() error {
 
 	for _, podStatus := range cachePods {
 		k8log.DebugLog("plegManager", fmt.Sprintf("cachePods is: : %v", podStatus))
-	}
-
-	// 更新podStatus
-	err = p.updatePlegRecord(runtimePodStatuses, cachePods)
-
-	if err != nil {
-		return err
 	}
 
 	// 比较所有的缓存的Pod和运行时的Pod的状态，然后生成事件

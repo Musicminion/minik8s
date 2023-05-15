@@ -12,7 +12,10 @@ type RunTimePodStatusMap map[string]*runtime.RunTimePodStatus
 type CachePodsMap map[string]*apiObject.PodStore
 
 // 更新Pleg里面的缓存
-func (p *plegManager) updatePlegRecord(runtimePodStatus RunTimePodStatusMap, cachePods CachePodsMap) error {
+// 这里涉及到三者的关系，一个是运行时的状态，一个是缓存的Pod，一个是pleg里面的podRecord
+// podRecord是一个和状态强相关的结构体，所以更新依据：runtimePodStatus-> podRecord
+// 然后我们的比较逻辑是podRecord<->cachePods，比较这两个的情况，然后生成pleg事件
+func (p *plegManager) updatePlegRecord(runtimePodStatus RunTimePodStatusMap) error {
 	// 对于所有的runtimePodStatus，更新plegRecord
 	errStr := ""
 	for podID, runtimePodStatus := range runtimePodStatus {
@@ -20,6 +23,17 @@ func (p *plegManager) updatePlegRecord(runtimePodStatus RunTimePodStatusMap, cac
 
 		if err != nil {
 			errStr += fmt.Sprintf("update podRecord error: %s", err.Error())
+		}
+	}
+
+	// 对于所有的p.podStatus，如果不在runtimePodStatus里面，就更新为nil
+	for podID := range p.podStatus {
+		_, ok := runtimePodStatus[podID]
+		if !ok {
+			err := p.UpdatePodRecord(podID, nil)
+			if err != nil {
+				errStr += fmt.Sprintf("delete podRecord error: %s", err.Error())
+			}
 		}
 	}
 
@@ -34,57 +48,76 @@ func (p *plegManager) updatePlegRecord(runtimePodStatus RunTimePodStatusMap, cac
 // CachePodsMap 是PodID到缓存的Pod的映射
 // 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod
 func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cachePods CachePodsMap) error {
-	// 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod
-	p.calculateDiffPods(runtimePodStatus, cachePods)
+	// 根据运行时状态更新plegRecord
+	errStr := ""
 
-	// 之后处理runtimePodStatus和cachePods的里面都有的Pod
-	for podID := range runtimePodStatus {
+	err := p.updatePlegRecord(runtimePodStatus)
+
+	if err != nil {
+		errStr += fmt.Sprintf("updatePlegRecord error: %s", err.Error())
+	}
+
+	// 然后比较plegRecord和cachePods，生成pleg事件
+	// 先查找需要删除的Pod，遍历plegRecord，如果不在cachePods里面，就是需要删除的Pod
+	for podID := range p.podStatus {
 		_, ok := cachePods[podID]
-		if ok {
-			// 比较两个Pod的状态，然后生成pleg事件
-			p.comparePodStatus(runtimePodStatus[podID], cachePods[podID])
+		if !ok {
+			p.AddContainerNeedDeleteEvent(podID)
 		}
 	}
+
+	// 然后查找需要添加的Pod，遍历cachePods，如果不在plegRecord里面，就是需要添加的Pod
+	for podID := range cachePods {
+		_, ok := p.podStatus[podID]
+		if !ok {
+			p.AddContainerNeedCreateEvent(podID, cachePods[podID])
+		}
+	}
+
+	// 然后遍历plegRecord，查看发生了什么变化，然后对照cachePods，生成对应的事件
+	// for podID, podRecord := range p.podStatus {
+	// 	// TODO
+	// }
 
 	return nil
 }
 
-// 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod
-func (p *plegManager) calculateDiffPods(runtimePodStatus RunTimePodStatusMap, cachePods CachePodsMap) {
-	// 需要删除的Pod
-	deletePods := make([]string, 0)
-	// 需要添加的Pod
-	addPods := make([]string, 0)
+// // 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod
+// func (p *plegManager) calculateDiffPods(runtimePodStatus RunTimePodStatusMap, cachePods CachePodsMap) {
+// 	// 需要删除的Pod
+// 	deletePods := make([]string, 0)
+// 	// 需要添加的Pod
+// 	addPods := make([]string, 0)
 
-	// 遍历runtimePodStatus，找到需要删除的Pod
-	for podID := range runtimePodStatus {
-		_, ok := cachePods[podID]
-		if !ok {
-			deletePods = append(deletePods, podID)
-		}
-	}
+// 	// 遍历runtimePodStatus，找到需要删除的Pod
+// 	for podID := range runtimePodStatus {
+// 		_, ok := cachePods[podID]
+// 		if !ok {
+// 			deletePods = append(deletePods, podID)
+// 		}
+// 	}
 
-	// 遍历cachePods，找到需要添加的Pod
-	for podID := range cachePods {
-		_, ok := runtimePodStatus[podID]
-		if !ok {
-			addPods = append(addPods, podID)
-		}
-	}
+// 	// 遍历cachePods，找到需要添加的Pod
+// 	for podID := range cachePods {
+// 		_, ok := runtimePodStatus[podID]
+// 		if !ok {
+// 			addPods = append(addPods, podID)
+// 		}
+// 	}
 
-	// 生成pleg事件
-	// 把需要删除的Pod添加到pleg事件中
-	for _, podID := range deletePods {
-		p.AddContainerNeedDeleteEvent(podID)
-	}
+// 	// 生成pleg事件
+// 	// 把需要删除的Pod添加到pleg事件中
+// 	for _, podID := range deletePods {
+// 		p.AddContainerNeedDeleteEvent(podID)
+// 	}
 
-	// 把需要添加的Pod添加到pleg事件中
-	for _, podID := range addPods {
-		p.AddContainerNeedCreateEvent(podID, cachePods[podID])
-	}
-}
+// 	// 把需要添加的Pod添加到pleg事件中
+// 	for _, podID := range addPods {
+// 		p.AddContainerNeedCreateEvent(podID, cachePods[podID])
+// 	}
+// }
 
-// 比较在Cache里面的一个Pod的情况和该Pod在运行时候的情况，然后生成pleg事件
-func (p *plegManager) comparePodStatus(runtimePodStatus *runtime.RunTimePodStatus, cachePod *apiObject.PodStore) {
-	//
-}
+// // 比较在Cache里面的一个Pod的情况和该Pod在运行时候的情况，然后生成pleg事件
+// func (p *plegManager) comparePodStatus(runtimePodStatus *runtime.RunTimePodStatus, cachePod *apiObject.PodStore) {
+// 	//
+// }

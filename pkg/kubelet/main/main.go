@@ -95,6 +95,8 @@ func (k *Kubelet) Run() {
 	k.statusManager.Run()
 	k.plegManager.Run()
 
+	go k.ListenChan()
+
 	<-sigs
 	k.UnRegisterNode()
 }

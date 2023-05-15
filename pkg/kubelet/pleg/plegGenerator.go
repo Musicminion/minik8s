@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/kubelet/runtime"
+	minik8stypes "miniK8s/pkg/minik8sTypes"
 )
 
 // 用来比较运行的状态和缓存的状态，然后生成pleg事件
@@ -46,7 +47,11 @@ func (p *plegManager) updatePlegRecord(runtimePodStatus RunTimePodStatusMap) err
 
 // RuntimePodStatusMap 是PodID到运行时的Pod状态的映射
 // CachePodsMap 是PodID到缓存的Pod的映射
-// 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod
+// 1. pleg产生之前，首先我们根据运行时的状态，更新plegRecord
+// 2. 然后我们比较plegRecord和cachePods，生成pleg事件，具体说来如下
+// 3. 首先查找需要删除的Pod，遍历plegRecord，如果不在cachePods里面，就是需要删除的Pod
+// 4. 然后查找需要添加的Pod，遍历cachePods，如果不在plegRecord里面，就是需要添加的Pod
+// 5. 然后遍历plegRecord，查看发生了什么变化，然后对照cachePods，生成对应的事件
 func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cachePods CachePodsMap) error {
 	// 根据运行时状态更新plegRecord
 	errStr := ""
@@ -62,7 +67,7 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 	for podID := range p.podStatus {
 		_, ok := cachePods[podID]
 		if !ok {
-			p.AddContainerNeedDeleteEvent(podID)
+			p.AddPodNeedDeleteEvent(podID)
 		}
 	}
 
@@ -70,14 +75,64 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 	for podID := range cachePods {
 		_, ok := p.podStatus[podID]
 		if !ok {
-			p.AddContainerNeedCreateEvent(podID, cachePods[podID])
+			p.AddPodNeedCreateEvent(podID, cachePods[podID])
 		}
 	}
 
 	// 然后遍历plegRecord，查看发生了什么变化，然后对照cachePods，生成对应的事件
-	// for podID, podRecord := range p.podStatus {
-	// 	// TODO
-	// }
+	// _是podID，podRecord是podID对应的podRecord
+	for _, podRecord := range p.podStatus {
+		if podRecord != nil && podRecord.old == nil && podRecord.current != nil {
+			// 遍历podRecord.containers，查看发生了什么变化，然后对照cachePods，生成对应的事件
+			for _, containerstatus := range podRecord.current.PodStatus.ContainerStatuses {
+				switch containerstatus.Status {
+				case string(minik8stypes.Created):
+					// break
+				case string(minik8stypes.Running):
+					// break
+				case string(minik8stypes.Paused):
+					// break
+					p.AddPodNeedStartEvent(podRecord.current.PodID)
+				case string(minik8stypes.Restart):
+					// break
+				case string(minik8stypes.Removing):
+					// break
+				case string(minik8stypes.Exited):
+					p.AddPodNeedRestartEvent(podRecord.current.PodID)
+					// break
+				case string(minik8stypes.Dead):
+					p.AddPodNeedRestartEvent(podRecord.current.PodID)
+					// break
+				default:
+					// break
+				}
+			}
+		}
+
+		if podRecord != nil && podRecord.old != nil && podRecord.current != nil {
+			// 遍历podRecord.containers，查看发生了什么变化，然后对照cachePods，生成对应的事件
+			for _, containerstatus := range podRecord.current.PodStatus.ContainerStatuses {
+				switch containerstatus.Status {
+				case string(minik8stypes.Created):
+					// break
+				case string(minik8stypes.Running):
+					// break
+				case string(minik8stypes.Paused):
+					// break
+				case string(minik8stypes.Restart):
+					// break
+				case string(minik8stypes.Removing):
+					// break
+				case string(minik8stypes.Exited):
+					// break
+				case string(minik8stypes.Dead):
+					// break
+				default:
+					// break
+				}
+			}
+		}
+	}
 
 	return nil
 }

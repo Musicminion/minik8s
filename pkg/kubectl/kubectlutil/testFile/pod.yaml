@@ -13,7 +13,7 @@ spec:
   - name: memory-demo-ctr
     image: polinux/stress
     ports:
-        - containerPort: 80
+      - containerPort: 80
     resources:
       requests:
         memory: "100Mi"

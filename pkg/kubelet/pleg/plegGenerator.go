@@ -106,35 +106,20 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 				default:
 					// break
 				}
+				// }
 			}
-		}
 
-		if podRecord != nil && podRecord.old != nil && podRecord.current != nil {
-			// 遍历podRecord.containers，查看发生了什么变化，然后对照cachePods，生成对应的事件
-			for _, containerstatus := range podRecord.current.PodStatus.ContainerStatuses {
-				switch containerstatus.Status {
-				case string(minik8stypes.Created):
-					// break
-				case string(minik8stypes.Running):
-					// break
-				case string(minik8stypes.Paused):
-					// break
-				case string(minik8stypes.Restart):
-					// break
-				case string(minik8stypes.Removing):
-					// break
-				case string(minik8stypes.Exited):
-					// break
-				case string(minik8stypes.Dead):
-					// break
-				default:
-					// break
-				}
+			if podRecord != nil && podRecord.old != nil && podRecord.current != nil {
+				p.CompareOldAndCurrentPodStatus(podRecord.old, podRecord.current)
 			}
 		}
 	}
 
 	return nil
+}
+
+func (p *plegManager) CompareOldAndCurrentPodStatus(oldStatus *runtime.RunTimePodStatus, newStatus *runtime.RunTimePodStatus) {
+
 }
 
 // // 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod

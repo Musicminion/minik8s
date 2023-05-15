@@ -62,11 +62,9 @@ func (k *Kubelet) PlegPodNeedStopHandler(event *pleg.PodLifecycleEvent) {
 
 func (k *Kubelet) PlegPodNeedDeleteHandler(event *pleg.PodLifecycleEvent) {
 	// TODO
-	// 把data解析为pod对象
-	podData := event.Data.(*apiObject.PodStore)
 
 	// 把pod对象添加到workManager的podStore中
-	k.workManager.DeletePod(podData)
+	// k.workManager.DeletePod(event.ID)
 }
 
 func (k *Kubelet) PlegPodNeedRestartHandler(event *pleg.PodLifecycleEvent) {

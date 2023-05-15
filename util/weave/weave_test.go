@@ -4,6 +4,19 @@ import (
 	"testing"
 )
 
+func TestWeaveFindIpByContainerID(t *testing.T) {
+	// // 假设Docker容器的ID为test_container，IP地址为
+	// containerID := "63730fbf5ce8"
+	// res, err := WeaveFindIpByContainerID(containerID)
+
+	// if err != nil {
+	// 	t.Errorf("WeaveFindIpByContainerID() error = %v", err)
+	// 	return
+	// }
+
+	// t.Logf("WeaveFindIpByContainerID() result = %v", res)
+}
+
 func TestWeaveAttach(t *testing.T) {
 	// 假设Docker容器的ID为test_container，IP地址为192.168.0.2
 	// containerID := "test1"

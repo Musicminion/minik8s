@@ -2,8 +2,10 @@ package runtime
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/util/host"
+	"miniK8s/util/weave"
 	"time"
 
 	"github.com/docker/docker/api/types"
@@ -109,6 +111,8 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus,
 	for podID, containers := range podIDToContainers {
 		// 创建一个PodStatus
 		podStatus := apiObject.PodStatus{}
+		// 创建一个containerIP的数组
+		podIPs := []string{}
 
 		// 遍历所有的容器，获取容器的状态信息
 		for _, container := range containers {
@@ -123,6 +127,15 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus,
 			}
 
 			podStatus.ContainerStatuses = append(podStatus.ContainerStatuses, *containerStatus)
+
+			// 通过Weave网络获取容器的IP
+			containerIP, err := weave.WeaveFindIpByContainerID(containerID)
+
+			if err != nil {
+				logStr := "GetRuntimeAllPodStatus: " + err.Error()
+				k8log.ErrorLog("kubelet", logStr)
+			}
+			podIPs = append(podIPs, containerIP)
 		}
 
 		// 将Pod的状态信息填充到podIDToPodStatus中
@@ -132,17 +145,90 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus,
 		_, ok := podIDToPodStatus[podID]
 
 		if ok {
-			podStatus.UpdateTime = time.Now()
-			// TODO:还需要添加Pod的其他信息
+			// 需要添加Pod的其他信息
+			// 处理Pod的IP问题，需要检查所有容器的IP是否相同
+			// 检查Pod的IP是否为空
+			if len(podIPs) != 0 {
+				// 遍历检查所有容器的IP是否相同
+				for _, podIP := range podIPs {
+					if podIP != podIPs[0] {
+						k8log.WarnLog("kubelet", "GetRuntimeAllPodStatus: PodIP is not the same")
+						break
+					}
+				}
+				podStatus.PodIP = podIPs[0]
+			}
 
-			// ****************** TODO ******************
+			// 然后处理Pod的状态信息
+			podCalculatedPhase, err := r.CalculatePodPhaseByContainerStatus(&podStatus.ContainerStatuses)
 
-			podIDToPodStatus[podID].PodStatus = podStatus
+			if err != nil {
+				k8log.ErrorLog("kubelet", "GetRuntimeAllPodStatus: "+err.Error())
+				podStatus.Phase = apiObject.PodUnknown
+				podStatus.UpdateTime = time.Now()
+				podIDToPodStatus[podID].PodStatus = podStatus
+			} else {
+				// 将计算出来的Pod的状态信息写入
+				podStatus.Phase = podCalculatedPhase
+				podStatus.UpdateTime = time.Now()
+				podIDToPodStatus[podID].PodStatus = podStatus
+			}
 		}
 	}
 
 	// 组装返回值
 	return podIDToPodStatus, nil
+}
+
+// 注意：没有容器的时候，Pod的状态是Pending
+func (r *runtimeManager) CalculatePodPhaseByContainerStatus(allContainerStatus *[]types.ContainerState) (string, error) {
+
+	// 如果没有容器，就直接返回
+	if len(*allContainerStatus) == 0 {
+		return apiObject.PodPending, nil
+	}
+
+	// ==========================================================
+	isPodRunning := true
+	// 如果有容器，就遍历所有容器，检查容器的状态
+	for _, containerStatus := range *allContainerStatus {
+		isPodRunning = isPodRunning && containerStatus.Running
+	}
+	if isPodRunning {
+		return apiObject.PodRunning, nil
+	}
+
+	// ==========================================================
+	// 如果有容器正在终止，就返回Terminating
+	isPodTerminating := false
+	// 如果有容器，就遍历所有容器，检查容器的状态
+	for _, containerStatus := range *allContainerStatus {
+		isPodTerminating = isPodTerminating || containerStatus.Dead
+	}
+	if isPodTerminating {
+		return apiObject.PodTerminating, nil
+	}
+
+	// ==========================================================
+	// 如果所有容器都终止了，就检查所有容器的退出码
+	allContainerTerminated := true
+	for _, containerStatus := range *allContainerStatus {
+		allContainerTerminated = allContainerTerminated && containerStatus.Dead
+	}
+
+	if allContainerTerminated {
+		// 检查退出码
+		for _, containerStatus := range *allContainerStatus {
+			if containerStatus.ExitCode != 0 {
+				return apiObject.PodFailed, nil
+			}
+		}
+		return apiObject.PodSucceeded, nil
+	}
+
+	// ==========================================================
+	// 反之就是未知状态
+	return apiObject.PodUnknown, nil
 }
 
 func (r *runtimeManager) ParseInspectInfoToContainerState(inspectInfo *types.ContainerJSON) *types.ContainerState {

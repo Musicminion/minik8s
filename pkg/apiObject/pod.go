@@ -172,6 +172,17 @@ type Pod struct {
 // PodStatus是用来存储Pod的状态的，同时也存储了Pod的一些元数据
 // type ContainerStatus
 
+// Pod的Phase
+const (
+	// PodPending代表Pod处于Pending状态
+	PodPending     = "Pending"
+	PodRunning     = "Running"
+	PodSucceeded   = "Succeeded"
+	PodFailed      = "Failed"
+	PodUnknown     = "Unknown"
+	PodTerminating = "Terminating"
+)
+
 // PodStatus是用来存储Pod的状态的
 // 参考官方文档：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#podstatus-v1-core
 type PodStatus struct {

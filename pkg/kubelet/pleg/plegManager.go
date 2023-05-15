@@ -35,14 +35,6 @@ func NewPlegManager(statusManager status.StatusManager, plegchan chan *PodLifecy
 // 这里都是podStatus的增删改查函数
 func (p *plegManager) UpdatePodRecord(podID string, newStatus *runtime.RunTimePodStatus) error {
 	// // 遍历podStatus，找到podID对应的podRecord
-	// for _, podRecord := range p.podStatus {
-	// 	if podRecord.old.PodID == podID {
-	// 		podRecord.old = podRecord.current
-	// 		podRecord.current = newStatus
-	// 		return nil
-	// 	}
-	// }
-
 	// 如果在podStatus里面存在podID对应的podRecord，就更新podRecord
 	tryFindPodRecord, ok := p.podStatus[podID]
 	if ok && tryFindPodRecord != nil {
@@ -86,6 +78,7 @@ func (p *plegManager) checkAllPod() error {
 		k8log.DebugLog("plegManager", fmt.Sprintf("runtimePodStatuses is: %v", podStatus))
 	}
 
+	// 从缓存里面拿到所有的Pod的状态
 	cachePods, err := p.statusManager.GetAllPodFromCache()
 
 	if err != nil {
@@ -102,6 +95,9 @@ func (p *plegManager) checkAllPod() error {
 	if err != nil {
 		return err
 	}
+
+	// 比较所有的缓存的Pod和运行时的Pod的状态，然后生成事件
+	p.plegGenerator(runtimePodStatuses, cachePods)
 
 	return nil
 }

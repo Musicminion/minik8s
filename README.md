@@ -1,4 +1,9 @@
-# 记录apiserver的开发流程
+[![wakatime](https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg)](https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d)
+
+# Minik8s
+一个简易的容器编排工具。
+
+### 记录apiserver的开发流程
 
 ### kubelet架构
 目前kubelet架构设计如下

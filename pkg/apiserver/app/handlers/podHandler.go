@@ -105,9 +105,9 @@ func GetPods(c *gin.Context) {
 	targetPods := make([]string, 0)
 	for i, pod := range res {
 		targetPods = append(targetPods, pod.Value)
-		if i < len(res) - 1 {
+		if i < len(res)-1 {
 			targetPods = append(targetPods, ",")
-		} 
+		}
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -410,6 +410,8 @@ func GetPodStatus(c *gin.Context) {
 // 这样就会导致，删除Pod的时候，Pod又被创建了，死循环，寄中寄
 // "/api/v1/namespaces/:namespace/pods/:name/status"
 func UpdatePodStatus(c *gin.Context) {
+	k8log.WarnLog("APIServer", "UpdatePodStatus")
+
 	podName := c.Param(config.URL_PARAM_NAME)
 	podNamespace := c.Param(config.URL_PARAM_NAMESPACE)
 
@@ -437,6 +439,7 @@ func UpdatePodStatus(c *gin.Context) {
 	}
 
 	if len(res) == 0 {
+
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "pod not found",
 		})
@@ -444,6 +447,7 @@ func UpdatePodStatus(c *gin.Context) {
 	}
 
 	if len(res) != 1 {
+
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get pod failed, pod is not unique",
 		})
@@ -460,9 +464,15 @@ func UpdatePodStatus(c *gin.Context) {
 		return
 	}
 
+	// 打印post请求的body
+	// body, _ := ioutil.ReadAll(c.Request.Body)
+	// logStr = fmt.Sprintf("body: %s", string(body))
+	// k8log.WarnLog("APIServer", logStr)
+
 	// 获取请求体，转化为PodStatus
 	podStatus := &apiObject.PodStatus{}
-	err = c.ShouldBind(podStatus)
+	// var podStatus apiObject.PodStatus
+	err = c.ShouldBind(&podStatus)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -482,6 +492,10 @@ func UpdatePodStatus(c *gin.Context) {
 		})
 		return
 	}
+
+	// // // 输出podStoreJson
+	// logStr = fmt.Sprintf("podStoreJson: %s", string(podStoreJson))
+	// k8log.WarnLog("APIServer", logStr)
 
 	// 更新Pod
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)
@@ -507,6 +521,8 @@ func selectiveUpdatePodStatus(oldPod *apiObject.PodStore, podStatus *apiObject.P
 	if podStatus.PodIP != "" {
 		oldPod.Status.PodIP = podStatus.PodIP
 	}
+
+	oldPod.Status.ContainerStatuses = podStatus.ContainerStatuses
 
 	// UpdateTime
 	oldPod.Status.UpdateTime = time.Now()

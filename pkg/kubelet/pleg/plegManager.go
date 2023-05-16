@@ -70,7 +70,7 @@ func (p *plegManager) DeletePodRecord(podID string) error {
 }
 
 func (p *plegManager) checkAllPod() error {
-	k8log.WarnLog("plegManager", "checkAllPod")
+	// k8log.WarnLog("plegManager", "checkAllPod")
 
 	// 获取运行时的Pod的状态
 	runtimePodStatuses, err := p.statusManager.GetAllPodFromRuntime()

@@ -54,6 +54,6 @@ const (
 	URL_PARAM_NAMESPACE = "namespace"
 
 	// 请把所有【参数】相关的放在下面，【PART】是指URI里面带冒号的部分
-	URI_PARAM_NAME_PART      = ":name"
+	URL_PARAM_NAME_PART      = ":name"
 	URL_PARAM_NAMESPACE_PART = ":namespace"
 )

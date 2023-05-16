@@ -129,13 +129,13 @@ func (s *statusManager) Run() {
 		}
 	}
 
-	// pushPodStatusWrap := func() {
-	// 	k8log.DebugLog("Kubelet-StatusManager", "Push Pod Status")
-	// 	res := s.PushNodePodStatus()
-	// 	if res != nil {
-	// 		k8log.ErrorLog("Push Pod Status Error: ", res.Error())
-	// 	}
-	// }
+	pushPodStatusWrap := func() {
+		k8log.DebugLog("Kubelet-StatusManager", "Push Pod Status")
+		res := s.PushNodePodStatus()
+		if res != nil {
+			k8log.ErrorLog("Push Pod Status Error: ", res.Error())
+		}
+	}
 
 	pullPodWrap := func() {
 		k8log.DebugLog("Kubelet-StatusManager", "Pull Pod Status")
@@ -153,6 +153,9 @@ func (s *statusManager) Run() {
 
 	// Pod最新数据拉取到缓存的协程
 	go executor.Period(PodPullDelay, PodPullInterval, pullPodWrap, PodPullIfLoop)
+
+	// Pod推送
+	go executor.Period(PodPushDelay, PodPushInterval, pushPodStatusWrap, PodPushIfLoop)
 }
 
 func (s *statusManager) GetNodeName() string {

@@ -20,66 +20,66 @@ type GpuJobSpec struct {
 }
 
 type GpuJob struct {
-	Base `yaml:",inline"`
-	Spec GpuJobSpec `yaml:"spec"`
+	Basic `yaml:",inline"`
+	Spec  GpuJobSpec `yaml:"spec"`
 }
 
-func (gpu *GpuJob) Namespace() string {
+func (gpu *GpuJob) GetNamespace() string {
 	return gpu.Metadata.Namespace
 }
 
-func (gpu *GpuJob) Name() string {
+func (gpu *GpuJob) GetName() string {
 	return gpu.Metadata.Name
 }
 
-func (gpu *GpuJob) UID() types.UID {
-	return gpu.Metadata.UID
+func (gpu *GpuJob) GetGetUUID() string {
+	return gpu.Metadata.UUID
 }
 
-func (gpu *GpuJob) Volume() string {
+func (gpu *GpuJob) GetVolume() string {
 	return gpu.Spec.Volume
 }
 
-func (gpu *GpuJob) OutputFile() string {
+func (gpu *GpuJob) GetOutputFile() string {
 	return gpu.Spec.OutputFile
 }
 
-func (gpu *GpuJob) ErrorFile() string {
+func (gpu *GpuJob) GetErrorFile() string {
 	return gpu.Spec.ErrorFile
 }
 
-func (gpu *GpuJob) NumProcess() int {
+func (gpu *GpuJob) GetNumProcess() int {
 	return gpu.Spec.NumProcess
 }
 
-func (gpu *GpuJob) NumTasksPerNode() int {
+func (gpu *GpuJob) GetNumTasksPerNode() int {
 	return gpu.Spec.NumTasksPerNode
 }
 
-func (gpu *GpuJob) CpusPerTask() int {
+func (gpu *GpuJob) GetCpusPerTask() int {
 	return gpu.Spec.CpusPerTask
 }
 
-func (gpu *GpuJob) NumGpus() int {
+func (gpu *GpuJob) GetNumGpus() int {
 	return gpu.Spec.NumGpus
 }
 
-func (gpu *GpuJob) RunScripts() string {
+func (gpu *GpuJob) GetRunScripts() string {
 	return strings.Join(gpu.Spec.RunScripts, ";")
 }
 
-func (gpu *GpuJob) CompileScripts() string {
+func (gpu *GpuJob) GetCompileScripts() string {
 	return strings.Join(gpu.Spec.CompileScripts, ";")
 }
 
-func (gpu *GpuJob) Username() string {
+func (gpu *GpuJob) GetUsername() string {
 	return gpu.Spec.Username
 }
 
-func (gpu *GpuJob) Password() string {
+func (gpu *GpuJob) GetPassword() string {
 	return gpu.Spec.Password
 }
 
-func (gpu *GpuJob) WorkDir() string {
+func (gpu *GpuJob) GetWorkDir() string {
 	return gpu.Spec.WorkDir
 }

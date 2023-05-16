@@ -208,6 +208,7 @@ func (p *podWorkerManager) DelPodByPodID(podUUID string) error {
 	if err != nil {
 		return err
 	}
+	// TODO: 加上hook，删除podWorkerMap
 
 	return nil
 }

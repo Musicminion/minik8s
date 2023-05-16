@@ -37,6 +37,8 @@ type StatusManager interface {
 	RegisterNode() error
 	// 注销节点
 	UnRegisterNode() error
+	// 获取节点名称
+	GetNodeName() string
 
 	// Run 运行状态管理器，函数不会阻塞
 	Run()
@@ -151,4 +153,8 @@ func (s *statusManager) Run() {
 
 	// Pod最新数据拉取到缓存的协程
 	go executor.Period(PodPullDelay, PodPullInterval, pullPodWrap, PodPullIfLoop)
+}
+
+func (s *statusManager) GetNodeName() string {
+	return s.runtimeManager.GetRuntimeNodeName()
 }

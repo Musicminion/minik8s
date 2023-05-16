@@ -114,6 +114,9 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		return
 	}
 
+	// 为pod添加node信息
+	podStore.Spec.NodeName = scheduledNode
+
 	// TODO: 将podUpdate发送给对应的Node
 	podUpdate := &entity.PodUpdate{
 		Action:    entity.CREATE,

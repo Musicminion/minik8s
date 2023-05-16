@@ -152,5 +152,5 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 		return err
 	}
 
-	return PublishMsg(PodUpdate, jsonMsg)
+	return PublishMsg(PodUpdateWithNode(podUpdate.PodTarget.Spec.NodeName), jsonMsg)
 }

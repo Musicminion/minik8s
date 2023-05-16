@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
@@ -93,26 +94,39 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		return
 	}
 
-	respMessage := message.Message{
-		Type:         message.ScheduleResult,
-		Content:      scheduledNode,
-		ResourceURI:  parsedMsg.ResourceURI,
-		ResourceName: parsedMsg.ResourceName,
-	}
+	// respMessage := message.Message{
+	// 	Type:         message.ScheduleResult,
+	// 	Content:      scheduledNode,
+	// 	ResourceURI:  parsedMsg.ResourceURI,
+	// 	ResourceName: parsedMsg.ResourceName,
+	// }
 
 	// JSOn序列化
-	result, err := json.Marshal(respMessage)
+	// result, err := json.Marshal(respMessage)
+	// if err != nil {
+	// 	k8log.ErrorLog("[Scheduler]", "序列化消息失败")
+	// }
+
+	podStore := &apiObject.PodStore{}
+	err = json.Unmarshal([]byte(parsedMsg.Content), &podStore)
 	if err != nil {
-		k8log.ErrorLog("[Scheduler]", "序列化消息失败")
+		k8log.ErrorLog("[Scheduler]", "反序列化pod失败")
+		return
 	}
 
 	// TODO: 将podUpdate发送给对应的Node
-
-	sch.publisher.Publish("apiServer", message.ContentTypeJson, result)
+	podUpdate := &entity.PodUpdate{
+		Action:    entity.CREATE,
+		PodTarget: *podStore,
+		Node:      scheduledNode,
+	}
+	msgutil.PublishUpdatePod(podUpdate)
+	// sch.publisher.Publish("apiServer", message.ContentTypeJson, result)
 }
 
 // 调度器的消息处理函数,分发给不同的消息处理函数
 func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
+	k8log.DebugLog("[Scheduler]", "收到消息"+string(msg.Body))
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
 		k8log.ErrorLog("[Scheduler]", "消息格式错误,无法转换为Message")
@@ -128,7 +142,11 @@ func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
 
 }
 
-// 启动调度器
 func (sch *Scheduler) Run() {
-	sch.lw.WatchQueue_Block(msgutil.NodeSchedule, sch.MsgHandler, make(chan struct{}))
+	// TODO
+	// 监听队列
+	for {
+		// 监听队列
+		sch.lw.WatchQueue_Block(msgutil.NodeSchedule, sch.MsgHandler, make(chan struct{}))
+	}
 }

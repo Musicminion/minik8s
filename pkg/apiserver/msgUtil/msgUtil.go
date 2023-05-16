@@ -5,6 +5,7 @@ import (
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/message"
 	"miniK8s/util/stringutil"
 )
@@ -35,9 +36,14 @@ func PublishMsg(queueName string, msg []byte) error {
 func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+	podJson, err := json.Marshal(pod)
+	if err != nil {
+		k8log.ErrorLog("[msgutil]", "json marshal pod failed")
+		return err
+	}
 	message := message.Message{
 		Type:         message.RequestSchedule,
-		Content:      pod.GetPodName(),
+		Content:      string(podJson),
 		ResourceURI:  resourceURI,
 		ResourceName: pod.GetPodName(),
 	}

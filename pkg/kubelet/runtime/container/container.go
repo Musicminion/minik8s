@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"miniK8s/pkg/k8log"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
@@ -19,6 +20,7 @@ type ContainerManager struct {
 // 创建容器的方法,返回容器的ID和错误
 func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.ContainerConfig) (string, error) {
 	// 获取docker的client
+	k8log.DebugLog("[Container Manager]", "container create: "+ name)
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
 	if err != nil {

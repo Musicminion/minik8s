@@ -24,7 +24,7 @@ func (s *statusManager) PushNodeStatus() error {
 	}
 
 	// 获取Node的状态信息的URL
-	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URI_PARAM_NAME_PART, nodeStatus.Hostname)
+	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URL_PARAM_NAME_PART, nodeStatus.Hostname)
 
 	// 给targetURL添加前缀
 	targetURL = s.apiserverURLPrefix + targetURL
@@ -49,6 +49,7 @@ func (s *statusManager) PushNodeStatus() error {
 // PodSpecStatusURL = "/api/v1/namespaces/:namespace/pods/:name/status"
 // 更新Pod的状态信息，发送给APIServer
 func (s *statusManager) PushNodePodStatus() error {
+
 	// TODO: 向APIServer推送Pod的状态信息
 	allPodStatus, err := s.runtimeManager.GetRuntimeAllPodStatus()
 	if err != nil {
@@ -63,12 +64,24 @@ func (s *statusManager) PushNodePodStatus() error {
 		curPodNamespace := podStatus.PodNamespace
 
 		// 获取Pod的状态信息的URL
-		targetURL := stringutil.Replace(config.PodSpecStatusURL, config.URI_PARAM_NAME_PART, curPodName)
+		// targetURL := stringutil.Replace(config.PodSpecStatusURL, config.URI_PARAM_NAME_PART, curPodName)
+		// targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAMESPACE_PART, curPodNamespace)
+		targetURL := config.PodSpecStatusURL
+		// 注意必须要先替换namespace，再替换name，不然替换短的会导致替换长的时候出现问题
 		targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAMESPACE_PART, curPodNamespace)
+		targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAME_PART, curPodName)
+
 		targetURL = s.apiserverURLPrefix + targetURL
 
+		// // 输出podStatus
+		// podStatusStr, _ := json.Marshal(podStatus.PodStatus)
+
+		// logStr := "PushNodePodStatus podStatus: " + string(podStatusStr)
+		// k8log.WarnLog("kubelet", logStr)
+		// k8log.WarnLog("kubelet", "PushNodePodStatus podStatus: "+podStatus)
+
 		// 发送POST请求
-		code, res, err := netrequest.PostRequestByTarget(targetURL, podStatus)
+		code, res, err := netrequest.PostRequestByTarget(targetURL, podStatus.PodStatus)
 
 		if err != nil {
 			logStr := "Push Pod Status Error: " + err.Error()
@@ -103,7 +116,7 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 	// 获取Node的状态信息的URL
 	nodeName := s.runtimeManager.GetRuntimeNodeName()
 
-	targetURL := stringutil.Replace(config.NodeAllPodsURL, config.URI_PARAM_NAME_PART, nodeName)
+	targetURL := stringutil.Replace(config.NodeAllPodsURL, config.URL_PARAM_NAME_PART, nodeName)
 	targetURL = s.apiserverURLPrefix + targetURL
 
 	var pods []apiObject.PodStore
@@ -204,7 +217,7 @@ func (s *statusManager) CheckIfRegisterd() bool {
 	nodeName := s.runtimeManager.GetRuntimeNodeName()
 
 	// 获取Node的状态信息的URL
-	targetURL := stringutil.Replace(config.NodeSpecURL, config.URI_PARAM_NAME_PART, nodeName)
+	targetURL := stringutil.Replace(config.NodeSpecURL, config.URL_PARAM_NAME_PART, nodeName)
 
 	// 拼接URL
 	targetURL = s.apiserverURLPrefix + targetURL
@@ -297,7 +310,7 @@ func (s *statusManager) UnRegisterNode() error {
 	nodeStatus.Condition = apiObject.NodeCondition(apiObject.Unknown)
 
 	// 获取Node的状态信息的URL
-	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URI_PARAM_NAME_PART, nodeStatus.Hostname)
+	targetURL := stringutil.Replace(config.NodeSpecStatusURL, config.URL_PARAM_NAME_PART, nodeStatus.Hostname)
 
 	// 补充URL前缀
 	targetURL = s.apiserverURLPrefix + targetURL

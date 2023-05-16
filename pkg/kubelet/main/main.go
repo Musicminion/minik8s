@@ -108,8 +108,8 @@ func (k *Kubelet) Run() {
 
 	// 监听 podUpdate 的消息队列
 	go k.lw.WatchQueue_Block(msgutil.PodUpdate, k.HandleServiceUpdate, make(chan struct{}))
-	for k.syncLoopIteration(k.podUpdates) {
-	}
+	// for k.syncLoopIteration(k.podUpdates) {
+	// }
 	<-sigs
 	k.UnRegisterNode()
 }

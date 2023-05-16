@@ -34,7 +34,7 @@ func PublishMsg(queueName string, msg []byte) error {
 
 // 发布消息的组件函数
 func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
-	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName())
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, pod.GetPodName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 	podJson, err := json.Marshal(pod)
 	if err != nil {
@@ -77,7 +77,7 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 // }
 
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
-	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URI_PARAM_NAME_PART, serviceUpdate.ServiceTarget.GetName())
+	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAME_PART, serviceUpdate.ServiceTarget.GetName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.GetNamespace())
 
 	jsonBytes, err := json.Marshal(serviceUpdate)
@@ -104,7 +104,7 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 }
 
 func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
-	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URI_PARAM_NAME_PART, endpointUpdate.ServiceTarget.Service.GetName())
+	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAME_PART, endpointUpdate.ServiceTarget.Service.GetName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, endpointUpdate.ServiceTarget.Service.GetNamespace())
 
 	jsonBytes, err := json.Marshal(endpointUpdate)
@@ -131,7 +131,7 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 }
 
 func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
-	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, podUpdate.PodTarget.GetPodName())
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, podUpdate.PodTarget.GetPodName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, podUpdate.PodTarget.GetPodNamespace())
 
 	jsonBytes, err := json.Marshal(podUpdate)

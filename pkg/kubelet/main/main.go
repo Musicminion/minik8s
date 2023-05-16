@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
@@ -104,18 +103,25 @@ func (k *Kubelet) Run() {
 	k.statusManager.Run()
 	k.plegManager.Run()
 
+	// TODO: 为什么下面会undefined
 	go k.ListenChan()
 
 	// 监听 podUpdate 的消息队列
-	go k.lw.WatchQueue_Block(msgutil.PodUpdate, k.HandleServiceUpdate, make(chan struct{}))
+	// go k.lw.WatchQueue_Block(msgutil.PodUpdate, k.HandleServiceUpdate, make(chan struct{}))
+	// for k.syncLoopIteration(k.podUpdates) {
+	// }
+	// listenTopic := msgutil.PodUpdateWithNode(k.statusManager.GetNodeName())
+	// k8log.InfoLog("Kubelet", "Start to listen on "+listenTopic+" queue")
+	// go k.lw.WatchQueue_Block(listenTopic, k.HandlePodUpdate, make(chan struct{}))
 	// for k.syncLoopIteration(k.podUpdates) {
 	// }
 	<-sigs
 	k.UnRegisterNode()
 }
 
-func (k *Kubelet) HandleServiceUpdate(msg amqp.Delivery) {
+func (k *Kubelet) HandlePodUpdate(msg amqp.Delivery) {
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
+	k8log.InfoLog("[Kubelet]", "HandlePodUpdate: receive message"+string(msg.Body))
 	if err != nil {
 		k8log.ErrorLog("[Kubelet]", "消息格式错误,无法转换为Message")
 	}

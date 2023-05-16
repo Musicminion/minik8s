@@ -10,6 +10,8 @@ const (
 
 	// 完整路径：/registry/pods/<namespace>/<pod-name>
 	EtcdPodPath = "/registry/pods/"
+	// 完整路径：/registry/pods/<namespace>/<job-name>
+	EtcdJobPath = "/registry/jobs/"
 	// 完整路径：/registry/services/<svc-name>
 	EtcdServicePath = "/registry/services/"
 	// 完整路径：/registry/svclabel/<label-key>/<label-value>/<svc-uuid>

@@ -1,16 +1,16 @@
-package gpu
+package server
 
 import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
 	"miniK8s/pkg/k8log"
-	"minik8s/apiObject/types"
-	"minik8s/gpu/src/ssh"
-	"minik8s/util/logger"
-	"minik8s/util/recoverutil"
-	"minik8s/util/uidutil"
-	"minik8s/util/wait"
+	// "minik8s/apiObject/types"
+	// "minik8s/gpu/src/ssh"
+	// "minik8s/util/logger"
+	// "minik8s/util/recoverutil"
+	// "minik8s/util/uidutil"
+	// "minik8s/util/wait"
 	"os"
 	"path"
 	"path/filepath"

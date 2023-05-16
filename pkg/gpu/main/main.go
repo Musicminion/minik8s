@@ -1,12 +1,9 @@
 package main
 
-import (
-	// "minik8s/pkg/gpu/gpu"
-	"miniK8S/pkg/gpu/gp"
-)
+import "miniK8s/pkg/gpu/server"
 
 var (
-	args = gpu.JobArgs{
+	args = server.JobArgs{
 		JobName:         "gpu-job",
 		Output:          "output",
 		Error:           "error",
@@ -18,7 +15,7 @@ var (
 		CompileScripts:  "",
 		RunScripts:      "",
 		Username:        "stu1638",
-		Password:        "9Hi#GOjX",
+		Password:        "",
 	}
 )
 
@@ -37,6 +34,6 @@ func main() {
 	// flag.StringVar(&args.Username, "username", "", "username")
 	// flag.StringVar(&args.Password, "password", "", "password")
 	// flag.Parse()
-	server := gpu.NewServer(args, gpu.DefaultJobURL)
+	server := server.NewServer(args, server.DefaultJobURL)
 	server.Run()
 }

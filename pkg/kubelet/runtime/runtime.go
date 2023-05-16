@@ -1,11 +1,14 @@
 package runtime
 
 import (
+	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime/container"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
+
+	"github.com/docker/docker/api/types"
 )
 
 type RuntimeManager interface {
@@ -15,6 +18,7 @@ type RuntimeManager interface {
 	StopPod(pod *apiObject.PodStore) error
 	RestartPod(pod *apiObject.PodStore) error
 	DelPodByPodID(podUUID string) error
+	RecreatePodContainer(pod *apiObject.PodStore) error
 
 	// GetRuntimeNodeStatus 获取运行时Node的状态信息
 	GetRuntimeNodeStatus() (*apiObject.NodeStatus, error)
@@ -183,6 +187,49 @@ func (r *runtimeManager) DelPodByPodID(podUUID string) error {
 
 	if err != nil {
 		return err
+	}
+
+	return nil
+}
+
+// 判断当前的container是否在给定的containers中
+func contains(runContainers []types.Container, containerName string) bool {
+	for _, runContainer := range runContainers {
+		// 注意，docker的容器名字是以/开头的 ！
+		if runContainer.Names[0] == "/"+containerName {
+			return true
+		}
+	}
+	return false
+}
+
+// 重启pod中的缺失的容器（Pause容器除外）
+func (r *runtimeManager) RecreatePodContainer(pod *apiObject.PodStore) error {
+	// 获取运行中的Pod的所有容器
+	filter := make(map[string][]string)
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{pod.GetPodUUID()}
+
+	// 根据容器的名字过滤器，过滤出来所有的容器
+	runContainers, err := r.containerManager.ListContainersWithOpt(filter)
+	// 从容器中筛选出pauseContainer
+
+	var pauseContainerID string
+	for _, container := range runContainers {
+		if container.Labels[minik8sTypes.ContainerLabel_IfPause] == minik8sTypes.ContainerLabel_IfPause_True {
+			pauseContainerID = container.ID
+		}
+	}
+
+	if err != nil {
+		return err
+	}
+
+	for _, container := range pod.Spec.Containers {
+		if !contains(runContainers, container.Name) {
+			// 重启容器
+			k8log.InfoLog("[kubelet]", fmt.Sprintf("Recreate container %s in pod %s", container.Name, pod.GetPodName()))
+			r.createPodContainer(pod, &container, pauseContainerID)
+		}
 	}
 
 	return nil

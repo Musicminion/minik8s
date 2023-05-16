@@ -37,6 +37,7 @@ func (r *runtimeManager) removePauseContainer(pod *apiObject.PodStore) (string, 
 	for _, container := range res {
 		retID = container.ID
 		// 删除pause容器
+		k8log.DebugLog("[Pause Container]", "removePauseContainer "+ container.Names[0])
 		if _, err := r.containerManager.RemoveContainer(container.ID); err != nil {
 			return "", err
 		}
@@ -177,16 +178,18 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	}
 
 	// [Weave网络] 为pause容器添加网络
-	res, err := weave.WeaveAttach(ID, pod.Status.PodIP)
-	if err != nil {
-		k8log.ErrorLog("[Pause Container]", err.Error())
-		return "", err
+	if pod.Status.PodIP == ""{
+		res, err := weave.WeaveAttach(ID)
+		if err != nil {
+			k8log.ErrorLog("[Pause Container]", err.Error())
+			return "", err
+		}
+	
+		// TODO: add podIp to pod status
+		pod.Status.PodIP = res
+		k8log.DebugLog("WeaveAttach", "WeaveAttach res "+res)
 	}
 
-	// TODO: add podIp to pod status
-	pod.Status.PodIP = res
-
-	k8log.DebugLog("WeaveAttach", "WeaveAttach res "+res)
 
 	return ID, nil
 }

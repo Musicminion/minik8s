@@ -59,3 +59,11 @@ func (p *plegManager) AddContainerNeedSyncEvent(podID string) {
 		Data: nil,
 	}
 }
+
+func (p *plegManager) AddPodContainerNeedRecreateEvent(podID string, podData *apiObject.PodStore) {
+	p.PlegChannel <- &PodLifecycleEvent{
+		ID:   podID,
+		Type: PodContainerNeedRecreate,
+		Data: podData,
+	}
+}

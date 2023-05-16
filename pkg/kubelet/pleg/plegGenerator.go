@@ -110,7 +110,18 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 			}
 
 			if podRecord != nil && podRecord.old != nil && podRecord.current != nil {
-				p.CompareOldAndCurrentPodStatus(podRecord.old, podRecord.current)
+				// p.CompareOldAndCurrentPodStatus(podRecord.old, podRecord.current)
+				// 如果发现获取到的pod的状态和上一次的状态数量都不一样，那么就是发生了变化
+				if len(podRecord.old.PodStatus.ContainerStatuses) != len(podRecord.current.PodStatus.ContainerStatuses) {
+					p.AddPodContainerNeedRecreateEvent(podRecord.current.PodID, cachePods[podRecord.current.PodID])
+				}
+
+				// 遍历podRecord.containers，查看发生了什么变化，然后对照cachePods，生成对应的事件
+				for id, containerstatus := range podRecord.current.PodStatus.ContainerStatuses {
+					if containerstatus.Status != podRecord.old.PodStatus.ContainerStatuses[id].Status {
+						p.AddPodNeedRestartEvent(podRecord.current.PodID)
+					}
+				}
 			}
 		}
 	}
@@ -118,9 +129,12 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 	return nil
 }
 
-func (p *plegManager) CompareOldAndCurrentPodStatus(oldStatus *runtime.RunTimePodStatus, newStatus *runtime.RunTimePodStatus) {
+// func (p *plegManager) CompareOldAndCurrentPodStatus(oldStatus *runtime.RunTimePodStatus, newStatus *runtime.RunTimePodStatus) {
+// 	// 如果状态没有发生变化
+// 	if len(oldStatus.PodStatus.ContainerStatuses) != len(newStatus.PodStatus.ContainerStatuses) {
 
-}
+// 	}
+// }
 
 // // 计算出不同的Pod，返回需要删除的Pod和需要添加的Pod
 // func (p *plegManager) calculateDiffPods(runtimePodStatus RunTimePodStatusMap, cachePods CachePodsMap) {

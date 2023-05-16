@@ -26,6 +26,8 @@ const (
 	PodNeedDelete  PodLifeCycleEventType = "PodNeedDelete"  // Pod需要删除
 	PodNeedUpdate  PodLifeCycleEventType = "PodNeedUpdate"  // Pod需要更新
 
+	PodContainerNeedRecreate PodLifeCycleEventType = "PodContainerNeedRecreate" // Pod的容器需要重新创建
+
 	// 不是上面的任何一个事件，就是PodSync
 	PodSync PodLifeCycleEventType = "PodSync"
 )

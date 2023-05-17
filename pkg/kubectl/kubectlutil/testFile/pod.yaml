@@ -24,7 +24,7 @@ spec:
   - name: nginx
     image: nginx
     ports:
-    - containerPort: 80
+    - containerPort: 8080
     volumeMounts:
     - name: sharedData
       mountPath: /etc/nginx/nginx.conf

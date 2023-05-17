@@ -9,7 +9,6 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"net/http"
-	"time"
 
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/util/stringutil"
@@ -192,6 +191,9 @@ func AddPod(c *gin.Context) {
 
 	// 将pod存储到etcd中
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)
+
+	// pod创建的时候，并不需要马上为其生成endpoint，因为pod创建的时候，并没有指定IP
+	// 当statusManager更新pod状态后, 有serviceController进行创建
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put pod to etcd failed " + err.Error(),

@@ -263,7 +263,7 @@ func UpdatePod(c *gin.Context) {
 	// 从etcd中获取Pod
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/<pod-name>
-	logStr := fmt.Sprintf("GetPod: namespace = %s, name = %s", podNamespace, podName)
+	logStr := fmt.Sprintf("UpdatePod: namespace = %s, name = %s", podNamespace, podName)
 	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", podNamespace, podName)
@@ -361,7 +361,7 @@ func GetPodStatus(c *gin.Context) {
 	// 从etcd中获取Pod
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/<pod-name>
-	logStr := fmt.Sprintf("GetPod: namespace = %s, name = %s", podNamespace, podName)
+	logStr := fmt.Sprintf("GetPodStatus: namespace = %s, name = %s", podNamespace, podName)
 	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", podNamespace, podName)
@@ -425,7 +425,7 @@ func UpdatePodStatus(c *gin.Context) {
 	// 从etcd中获取Pod
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/<pod-name>
-	logStr := fmt.Sprintf("GetPod: namespace = %s, name = %s", podNamespace, podName)
+	logStr := fmt.Sprintf("UpdatePodStatus: namespace = %s, name = %s", podNamespace, podName)
 	k8log.InfoLog("[APIServer]", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", podNamespace, podName)

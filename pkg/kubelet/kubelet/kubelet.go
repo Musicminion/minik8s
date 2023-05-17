@@ -13,6 +13,7 @@ import (
 	"miniK8s/pkg/message"
 	"os"
 	"os/signal"
+	"strconv"
 	"sync"
 	"syscall"
 	"time"
@@ -54,6 +55,7 @@ func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
 		statusManager: Kubelet_StatusManager,
 		plegChan:      Kubelet_PlegChan,
 		plegManager:   pleg.NewPlegManager(Kubelet_StatusManager, Kubelet_PlegChan),
+		podUpdates:    make(chan *entity.PodUpdate, 20),
 	}
 
 	return k, nil
@@ -104,7 +106,6 @@ func (k *Kubelet) Run() {
 	k.statusManager.Run()
 	k.plegManager.Run()
 
-	// TODO: 为什么下面会undefined
 	go k.ListenChan()
 
 	// 监听 podUpdate 的消息队列
@@ -112,8 +113,8 @@ func (k *Kubelet) Run() {
 	listenTopic := msgutil.PodUpdateWithNode(k.statusManager.GetNodeName())
 	k8log.InfoLog("Kubelet", "Start to listen on "+listenTopic+" queue")
 	go k.lw.WatchQueue_Block(listenTopic, k.HandlePodUpdate, make(chan struct{}))
-	for k.syncLoopIteration(k.podUpdates) {
-	}
+	go k.SyncLoopIterationWrap()
+
 	<-sigs
 	k.UnRegisterNode()
 }
@@ -125,6 +126,7 @@ func (k *Kubelet) HandlePodUpdate(msg amqp.Delivery) {
 		k8log.ErrorLog("[Kubelet]", "消息格式错误,无法转换为Message")
 	}
 	if parsedMsg.Type == message.PUT {
+		k8log.DebugLog("[Kubelet]", "HandlePodUpdate: PUT")
 		podUpdate := &entity.PodUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
 		if err != nil {
@@ -151,4 +153,9 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 	case entity.DELETE:
 	}
 	return true
+}
+
+func (k *Kubelet) SyncLoopIterationWrap() {
+	for k.syncLoopIteration(k.podUpdates) {
+	}
 }

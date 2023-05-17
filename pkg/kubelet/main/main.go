@@ -1,31 +1,20 @@
 package main
 
 import (
+	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/kubelet/kubelet"
 	"miniK8s/pkg/kubelet/kubeletconfig"
-	"miniK8s/pkg/listwatcher"
 )
 
-type Kubelet struct {
-	config *kubeletconfig.KubeletConfig
-	lw     *listwatcher.Listwatcher
-}
-
-func NewKubelet(conf *kubeletconfig.KubeletConfig) (*Kubelet, error) {
-	newlw, err := listwatcher.NewListWatcher(conf.LWConf)
-	if err != nil {
-		return nil, err
-	}
-
-	k := &Kubelet{
-		config: conf,
-		lw:     newlw,
-	}
-
-	return k, nil
-}
-
 func main() {
+	KubeleConfig := kubeletconfig.DefaultKubeletConfig()
+	Kubelet, err := kubelet.NewKubelet(KubeleConfig)
+	if err != nil {
+		k8log.FatalLog("Kublet", "NewKubelet failed, for "+err.Error())
+		return
+	}
 
+	Kubelet.Run()
 }
 
 // type Kubelet struct {
@@ -113,7 +102,7 @@ func main() {
 
 // 	} else {
 // 		k8log.DebugLog("APIServer", "寄"+fmt.Sprint(code))
-// 		k8log.DebugLog("APIServer", "寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄寄")
+// 		k8log.DebugLog("APIServer", "")
 // 	}
 
 // 	return nil

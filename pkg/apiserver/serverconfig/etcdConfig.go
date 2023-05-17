@@ -8,9 +8,14 @@ const (
 	EtcdTokenPath = "/registry/tokens/"
 	EtcdNodePath  = "/registry/nodes/"
 
-	// 更具体的说POD存在的是 /registry/pods/<namespace>/<pod-name>
-	EtcdPodPath     = "/registry/pods/"
+	// 完整路径：/registry/pods/<namespace>/<pod-name>
+	EtcdPodPath = "/registry/pods/"
+	// 完整路径：/registry/services/<svc-name>
 	EtcdServicePath = "/registry/services/"
+	// 完整路径：/registry/svclabel/<label-key>/<label-value>/<svc-uuid>
+	EtcdServiceSelectorPath = "/registry/svclabels/"
+	// 完整路径：/registry/endpoints/<label-key>/<label-value>/<endpoint-uuid>
+	EndpointPath = "/registry/endpoints/"
 )
 
 type EtcdConfig struct {

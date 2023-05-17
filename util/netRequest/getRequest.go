@@ -2,6 +2,7 @@ package netrequest
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"miniK8s/pkg/k8log"
 
@@ -10,25 +11,29 @@ import (
 
 // Get请求
 // GetRequest 从指定的uri获取数据，并将数据反序列化到target指向的对象中
-// 例如返回的
 func GetRequestByTarget(uri string, target interface{}, key string) (int, error) {
 	code, res, err := GetRequest(uri)
 
 	if err != nil {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
 		return 0, err
 	}
 
 	if code != 200 {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
 		return 0, err
 	}
 
 	// 尝试在res中获取key对应的值
 	data, ok := res[key]
 	if !ok {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
 		return 0, err
+	}
+
+	// 如果data为nil，直接返回
+	if data == nil {
+		return code, errors.New("resp[key] is nil")
 	}
 
 	// 将data转化为字符串
@@ -40,7 +45,7 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	err = json.Unmarshal([]byte(dataStr), target)
 
 	if err != nil {
-		k8log.DebugLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error())
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error()+dataStr)
 		return 0, err
 	}
 

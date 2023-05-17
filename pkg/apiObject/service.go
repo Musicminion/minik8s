@@ -1,35 +1,11 @@
 package apiObject
-// 从Condition到ServiceStatus基本都是和负载均衡相关的内容，目前暂不考虑实现
 
-type Condition struct {
-	UpdateTime string `yaml:"lastUpdateTime"`
-	// 描述status转换的原因
-	Message string `yaml:"message"`
-}
-
-type PortStatus struct {
-	Port int `yaml:"port"`
-	Protocol  string `yaml:"protocol"`
-}
-
-// LoadBalancerIngress表示负载均衡器ingress point的状态：用于该service的流量应该被发送到一个ingress point。
-type LoadBalancerIngress struct {
-	HostName     string  `yaml:"hostname"`
-	IP			 string `yaml:"ip"`
-	Ports   []PortStatus  `yaml:"ports"`
-}
-
-type LoadBalancerStatus struct {
-	Ingress   []LoadBalancerIngress `yaml:"ingress"`
-}
-
-// 参考官方文档：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#servicestatus-v1-core
 type ServiceStatus struct {
-	// 当前Serive的状态，由Condition类的array组成, 暂时用不上
-	Condition []Condition  `yaml:"conditions" json:"conditions"`
-	// LoadBalancer的状态，暂时用不上
-	LoadBalancer LoadBalancerStatus `yaml:"loadBalancer" json:"loadBalancer"`
-}
+	// 
+	Endpoints []Endpoint 
+	Phase string	
+}	
+
 
 // ServicePort contains information on service's port.
 type ServicePort struct {
@@ -141,3 +117,36 @@ func (s *ServiceStore) GetName() string {
 func (s *ServiceStore) GetNamespace() string {
 	return s.Basic.Metadata.Namespace
 }
+
+
+// 从Condition到ServiceStatus基本都是和负载均衡相关的内容，目前暂不考虑实现
+
+// type Condition struct {
+// 	UpdateTime string `yaml:"lastUpdateTime"`
+// 	// 描述status转换的原因
+// 	Message string `yaml:"message"`
+// }
+
+// type PortStatus struct {
+// 	Port int `yaml:"port"`
+// 	Protocol  string `yaml:"protocol"`
+// }
+
+// // LoadBalancerIngress表示负载均衡器ingress point的状态：用于该service的流量应该被发送到一个ingress point。
+// type LoadBalancerIngress struct {
+// 	HostName     string  `yaml:"hostname"`
+// 	IP			 string `yaml:"ip"`
+// 	Ports   []PortStatus  `yaml:"ports"`
+// }
+
+// type LoadBalancerStatus struct {
+// 	Ingress   []LoadBalancerIngress `yaml:"ingress"`
+// }
+
+// // 参考官方文档：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#servicestatus-v1-core
+// type ServiceStatus struct {
+// 	// 当前Serive的状态，由Condition类的array组成, 暂时用不上
+// 	Condition []Condition  `yaml:"conditions" json:"conditions"`
+// 	// LoadBalancer的状态，暂时用不上
+// 	LoadBalancer LoadBalancerStatus `yaml:"loadBalancer" json:"loadBalancer"`
+// }

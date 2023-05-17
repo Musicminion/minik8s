@@ -105,4 +105,11 @@ const (
 
 	// namespace相关的
 	ContainerLabel_PodNamespace = "_namespace"
+
+	// 是否归属于k8s
+	ContainerLabel_IfK8S = "_if_k8s"
+	// 是否归属于k8s的True值
+	ContainerLabel_IfK8S_True = "_true"
+	// 是否归属于k8s的False值
+	ContainerLabel_IfK8S_False = "_false"
 )

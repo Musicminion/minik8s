@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"miniK8s/pkg/k8log"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
@@ -19,6 +20,7 @@ type ContainerManager struct {
 // 创建容器的方法,返回容器的ID和错误
 func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.ContainerConfig) (string, error) {
 	// 获取docker的client
+	k8log.DebugLog("[Container Manager]", "container create: "+ name)
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
 	if err != nil {
@@ -33,6 +35,9 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 	if err != nil {
 		return "", err
 	}
+
+	// 由于我们这些都是k8s的容器，所以我们需要给这些容器添加一些标签
+	option.Labels[minik8sTypes.ContainerLabel_IfK8S] = minik8sTypes.ContainerLabel_IfK8S_True
 
 	// 创建容器的时候需要指定容器的配置、主机配置、网络配置、存储卷配置、容器名
 	result, err := client.ContainerCreate(
@@ -134,7 +139,7 @@ func (c *ContainerManager) RemoveContainer(containerID string) (string, error) {
 	return containerID, nil
 }
 
-// 列出所有的容器，包括已经停止的，返回容器的列表和错误
+// 列出所有的k8s的容器，包括已经停止的，返回容器的列表和错误
 func (c *ContainerManager) ListContainers() ([]types.Container, error) {
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
@@ -143,9 +148,14 @@ func (c *ContainerManager) ListContainers() ([]types.Container, error) {
 	}
 	defer client.Close()
 
+	listFliter := filters.NewArgs()
+	listFliter.Add("label", fmt.Sprint(minik8sTypes.ContainerLabel_IfK8S, "=", minik8sTypes.ContainerLabel_IfK8S_True))
+
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
-		All: true,
+		All:     true,
+		Filters: listFliter,
 	})
+
 	if err != nil {
 		return nil, err
 	}

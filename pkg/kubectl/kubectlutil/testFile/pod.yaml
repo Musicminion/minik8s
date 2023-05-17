@@ -13,7 +13,7 @@ spec:
   - name: memory-demo-ctr
     image: polinux/stress
     ports:
-        - containerPort: 80
+      - containerPort: 80
     resources:
       requests:
         memory: "100Mi"
@@ -24,7 +24,7 @@ spec:
   - name: nginx
     image: nginx
     ports:
-    - containerPort: 80
+    - containerPort: 8080
     volumeMounts:
     - name: sharedData
       mountPath: /etc/nginx/nginx.conf

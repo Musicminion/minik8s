@@ -6,5 +6,5 @@ import (
 
 type ServiceWithEndpoints struct {
 	Endpoints  []apiObject.Endpoint
-	Service    apiObject.Service
+	Service    apiObject.ServiceStore
 }

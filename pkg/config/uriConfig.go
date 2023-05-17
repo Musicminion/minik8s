@@ -2,6 +2,11 @@ package config
 
 // 考虑到APIServer用URL，而Kuble用URI，那URI的规定就该放在全局配置里面
 
+const (
+	// URI_PROTOCOL_SCHEME
+	URI_PROTOCOL_SCHEME = "http://"
+)
+
 // 这里是包括了API Server的所有URL
 
 // Node相关操作的URL
@@ -36,15 +41,11 @@ const (
 	// 获取Service的某个状态的URL
 	ServiceSpecStatusURL = "/api/v1/namespaces/:namespace/services/:name/status"
 
-
 	// Endpoint相关操作的URL
 	// 所有Endpoint的状态的URL
 	EndpointURL = "/api/v1/namespaces/:namespace/endpoints"
 	// 某个特定Endpoint的URL
 	EndpointSpecURL = "/api/v1/namespaces/:namespace/services/:name"
-
-
-
 )
 
 const (
@@ -53,7 +54,6 @@ const (
 	URL_PARAM_NAMESPACE = "namespace"
 
 	// 请把所有【参数】相关的放在下面，【PART】是指URI里面带冒号的部分
-	URI_PARAM_NAME_PART      = ":name"
+	URL_PARAM_NAME_PART      = ":name"
 	URL_PARAM_NAMESPACE_PART = ":namespace"
 )
-

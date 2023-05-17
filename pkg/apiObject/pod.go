@@ -1,5 +1,11 @@
 package apiObject
 
+import (
+	"time"
+
+	"github.com/docker/docker/api/types"
+)
+
 type ContainerPort struct {
 	Name          string `yaml:"name"`
 	HostPort      string `yaml:"hostPort"`
@@ -163,6 +169,20 @@ type Pod struct {
 	Spec  PodSpec `json:"spec" yaml:"spec"`
 }
 
+// PodStatus是用来存储Pod的状态的，同时也存储了Pod的一些元数据
+// type ContainerStatus
+
+// Pod的Phase
+const (
+	// PodPending代表Pod处于Pending状态
+	PodPending     = "Pending"
+	PodRunning     = "Running"
+	PodSucceeded   = "Succeeded"
+	PodFailed      = "Failed"
+	PodUnknown     = "Unknown"
+	PodTerminating = "Terminating"
+)
+
 // PodStatus是用来存储Pod的状态的
 // 参考官方文档：https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#podstatus-v1-core
 type PodStatus struct {
@@ -182,8 +202,12 @@ type PodStatus struct {
 	// Terminating（需要终止） Pod 已被请求终止，但是该终止请求还没有被发送到底层容器。Pod 仍然在运行。
 	Phase string `json:"phase" yaml:"phase"`
 
+	// 容器的状态数组
+	ContainerStatuses []types.ContainerState `json:"containerStatuses" yaml:"containerStatuses"`
+
 	// 最新的更新时间
-	UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+	// UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+	UpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 }
 
 // PodStore是用来存储Pod的设定和他的状态的

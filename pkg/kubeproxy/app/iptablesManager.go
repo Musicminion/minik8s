@@ -44,12 +44,13 @@ func New() *IptableManager {
 	return iptableManager
 }
 
+
 func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
-	clusterIp := serviceUpdate.ServiceTarget.Service.Spec.ClusterIP
-	seviceName := serviceUpdate.ServiceTarget.Service.Metadata.Name
-	ports := serviceUpdate.ServiceTarget.Service.Spec.Ports
+	clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
+	seviceName := serviceUpdate.ServiceTarget.Metadata.Name
+	ports := serviceUpdate.ServiceTarget.Spec.Ports
 	var pod_ip_list []string
-	for _, endpoint := range serviceUpdate.ServiceTarget.Endpoints {
+	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
 		pod_ip_list = append(pod_ip_list, endpoint.IP)
 	}
 
@@ -67,10 +68,42 @@ func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
 }
 
 func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) {
+	clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
+	seviceName := serviceUpdate.ServiceTarget.Metadata.Name
+	ports := serviceUpdate.ServiceTarget.Spec.Ports
+	var pod_ip_list []string
+	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
+		pod_ip_list = append(pod_ip_list, endpoint.IP)
+	}
 
+	if clusterIp == "" {
+		clusterIp, _ = im.allocClusterIP()
+	}
+
+	for _, eachports := range ports {
+		k8log.DebugLog("KUBEPROXY", "port: "+strconv.Itoa(eachports.Port))
+		port := eachports.Port
+		protocol := eachports.Protocol
+		targetPort := eachports.TargetPort
+		im.setIPTablesClusterIp(seviceName, clusterIp, port, protocol, targetPort, pod_ip_list)
+	}
+
+	// 删除 iptables 规则
+	im.ipt.Delete("nat", "KUBE-SERVICES", "-m", "comment", "--comment")
 }
 
 func (im *IptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
+	// clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
+	// seviceName := serviceUpdate.ServiceTarget.Metadata.Name
+	// ports := serviceUpdate.ServiceTarget.Spec.Ports
+	// var pod_ip_list []string
+	// for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
+	// 	pod_ip_list = append(pod_ip_list, endpoint.IP)
+	// }
+
+	// if clusterIp == "" {
+	// 	clusterIp, _ = im.allocClusterIP()
+	// }
 
 }
 
@@ -163,12 +196,14 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 	if err := im.ipt.NewChain("nat", kubesvc); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 	}
+
 	// 添加 NAT 规则，重定向流量到服务的集群 IP
 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
 		serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
 		"-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH), "-j", kubesvc); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for kubesvc chain: "+err.Error())
 	}
+
 	// 添加 NAT 规则，标记流量为 MASQUERADE
 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
 		serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),

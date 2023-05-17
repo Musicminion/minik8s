@@ -22,21 +22,18 @@ func TestPublishUpdateService(t *testing.T) {
 		fmt.Println(err.Error())
 		return
 	}
-	var service apiObject.Service
-	err = yaml.Unmarshal(fileContent, &service)
+	var serviceStore apiObject.ServiceStore
+	err = yaml.Unmarshal(fileContent, &serviceStore)
 	if err != nil {
 		k8log.ErrorLog("Kubectl", "ParseAPIObjectFromYamlfileContent: Unmarshal object failed "+err.Error())
 		t.Error("Unmarshal service object failed")
 	}
 
-	fmt.Println("service Info:", service)
+	fmt.Println("service Info:", serviceStore)
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action: entity.CREATE,
-		ServiceTarget: entity.ServiceWithEndpoints{
-			Service:   service,
-			Endpoints: make([]apiObject.Endpoint, 0),
-		},
+		Action:        entity.CREATE,
+		ServiceTarget: serviceStore,
 	}
 	PublishUpdateService(serviceUpdate)
 }
@@ -52,7 +49,7 @@ func TestPublishRequestNodeScheduleMsg(t *testing.T) {
 	if err != nil {
 		t.Errorf("unmarshal pod failed")
 	}
-	resourceURI := stringutil.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, pod.GetPodName())
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, pod.GetPodName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 	message := message.Message{
 		Type:         message.RequestSchedule,

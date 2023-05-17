@@ -17,6 +17,7 @@ type PodWorkerManager interface {
 	StopPod(pod *apiObject.PodStore) error
 	RestartPod(pod *apiObject.PodStore) error
 	DelPodByPodID(podUUID string) error
+	RecreatePodContainer(pod *apiObject.PodStore) error
 }
 
 type podWorkerManager struct {

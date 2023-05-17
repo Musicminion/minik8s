@@ -23,8 +23,11 @@ func (k *Kubelet)ListenChan() {
 			k.PlegPodNeedDeleteHandler(event)
 		case pleg.PodNeedRestart:
 			k.PlegPodNeedRestartHandler(event)
+		case pleg.PodContainerNeedRecreate:
+			k.PlegPodContainerNeedRecreateHandler(event)
 		case pleg.PodSync:
 			k.PlegPodSyncHandler(event)
+
 		}
 	}
 }
@@ -74,6 +77,13 @@ func (k *Kubelet)PlegPodNeedRestartHandler(event *pleg.PodLifecycleEvent) {
 
 	// 把pod对象添加到workManager的podStore中
 	k.workManager.RestartPod(podData)
+}
+
+func (k *Kubelet)PlegPodContainerNeedRecreateHandler(event *pleg.PodLifecycleEvent) {
+	// TODO
+	// 把data解析为pod对象
+	podData := event.Data.(*apiObject.PodStore)
+	k.workManager.RecreatePodContainer(podData)
 }
 
 func (k *Kubelet)PlegPodSyncHandler(event *pleg.PodLifecycleEvent) {

@@ -3,6 +3,7 @@ package pleg
 import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 )
@@ -60,6 +61,15 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 
 	if err != nil {
 		errStr += fmt.Sprintf("updatePlegRecord error: %s", err.Error())
+	}
+
+	// 打印plegRecord 和 cachePods
+	for podID, podRecord := range p.podStatus {
+		k8log.DebugLog("plegManager", fmt.Sprintf("podID: %s, podRecord: %v", podID, podRecord))
+	}
+
+	for podID, cachePod := range cachePods {
+		k8log.DebugLog("plegManager", fmt.Sprintf("podID: %s, cachePod: %v", podID, cachePod))
 	}
 
 	// 然后比较plegRecord和cachePods，生成pleg事件

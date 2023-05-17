@@ -37,6 +37,8 @@ func NewPodWorker() *PodWorker {
 		StartPodHandler:   runtimeManager.StartPod,
 		StopPodHandler:    runtimeManager.StopPod,
 		RestartPodHandler: runtimeManager.RestartPod,
+		DelPodByIDHandler: runtimeManager.DelPodByPodID,
+		RecreatePodContainerHandler: runtimeManager.RecreatePodContainer,
 	}
 }
 
@@ -64,6 +66,8 @@ func (p *PodWorker) RunTask(task WorkTask) {
 		p.RestartPodHandler(task.TaskArgs.(Task_RestartPodArgs).Pod)
 	case Task_DelPodByPodID:
 		p.DelPodByIDHandler(task.TaskArgs.(Task_DelPodByPodIDArgs).PodUUID)
+	case Task_RecreatePodContainer:
+		p.RecreatePodContainerHandler(task.TaskArgs.(Task_RecreatePodContainerArgs).Pod)
 	default:
 		k8log.ErrorLog("[Pod Worker]", "unknown task type")
 	}

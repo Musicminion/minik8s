@@ -57,7 +57,7 @@ func (r *runtimeManager) CreatePod(pod *apiObject.PodStore) error {
 	pauseID, err := r.createPauseContainer(pod)
 
 	if err != nil {
-		k8log.DebugLog("[Runtime Manager]", err.Error())
+		k8log.DebugLog("Runtime Manager", err.Error())
 		return err
 	}
 
@@ -65,7 +65,7 @@ func (r *runtimeManager) CreatePod(pod *apiObject.PodStore) error {
 	_, err = r.createPodAllContainer(pod, pauseID)
 
 	if err != nil {
-		k8log.ErrorLog("[Runtime Manager]", err.Error())
+		k8log.ErrorLog("Runtime Manager", err.Error())
 		return err
 	}
 
@@ -172,7 +172,7 @@ func (r *runtimeManager) DelPodByPodID(podUUID string) error {
 	res, err := r.containerManager.ListContainersWithOpt(filter)
 
 	if err != nil {
-		k8log.ErrorLog("[Runtime Manager]", err.Error())
+		k8log.ErrorLog("Runtime Manager", err.Error())
 		return err
 	}
 
@@ -180,7 +180,7 @@ func (r *runtimeManager) DelPodByPodID(podUUID string) error {
 	for _, container := range res {
 		_, err := r.containerManager.RemoveContainer(container.ID)
 		if err != nil {
-			k8log.ErrorLog("[Runtime Manager]", err.Error())
+			k8log.ErrorLog("Runtime Manager", err.Error())
 			return err
 		}
 	}
@@ -227,7 +227,7 @@ func (r *runtimeManager) RecreatePodContainer(pod *apiObject.PodStore) error {
 	for _, container := range pod.Spec.Containers {
 		if !contains(runContainers, container.Name) {
 			// 重启容器
-			k8log.InfoLog("[kubelet]", fmt.Sprintf("Recreate container %s in pod %s", container.Name, pod.GetPodName()))
+			k8log.InfoLog("kubelet", fmt.Sprintf("Recreate container %s in pod %s", container.Name, pod.GetPodName()))
 			r.createPodContainer(pod, &container, pauseContainerID)
 		}
 	}

@@ -52,7 +52,7 @@ func (p *PodWorker) Run() {
 }
 
 func (p *PodWorker) RunTask(task WorkTask) {
-	k8log.DebugLog("[Pod Worker]", "run task, task type is "+string(task.TaskType))
+	k8log.DebugLog("Pod Worker", "run task, task type is "+string(task.TaskType))
 	switch task.TaskType {
 	case Task_AddPod:
 		p.AddPodHandler(task.TaskArgs.(Task_AddPodArgs).Pod)
@@ -69,14 +69,14 @@ func (p *PodWorker) RunTask(task WorkTask) {
 	case Task_RecreatePodContainer:
 		p.RecreatePodContainerHandler(task.TaskArgs.(Task_RecreatePodContainerArgs).Pod)
 	default:
-		k8log.ErrorLog("[Pod Worker]", "unknown task type")
+		k8log.ErrorLog("Pod Worker", "unknown task type")
 	}
 }
 
 // Worker添加任务
 func (p *PodWorker) AddTask(task WorkTask) error {
 	// TODO: 这里需要考虑任务队列满的情况
-	k8log.DebugLog("[Pod Worker]", "add task, task type is "+string(task.TaskType))
+	k8log.DebugLog("Pod Worker", "add task, task type is "+string(task.TaskType))
 
 	// 检查队列是否已经满了
 	if len(p.TaskQueue) == WorkerChannelBufferSize {

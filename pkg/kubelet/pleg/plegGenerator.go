@@ -63,20 +63,12 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 		errStr += fmt.Sprintf("updatePlegRecord error: %s", err.Error())
 	}
 
-	// 打印plegRecord 和 cachePods
-	for podID, podRecord := range p.podStatus {
-		k8log.DebugLog("plegManager", fmt.Sprintf("podID: %s, podRecord: %v", podID, podRecord))
-	}
-
-	for podID, cachePod := range cachePods {
-		k8log.DebugLog("plegManager", fmt.Sprintf("podID: %s, cachePod: %v", podID, cachePod))
-	}
-
 	// 然后比较plegRecord和cachePods，生成pleg事件
 	// 先查找需要删除的Pod，遍历plegRecord，如果不在cachePods里面，就是需要删除的Pod
 	for podID := range p.podStatus {
 		_, ok := cachePods[podID]
 		if !ok {
+			k8log.InfoLog("plegManager", fmt.Sprintf("podID %s need delete", podID))
 			p.AddPodNeedDeleteEvent(podID)
 		}
 	}
@@ -85,6 +77,7 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 	for podID := range cachePods {
 		_, ok := p.podStatus[podID]
 		if !ok {
+			k8log.InfoLog("plegManager", fmt.Sprintf("podID %s need create", podID))
 			p.AddPodNeedCreateEvent(podID, cachePods[podID])
 		}
 	}

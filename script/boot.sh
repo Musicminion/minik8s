@@ -12,6 +12,14 @@ programs=(
     "./pkg/kubeproxy/main/main.go:./log/kubeproxy.log"
 )
 
+# 初始化测试环境
+# 删除 etcd 中所有内容
+. "$SCRIPTS_ROOT/etcd_clear.sh" /
+
+
+# 删除除了weave之外的所有容器
+. "$SCRIPTS_ROOT/container_clear.sh" /
+
 # 循环启动程序
 for program in "${programs[@]}"; do
     # 获取程序和日志文件路径

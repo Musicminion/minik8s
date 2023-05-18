@@ -107,33 +107,32 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 
 		if !exist {
 			// 添加新的endpoint
+			endpoint := apiObject.Endpoint{
+				Basic: apiObject.Basic{
+					Metadata: apiObject.Metadata{
+						UUID: uuid.NewUUID(),
+					},
+				},
+				IP:      pod.Status.PodIP,
+				Ports:   []string{},
+				PodUUID: pod.Metadata.UUID,
+			}
 			for _, container := range pod.Spec.Containers {
 				for _, port := range container.Ports {
-					endpoint := apiObject.Endpoint{
-						Basic: apiObject.Basic{
-							Metadata: apiObject.Metadata{
-								UUID: uuid.NewUUID(),
-							},
-						},
-						IP:      pod.Status.PodIP,
-						Port:    port.ContainerPort,
-						PodUUID: pod.Metadata.UUID,
-					}
-					// 更新endpoint map
+					// 更新endpoint的port
 					k8log.DebugLog("APIServer", "add endpoint uuid: "+endpoint.Metadata.UUID)
-					endpointJson, err := json.Marshal(endpoint)
-					if err != nil {
-						k8log.ErrorLog("APIServer", "marshal endpoint failed"+err.Error())
-						return err
-					}
-
-					// 将新的endpoint添加到etcd中
-					// endpoint的URL： /registry/endpoint/key/value/podUUID
-					etcdclient.EtcdStore.Put(path.Join(endpointsKVURL, endpoint.PodUUID), endpointJson)
-					totalEndpoints = append(totalEndpoints, endpoint)
+					endpoint.Ports = append(endpoint.Ports, port.ContainerPort)
 				}
 			}
-
+			// 将新的endpoint添加到etcd中
+			// endpoint的URL： /registry/endpoint/key/value/podUUID
+			endpointJson, err := json.Marshal(endpoint)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "marshal endpoint failed"+err.Error())
+				return err
+			}
+			etcdclient.EtcdStore.Put(path.Join(endpointsKVURL, endpoint.PodUUID), endpointJson)
+			totalEndpoints = append(totalEndpoints, endpoint)
 		}
 
 		// 根据Label从etcd找出所有匹配的service

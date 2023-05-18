@@ -102,8 +102,8 @@ func TestCreateService(t *testing.T) {
 	}
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action: entity.CREATE,
-		ServiceTarget: *&apiObject.ServiceStore{},
+		Action:        entity.CREATE,
+		ServiceTarget: apiObject.ServiceStore{},
 	}
 
 	// // 读取的内容转化为jsons
@@ -144,3 +144,23 @@ func TestCreateService(t *testing.T) {
 
 	proxy.iptableManager.CreateService(serviceUpdate)
 }
+
+// func TestClearIPTables(t *testing.T) {
+// 	// 创建 IptableManager 实例
+// 	im := New()
+
+// 	// 添加一些规则
+// 	im.ipt.Append("filter", "INPUT", "-s 127.0.0.1/32 -p tcp -m tcp --dport 22 -j ACCEPT")
+// 	im.ipt.Append("filter", "INPUT", "-s 192.168.1.0/24 -p tcp -m tcp --dport 80 -j ACCEPT")
+
+// 	// 清除规则
+// 	im.ClearIPTables()
+
+// 	// 检查是否已清除所有规则
+// 	chains, _ := im.ipt.List("filter", "INPUT")
+// 	if (len(chains)) != 0 {
+// 		t.Errorf("ClearIPTables failed, iptables chains are not empty")
+// 	}
+
+// 	im.SaveIPTables("test-save-iptables")
+// }

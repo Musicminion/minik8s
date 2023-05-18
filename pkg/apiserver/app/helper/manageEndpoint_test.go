@@ -73,7 +73,7 @@ var testService = apiObject.ServiceStore{
 func TestGetEndpoints(t *testing.T) {
 	// 创建测试用例
 
-	err := AddEndPoints(testPod)
+	err := UpdateEndPoints(testPod)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestAddEndPoints(t *testing.T) {
 	etcdclient.EtcdStore.Put(etcdURL, serviceJson)
 
 	// etcdclient.EtcdStore.PrefixGet(path.Join(config.ServiceURL, "app", testService.Spec.Selector["app"]))
-	err = AddEndPoints(testPod)
+	err = UpdateEndPoints(testPod)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}

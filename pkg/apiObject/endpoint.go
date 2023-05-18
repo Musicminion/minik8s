@@ -1,38 +1,45 @@
 package apiObject
 
-
 // type EndpointSubset struct{
 // 	IP string `yaml:"ip"`
 // 	Port string `yaml:"port"`
 // }
 
-
 type Endpoint struct {
-	Basic `json:",inline" yaml:",inline"`
-	IP string `yaml:"ip"`
-	Port string `yaml:"port"`
+	Basic   `json:",inline" yaml:",inline"`
+	PodUUID string `yaml:"podUUID"`
+	IP      string `yaml:"ip"`
+	Port    string `yaml:"port"`
 }
 
-func GetUUID(ep *Endpoint) string {
+func (ep *Endpoint) GetUUID() string {
 	return ep.Basic.Metadata.UUID
 }
 
-func GetIP(ep *Endpoint) string {
+func (ep *Endpoint) GetIP() string {
 	return ep.IP
 }
 
-func GetPort(ep *Endpoint) string {
+func (ep *Endpoint) GetPort() string {
 	return ep.Port
 }
 
-func SetUUID(ep *Endpoint, uuid string) {
+func (ep *Endpoint) SetUUID(uuid string) {
 	ep.Basic.Metadata.UUID = uuid
 }
 
-func SetIP(ep *Endpoint, ip string) {
+func (ep *Endpoint) SetIP(ip string) {
 	ep.IP = ip
 }
 
-func SetPort(ep *Endpoint, port string) {
+func (ep *Endpoint) SetPort(port string) {
 	ep.Port = port
+}
+
+func (ep *Endpoint) GetPodUUID() string {
+	return ep.PodUUID
+}
+
+func (ep *Endpoint) SetPodUUID(podUUID string) {
+	ep.PodUUID = podUUID
 }

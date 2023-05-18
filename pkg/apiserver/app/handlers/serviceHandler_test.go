@@ -7,7 +7,6 @@ import (
 	"io"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
-	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/stringutil"
@@ -23,9 +22,7 @@ import (
 
 func TestAddService(t *testing.T) {
 	// 清空etcd
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
+	etcdclient.EtcdStore.PrefixDel("/")
 
 	gin.SetMode(gin.ReleaseMode)
 	// 创建一个新的gin引擎，并注册AddService处理函数。
@@ -169,9 +166,7 @@ func TestDeleteService(t *testing.T) {
 
 func TestAddServiceWithEndpoints(t *testing.T) {
 	// 清空etcd
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
+	etcdclient.EtcdStore.PrefixDel("/")
 
 	gin.SetMode(gin.ReleaseMode)
 	// 创建一个新的gin引擎，并注册AddService处理函数。
@@ -243,8 +238,6 @@ func TestAddServiceWithEndpoints(t *testing.T) {
 			t.Errorf("expected status %v but got %v", http.StatusOK, resp.StatusCode)
 		}
 		// 清空etcd
-		etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
-		etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
-		etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
+		etcdclient.EtcdStore.PrefixDel("/")
 	}
 }

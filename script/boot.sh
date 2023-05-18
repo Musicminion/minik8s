@@ -1,0 +1,31 @@
+#!/bin/bash
+
+SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
+cd $SCRIPTS_ROOT/../
+
+# 定义启动的程序列表，每个元素对应一个 main.go 文件和日志文件路径
+programs=(
+    "./pkg/apiserver/main/main.go:./log/apiserver.log"
+    "./pkg/kubelet/main/main.go:./log/kubelet.log"
+    "./pkg/scheduler/main/main.go:./log/scheduler.log"
+    "./pkg/kubeproxy/main/main.go:./log/kubeproxy.log"
+)
+
+# 循环启动程序
+for program in "${programs[@]}"; do
+    # 获取程序和日志文件路径
+    IFS=':' read -ra ADDR <<< "$program"
+    program_file="${ADDR[0]}"
+    log_file="${ADDR[1]}"
+    echo "启动程序：$program_file , 日志文件：$log_file"
+    
+    # 创建日志文件
+    touch "$log_file"
+    
+    # 启动程序，并将标准输出和标准错误输出重定向到日志文件中
+    go run "$program_file" &> "$log_file" &
+done
+
+# 等待所有程序运行结束
+wait

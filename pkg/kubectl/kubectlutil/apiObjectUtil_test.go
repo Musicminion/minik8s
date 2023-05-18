@@ -7,7 +7,6 @@ import (
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/app/handlers"
-	"miniK8s/pkg/apiserver/serverconfig"
 
 	// apiserver "miniK8s/pkg/apiserver/app/server"
 	"miniK8s/pkg/config"
@@ -62,9 +61,7 @@ func TestParseAPIObjectFromYamlfileContent(t *testing.T) {
 
 func TestPostAPIObjectToServer(t *testing.T) {
 	// 清空etcd
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
+	etcdclient.EtcdStore.PrefixDel("/")
 
 	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
@@ -96,10 +93,7 @@ func TestPostAPIObjectToServer(t *testing.T) {
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	// err = PostAPIObjectToServer(URL, service)
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
+
 	// 创建响应写入器
 	w := httptest.NewRecorder()
 

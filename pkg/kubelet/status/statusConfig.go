@@ -9,7 +9,7 @@ const (
 
 // push node status
 var (
-	NodeHeartBeatInterval = []time.Duration{10 * time.Second}
+	NodeHeartBeatInterval = []time.Duration{30 * time.Second}
 	NodeHeartBeatDelay    = 0 * time.Second
 	NodeHeartBeatLoop     = true
 )
@@ -17,13 +17,19 @@ var (
 // push pod status
 var (
 	PodStatusUpdateDelay    = 0 * time.Second
-	PodStatusUpdateInterval = []time.Duration{10 * time.Second}
+	PodStatusUpdateInterval = []time.Duration{30 * time.Second}
 	PodStatusUpdateLoop     = true
 )
 
 // pull pod item
 var (
 	PodPullDelay    = 0 * time.Second
-	PodPullInterval = []time.Duration{10 * time.Second}
+	PodPullInterval = []time.Duration{30 * time.Second}
 	PodPullIfLoop   = true
+)
+
+var (
+	PodPushDelay    = 0 * time.Second
+	PodPushInterval = []time.Duration{30 * time.Second}
+	PodPushIfLoop   = true
 )

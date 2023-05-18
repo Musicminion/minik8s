@@ -3,8 +3,8 @@
 # 超级无敌巨无霸一键安装脚本
 # 1s搞定环境安装 By zzq！
 
-# 安装的东西有awk、docker、etcd、rabbitmq消息队列
-
+# 安装的东西有awk、go、docker、etcd、rabbitmq消息队列、redis、weave网络插件
+# 同时会对整个环境进行清理，删除etcd所有内容，并删除除了weave之外的所有container
 
 # Check if awk is installed
 if ! command -v awk &> /dev/null; then
@@ -157,7 +157,7 @@ then
     sudo systemctl start redis-server
 else
     # 如果Redis没有安装，则安装它
-    echo "Redis未安装，开始安装..."
+    echo "Redis未安装, 开始安装..."
     sudo apt-get update
     sudo apt install -y lsb-release
 
@@ -190,15 +190,13 @@ else
     echo "Weave安装完成"
 fi
 
+# 获取脚本所在目录
+SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
 ### 以下内容用于格式化服务器的部分数据
-# 获取 etcd 中所有键值
-keys=$(etcdctl get --prefix / | awk -F'[:]' '{print $1}')
+# 删除 etcd 中所有内容
+. "$SCRIPTS_ROOT/etcd_clear.sh" /
 
 
-# 循环删除所有键值
-for key in $keys; do
-  echo  "Delete key: $key"
-  etcdctl del $key
-done
-
-echo "Clear ETCD Done!"
+# 删除除了weave之外的所有容器
+. "$SCRIPTS_ROOT/container_clear.sh" /

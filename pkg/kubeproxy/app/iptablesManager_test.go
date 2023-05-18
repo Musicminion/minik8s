@@ -103,10 +103,7 @@ func TestCreateService(t *testing.T) {
 
 	serviceUpdate := &entity.ServiceUpdate{
 		Action: entity.CREATE,
-		ServiceTarget: entity.ServiceWithEndpoints{
-			Service:   *service,
-			Endpoints: make([]apiObject.Endpoint, 0),
-		},
+		ServiceTarget: *&apiObject.ServiceStore{},
 	}
 
 	// // 读取的内容转化为jsons

@@ -45,7 +45,7 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	err = json.Unmarshal([]byte(dataStr), target)
 
 	if err != nil {
-		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error())
+		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error()+dataStr)
 		return 0, err
 	}
 

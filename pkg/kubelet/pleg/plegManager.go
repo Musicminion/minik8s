@@ -35,19 +35,16 @@ func NewPlegManager(statusManager status.StatusManager, plegchan chan *PodLifecy
 // 这里都是podStatus的增删改查函数
 func (p *plegManager) UpdatePodRecord(podID string, newStatus *runtime.RunTimePodStatus) error {
 	// // 遍历podStatus，找到podID对应的podRecord
-	// for _, podRecord := range p.podStatus {
-	// 	if podRecord.old.PodID == podID {
-	// 		podRecord.old = podRecord.current
-	// 		podRecord.current = newStatus
-	// 		return nil
-	// 	}
-	// }
-
 	// 如果在podStatus里面存在podID对应的podRecord，就更新podRecord
 	tryFindPodRecord, ok := p.podStatus[podID]
 	if ok && tryFindPodRecord != nil {
 		tryFindPodRecord.old = tryFindPodRecord.current
 		tryFindPodRecord.current = newStatus
+
+		// 如果podRecord的old和current都是nil，就删除这个podRecord，回收垃圾
+		if tryFindPodRecord.old == nil && tryFindPodRecord.current == nil {
+			delete(p.podStatus, podID)
+		}
 		return nil
 	}
 
@@ -73,7 +70,7 @@ func (p *plegManager) DeletePodRecord(podID string) error {
 }
 
 func (p *plegManager) checkAllPod() error {
-	k8log.WarnLog("plegManager", "checkAllPod")
+	// k8log.WarnLog("plegManager", "checkAllPod")
 
 	// 获取运行时的Pod的状态
 	runtimePodStatuses, err := p.statusManager.GetAllPodFromRuntime()
@@ -86,6 +83,7 @@ func (p *plegManager) checkAllPod() error {
 		k8log.DebugLog("plegManager", fmt.Sprintf("runtimePodStatuses is: %v", podStatus))
 	}
 
+	// 从缓存里面拿到所有的Pod的状态
 	cachePods, err := p.statusManager.GetAllPodFromCache()
 
 	if err != nil {
@@ -96,20 +94,16 @@ func (p *plegManager) checkAllPod() error {
 		k8log.DebugLog("plegManager", fmt.Sprintf("cachePods is: : %v", podStatus))
 	}
 
-	// 更新podStatus
-	err = p.updatePlegRecord(runtimePodStatuses, cachePods)
-
-	if err != nil {
-		return err
-	}
+	// 比较所有的缓存的Pod和运行时的Pod的状态，然后生成事件
+	p.plegGenerator(runtimePodStatuses, cachePods)
 
 	return nil
 }
 
 // ************************************************************
 func (p *plegManager) Run() {
+	k8log.DebugLog("plegManager", "plegManager Run")
 	routineJob := func() {
-		k8log.DebugLog("plegManager", "plegManager Run")
 		result := p.checkAllPod()
 		if result != nil {
 			logStr := fmt.Sprintf("plegManager checkAllPod error: %v", result)

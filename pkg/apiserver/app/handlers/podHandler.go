@@ -219,24 +219,45 @@ func AddPod(c *gin.Context) {
 func DeletePod(c *gin.Context) {
 	// log
 	k8log.InfoLog("APIServer", "DeletePod")
-
-	// 从body中获取pod的信息
 	var pod apiObject.PodStore
-	if err := c.ShouldBind(&pod); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "parser pod failed " + err.Error(),
-		})
 
-		k8log.ErrorLog("APIServer", "AddPod: parser pod failed "+err.Error())
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	name := c.Param(config.URL_PARAM_NAME)
+
+	// 从etcd中获取Pod
+	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", namespace, name)
+	k8log.InfoLog("APIServer", "DeletePod: path = "+key)
+	podLRs, err := etcdclient.EtcdStore.Get(key)
+	if err != nil {
+		k8log.DebugLog("APIServer", "DeletePod: get pod failed "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "get pod failed " + err.Error(),
+		})
 		return
 	}
 
-	// 解析参数
+	if len(podLRs) == 0 {
+		k8log.DebugLog("APIServer", "DeletePod: get pod failed, pod does not exist")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "get pod failed,  pod does not exist",
+		})
+		return
+	}
 
-	// 检查参数是否为空
-	if pod.GetPodName() == "" || pod.GetPodNamespace() == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace or name is empty",
+	if len(podLRs) > 1 {
+		k8log.DebugLog("APIServer", "DeletePod: get pod failed, pod is not unique")
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "get pod failed, pod is not unique",
+		})
+		return
+	}
+
+	// 将json转化为PodStore
+	err = json.Unmarshal([]byte(podLRs[0].Value), &pod)
+	if err != nil {
+		k8log.DebugLog("APIServer", "DeletePod: parser json to pod failed "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "parser json to pod failed " + err.Error(),
 		})
 		return
 	}
@@ -244,13 +265,13 @@ func DeletePod(c *gin.Context) {
 	logStr := fmt.Sprintf("DeletePod: namespace = %s, name = %s", pod.GetPodNamespace(), pod.GetPodName())
 	k8log.InfoLog("APIServer", logStr)
 
-	err := etcdclient.EtcdStore.Del(fmt.Sprintf("/registry/pods/%s/%s", pod.GetPodNamespace(), pod.GetPodName()))
-
+	// 从etcd中删除Pod
+	err = etcdclient.EtcdStore.Del(key)
 	if err != nil {
+		k8log.DebugLog("APIServer", "DeletePod: delete pod failed "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "delete pod failed " + err.Error(),
 		})
-		return
 	}
 
 	c.JSON(204, gin.H{

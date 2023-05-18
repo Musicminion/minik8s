@@ -59,14 +59,16 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 		// 完成YAML转化为POD对象
 		var pod apiObject.Pod
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
-		// // 发请求，走你！
-		URL := config.API_Server_URL_Prefix + config.PodsURL
-		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
-		err := kubectlutil.PostAPIObjectToServer(URL, pod)
+		podURL := config.API_Server_URL_Prefix + config.PodSpecURL
+		podURL = stringutil.Replace(podURL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+		podURL = stringutil.Replace(podURL, config.URL_PARAM_NAME_PART, pod.GetPodName())
+
+		err = kubectlutil.DeleteAPIObjectToServer(podURL)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
 		}
+
 	case "Service":
 		fmt.Println("Kind: Service")
 		var service apiObject.Service

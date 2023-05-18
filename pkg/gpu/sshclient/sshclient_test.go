@@ -13,6 +13,9 @@ func TestEnv(t *testing.T) {
 }
 
 func TestNewSSHClient(t *testing.T) {
+	if ifTest == false {
+		return
+	}
 	client, err := NewSSHClient(os.Getenv("GPU_SSH_USERNAME"), os.Getenv("GPU_SSH_PASSWORD"))
 
 	if err != nil {

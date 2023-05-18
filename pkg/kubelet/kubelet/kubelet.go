@@ -121,16 +121,16 @@ func (k *Kubelet) Run() {
 
 func (k *Kubelet) HandlePodUpdate(msg amqp.Delivery) {
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
-	k8log.InfoLog("[Kubelet]", "HandlePodUpdate: receive message"+string(msg.Body))
+	k8log.InfoLog("Kubelet", "HandlePodUpdate: receive message"+string(msg.Body))
 	if err != nil {
-		k8log.ErrorLog("[Kubelet]", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("Kubelet", "消息格式错误,无法转换为Message")
 	}
 	if parsedMsg.Type == message.PUT {
-		k8log.DebugLog("[Kubelet]", "HandlePodUpdate: PUT")
+		k8log.DebugLog("Kubelet", "HandlePodUpdate: PUT")
 		podUpdate := &entity.PodUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
 		if err != nil {
-			k8log.ErrorLog("[Kubelet]", "HandlePodUpdate: failed to unmarshal")
+			k8log.ErrorLog("Kubelet", "HandlePodUpdate: failed to unmarshal")
 			return
 		}
 		k.podUpdates <- podUpdate

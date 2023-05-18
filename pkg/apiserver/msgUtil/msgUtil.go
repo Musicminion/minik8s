@@ -38,7 +38,7 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 	podJson, err := json.Marshal(pod)
 	if err != nil {
-		k8log.ErrorLog("[msgutil]", "json marshal pod failed")
+		k8log.ErrorLog("msgutil", "json marshal pod failed")
 		return err
 	}
 	message := message.Message{

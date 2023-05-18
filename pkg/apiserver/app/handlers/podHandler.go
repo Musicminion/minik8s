@@ -445,7 +445,7 @@ func GetPodStatus(c *gin.Context) {
 // 这样就会导致，删除Pod的时候，Pod又被创建了，死循环，寄中寄
 // "/api/v1/namespaces/:namespace/pods/:name/status"
 func UpdatePodStatus(c *gin.Context) {
-	k8log.DebugLog("[APIServer]", "UpdatePodStatus")
+	k8log.DebugLog("APIServer", "UpdatePodStatus")
 
 	podName := c.Param(config.URL_PARAM_NAME)
 	podNamespace := c.Param(config.URL_PARAM_NAMESPACE)
@@ -461,7 +461,7 @@ func UpdatePodStatus(c *gin.Context) {
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/<pod-name>
 	logStr := fmt.Sprintf("UpdatePodStatus: namespace = %s, name = %s", podNamespace, podName)
-	k8log.InfoLog("[APIServer]", logStr)
+	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", podNamespace, podName)
 	res, err := etcdclient.EtcdStore.Get(key)
@@ -554,7 +554,7 @@ func selectiveUpdatePodStatus(oldPod *apiObject.PodStore, podStatus *apiObject.P
 	}
 
 	if podStatus.PodIP != oldPod.Status.PodIP {
-
+		k8log.DebugLog("APIServer", "selectiveUpdatePodStatus: podIP changed")
 		// 更新podIP, 若当前pod存在Label，则涉及endpoint的创建/更新
 		for key, value := range oldPod.Metadata.Labels {
 			endpoints, err := helper.GetEndpoints(key, value)

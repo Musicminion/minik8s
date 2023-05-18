@@ -25,6 +25,10 @@ for program in "${programs[@]}"; do
     
     # 启动程序，并将标准输出和标准错误输出重定向到日志文件中
     go run "$program_file" &> "$log_file" &
+    # 如果是apiserver，需要sleep一段时间确保启动成功
+    if [[ $program_file == *"apiserver"* ]]; then
+        sleep 5
+    fi
 done
 
 # 等待所有程序运行结束

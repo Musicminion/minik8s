@@ -79,18 +79,18 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 // 处理调度请求的消息
 func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	// TODO
-	k8log.DebugLog("[Scheduler]", "收到调度请求消息"+parsedMsg.Content)
+	k8log.DebugLog("Scheduler", "收到调度请求消息"+parsedMsg.Content)
 
 	nodes, err := sch.GetAllNodes()
 
 	if err != nil {
-		k8log.ErrorLog("[Scheduler]", "获取所有节点失败"+err.Error())
+		k8log.ErrorLog("Scheduler", "获取所有节点失败"+err.Error())
 	}
 
 	scheduledNode := sch.ChooseFromNodes(nodes)
 
 	if scheduledNode == "" {
-		k8log.ErrorLog("[Scheduler]", "没有可用的节点")
+		k8log.ErrorLog("Scheduler", "没有可用的节点")
 		return
 	}
 
@@ -104,13 +104,13 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	// JSOn序列化
 	// result, err := json.Marshal(respMessage)
 	// if err != nil {
-	// 	k8log.ErrorLog("[Scheduler]", "序列化消息失败")
+	// 	k8log.ErrorLog("Scheduler", "序列化消息失败")
 	// }
 
 	podStore := &apiObject.PodStore{}
 	err = json.Unmarshal([]byte(parsedMsg.Content), &podStore)
 	if err != nil {
-		k8log.ErrorLog("[Scheduler]", "反序列化pod失败")
+		k8log.ErrorLog("Scheduler", "反序列化pod失败")
 		return
 	}
 
@@ -129,10 +129,10 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 
 // 调度器的消息处理函数,分发给不同的消息处理函数
 func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
-	k8log.DebugLog("[Scheduler]", "收到消息"+string(msg.Body))
+	k8log.DebugLog("Scheduler", "收到消息"+string(msg.Body))
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
-		k8log.ErrorLog("[Scheduler]", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("Scheduler", "消息格式错误,无法转换为Message")
 	}
 
 	switch parsedMsg.Type {

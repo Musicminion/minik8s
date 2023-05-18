@@ -21,6 +21,7 @@ var commands = &cobra.Command{
 
 func init() {
 	commands.AddCommand(applyCmd)
+	commands.AddCommand(deleteCmd)
 }
 
 func runRoot(cmd *cobra.Command, args []string) {

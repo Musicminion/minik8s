@@ -102,8 +102,8 @@ func (p *plegManager) checkAllPod() error {
 
 // ************************************************************
 func (p *plegManager) Run() {
+	k8log.DebugLog("plegManager", "plegManager Run")
 	routineJob := func() {
-		k8log.DebugLog("plegManager", "plegManager Run")
 		result := p.checkAllPod()
 		if result != nil {
 			logStr := fmt.Sprintf("plegManager checkAllPod error: %v", result)

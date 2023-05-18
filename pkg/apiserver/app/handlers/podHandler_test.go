@@ -140,9 +140,39 @@ func TestDeletePod(t *testing.T) {
 	r.DELETE(config.PodSpecURL, DeletePod)
 
 	for i := 1; i <= 2; i++ {
+		path := "./testFile/yamlFile/Pod-" + fmt.Sprint(i) + ".yaml"
+		file, err := os.Open(path)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		// 读取文件内容
+		content, err := io.ReadAll(file)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		// 将文件内容转换为Pod对象
+		// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
+		pod := &apiObject.PodStore{}
+		err = yaml.Unmarshal(content, pod)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		// 读取的内容转化为json
+
+		jsonBytes, err := json.Marshal(pod)
+
+		if err != nil {
+			t.Fatal(err)
+		}
+		podReader := bytes.NewReader(jsonBytes)
+
 		// 创建一个http请求，请求方法为GET，请求路径为"/api/v1/namespaces/:namespace/pods"。
-		uri := config.PodsURL + "/pod-example" + fmt.Sprint(i)
-		req, err := http.NewRequest("DELETE", uri, nil)
+		URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, pod.Metadata.Namespace)
+		URL = URL + "/pod-example" + fmt.Sprint(i)
+		req, err := http.NewRequest("DELETE", URL, podReader)
 		req.Header.Set("Content-Type", "application/json")
 		if err != nil {
 			t.Fatal(err)

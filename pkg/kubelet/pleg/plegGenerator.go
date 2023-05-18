@@ -3,6 +3,7 @@ package pleg
 import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 )
@@ -67,6 +68,7 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 	for podID := range p.podStatus {
 		_, ok := cachePods[podID]
 		if !ok {
+			k8log.InfoLog("plegManager", fmt.Sprintf("podID %s need delete", podID))
 			p.AddPodNeedDeleteEvent(podID)
 		}
 	}
@@ -75,6 +77,7 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 	for podID := range cachePods {
 		_, ok := p.podStatus[podID]
 		if !ok {
+			k8log.InfoLog("plegManager", fmt.Sprintf("podID %s need create", podID))
 			p.AddPodNeedCreateEvent(podID, cachePods[podID])
 		}
 	}

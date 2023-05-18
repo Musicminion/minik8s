@@ -73,7 +73,7 @@ var testService = apiObject.ServiceStore{
 func TestGetEndpoints(t *testing.T) {
 	// 创建测试用例
 
-	err := AddEndPoints(testPod)
+	err := UpdateEndPoints(testPod)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -86,14 +86,12 @@ func TestGetEndpoints(t *testing.T) {
 	}
 
 	// 验证结果
-	if len(endpoints) != len(testPod.Spec.Containers) {
-		t.Errorf("expected %+v, but got %+v", len(testPod.Spec.Containers), len(endpoints))
+	if len(endpoints) != len(testPod.Metadata.Labels) {
+		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
 	}
 
 	// 清空etcd
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
+	etcdclient.EtcdStore.PrefixDel("/")
 
 }
 
@@ -107,7 +105,7 @@ func TestAddEndPoints(t *testing.T) {
 	etcdclient.EtcdStore.Put(etcdURL, serviceJson)
 
 	// etcdclient.EtcdStore.PrefixGet(path.Join(config.ServiceURL, "app", testService.Spec.Selector["app"]))
-	err = AddEndPoints(testPod)
+	err = UpdateEndPoints(testPod)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -118,13 +116,11 @@ func TestAddEndPoints(t *testing.T) {
 	}
 
 	// 验证endpoints的size
-	if len(endpoints) != len(testPod.Spec.Containers) {
-		t.Errorf("expected %+v, but got %+v", len(testPod.Spec.Containers), len(endpoints))
+	if len(endpoints) != len(testPod.Metadata.Labels) {
+		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
 	}
 
 	// 清空etcd
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdServicePath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EndpointPath)
-	etcdclient.EtcdStore.PrefixDel(serverconfig.EtcdPodPath)
+	etcdclient.EtcdStore.PrefixDel("/")
 
 }

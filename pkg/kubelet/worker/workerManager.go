@@ -17,6 +17,7 @@ type PodWorkerManager interface {
 	StopPod(pod *apiObject.PodStore) error
 	RestartPod(pod *apiObject.PodStore) error
 	DelPodByPodID(podUUID string) error
+	RecreatePodContainer(pod *apiObject.PodStore) error
 }
 
 type podWorkerManager struct {
@@ -48,6 +49,7 @@ func NewPodWorkerManager() PodWorkerManager {
 
 // AddPod 添加pod
 func (p *podWorkerManager) AddPod(podStore *apiObject.PodStore) error {
+	k8log.InfoLog("Pod Worker", "add pod, pod name is "+podStore.GetPodName())
 	podUUID := podStore.GetPodUUID()
 	// 遍历PodWorkersMap，如果存在podUUID对应的PodWorker，则直接返回
 	if _, ok := p.PodWorkersMap[podUUID]; ok {
@@ -97,7 +99,7 @@ func (p *podWorkerManager) DeletePod(pod *apiObject.PodStore) error {
 		},
 	}
 
-	k8log.DebugLog("[Pod Worker]", "delete pod, task type is "+string(task.TaskType))
+	k8log.DebugLog("Pod Worker", "delete pod, task type is "+string(task.TaskType))
 
 	// 把任务添加到PodWorker的任务队列中
 	err := p.PodWorkersMap[podUUID].AddTask(task)

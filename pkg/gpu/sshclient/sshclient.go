@@ -21,6 +21,7 @@ type SSHClient interface {
 
 	// 上传文件
 	UploadFile(localPath string, remotePath string) error
+	DownloadFile(remotePath string, localPath string) error
 }
 
 type sshClient struct {
@@ -88,6 +89,12 @@ func (sc *sshClient) RunCmd(cmd string) (string, error) {
 func (sc *sshClient) UploadFile(localPath string, remotePath string) error {
 	// 上传文件
 	err := sc.Client.Upload(localPath, remotePath)
+	return err
+}
+
+func (sc *sshClient) DownloadFile(remotePath string, localPath string) error {
+	// 下载文件
+	err := sc.Client.Download(remotePath, localPath)
 	return err
 }
 

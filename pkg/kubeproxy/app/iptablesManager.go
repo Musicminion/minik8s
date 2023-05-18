@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
@@ -43,7 +44,6 @@ func New() *IptableManager {
 	iptableManager.init_iptables()
 	return iptableManager
 }
-
 
 func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
 	clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
@@ -235,16 +235,15 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		} else if im.stragegy == ROUNDDOB {
 			if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
-					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: " + err.Error())
+					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 				}
 			} else { // 使用 roundrobin 策略，将流量重定向到下一个 Pod
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
-					"-m", "statistic", "--mode", "nth", "--every", strconv.Itoa(podNum - i)); err != nil {
-					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: " + err.Error())
+					"-m", "statistic", "--mode", "nth", "--every", strconv.Itoa(podNum-i)); err != nil {
+					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 				}
 			}
 		}
-
 
 		// 将流量 DNAT 到 Pod IP 和端口
 		if err := im.ipt.Insert("nat", kubesep, 1, "-j", "DNAT",
@@ -303,13 +302,41 @@ func (im *IptableManager) RestoreIPTables(path string) error {
 	return nil
 }
 
-// ClearIPTables 清除所有的 iptables 规则
-func (im *IptableManager) ClearIPTables() {
-	im.ipt.ClearAll()
-	log.Printf("iptables rules have been cleared")
-}
+
 
 func (im *IptableManager) Run() {
 	// im.init_iptables()
 	im.setIPTablesClusterIp("test", "10.244.10.3", 80, "tcp", 80, []string{"10.1.244.1", "10.1.244.3"})
+}
+
+func (im *IptableManager) DeletePrefix(table, chain, prefix string) error {
+	output, err := im.ipt.List(table, chain)
+	if err != nil {
+		return err
+	}
+	rules := strings.TrimRight(strings.Join(output, "\n"), "\n")
+	for _, rule := range strings.Split(rules, "\n") {
+		if strings.HasPrefix(rule, "-A") && strings.Contains(rule, fmt.Sprintf("%s-", prefix)) {
+			// extract the rulespec from the rule
+			rulespec := strings.Split(rule, " ")
+			rulespec = rulespec[1:]
+			// remove the rule
+			err = im.ipt.Delete(table, chain, rulespec...)
+			if err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// ClearIPTables 清除所有的 iptables 规则
+func (im *IptableManager) ClearIPTables() {
+	im.ipt.ClearAll()
+	im.ipt.DeleteAll()
+	// im.ipt.ClearChain("nat", "KUBE-SVC")
+	im.ipt.ClearAndDeleteChain("nat", "KUBE-SVC")
+	im.DeletePrefix("nat", "KUBE-SERVICES", "KUBE-SVC-")
+
+	log.Printf("iptables rules have been cleared")
 }

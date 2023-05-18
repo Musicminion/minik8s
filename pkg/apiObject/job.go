@@ -23,9 +23,17 @@ type JobSpec struct {
 	JobPassword     string   `yaml:"password" json:"password"`               // 密码
 }
 
+// 任务状态，参考：https://docs.hpc.sjtu.edu.cn/job/slurm.html
 type JobStatus struct {
-	State      string    `yaml:"state" json:"state"`
-	UpdateTime time.Time `yaml:"updateTime" json:"updateTime"`
+	JobID      string    `yaml:"jobID" json:"jobID"`           // 任务ID，这个是slurm返回的ID
+	Partition  string    `yaml:"partition" json:"partition"`   // 分区
+	Account    string    `yaml:"account" json:"account"`       // 账户
+	AllocCPUS  string    `yaml:"allocCPUS" json:"allocCPUS"`   // 分配CPU数
+	State      string    `yaml:"state" json:"state"`           // 任务状态
+	ExitCode   string    `yaml:"exitCode" json:"exitCode"`     // 退出码
+	Output     []string  `yaml:"output" json:"output"`         // 输出的内容
+	Error      []string  `yaml:"error" json:"error"`           // 错误的内容
+	UpdateTime time.Time `yaml:"updateTime" json:"updateTime"` // 更新时间
 }
 
 type JobStore struct {

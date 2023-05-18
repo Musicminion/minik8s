@@ -4,39 +4,39 @@ import "miniK8s/pkg/apiObject"
 
 // 这个包里面主要提供一些工具函数，用来向plegChannel里面添加事件
 // 不同的事件通过不同的函数添加。不要直接添加事件，注意传递的参数
-func (p *plegManager) AddContainerNeedStartEvent(podID string) {
+func (p *plegManager) AddPodNeedStartEvent(podID string) {
 	p.PlegChannel <- &PodLifecycleEvent{
 		ID:   podID,
-		Type: ContainerNeedStart,
+		Type: PodNeedStart,
 		Data: nil,
 	}
 }
 
-func (p *plegManager) AddContainerNeedStopEvent(podID string) {
+func (p *plegManager) AddPodNeedStopEvent(podID string) {
 	p.PlegChannel <- &PodLifecycleEvent{
 		ID:   podID,
-		Type: ContainerNeedStop,
+		Type: PodNeedStop,
 		Data: nil,
 	}
 }
 
-func (p *plegManager) AddContainerNeedDeleteEvent(podID string) {
+func (p *plegManager) AddPodNeedDeleteEvent(podID string) {
 	p.PlegChannel <- &PodLifecycleEvent{
 		ID:   podID,
-		Type: ContainerNeedDelete,
+		Type: PodNeedDelete,
 		Data: nil,
 	}
 }
 
-func (p *plegManager) AddContainerNeedCreateEvent(podID string, podData *apiObject.PodStore) {
+func (p *plegManager) AddPodNeedCreateEvent(podID string, podData *apiObject.PodStore) {
 	p.PlegChannel <- &PodLifecycleEvent{
 		ID:   podID,
-		Type: ContainerNeedCreate,
+		Type: PodNeedCreate,
 		Data: podData,
 	}
 }
 
-func (p *plegManager) AddContainerNeedUpdateEvent(podID string, podData *apiObject.PodStore) {
+func (p *plegManager) AddPodNeedUpdateEvent(podID string, podData *apiObject.PodStore) {
 	p.PlegChannel <- &PodLifecycleEvent{
 		ID:   podID,
 		Type: ContainerNeedUpdate,
@@ -44,7 +44,7 @@ func (p *plegManager) AddContainerNeedUpdateEvent(podID string, podData *apiObje
 	}
 }
 
-func (p *plegManager) AddContainerNeedRestartEvent(podID string) {
+func (p *plegManager) AddPodNeedRestartEvent(podID string) {
 	p.PlegChannel <- &PodLifecycleEvent{
 		ID:   podID,
 		Type: ContainerNeedReStart,
@@ -57,5 +57,13 @@ func (p *plegManager) AddContainerNeedSyncEvent(podID string) {
 		ID:   podID,
 		Type: PodSync,
 		Data: nil,
+	}
+}
+
+func (p *plegManager) AddPodContainerNeedRecreateEvent(podID string, podData *apiObject.PodStore) {
+	p.PlegChannel <- &PodLifecycleEvent{
+		ID:   podID,
+		Type: PodContainerNeedRecreate,
+		Data: podData,
 	}
 }

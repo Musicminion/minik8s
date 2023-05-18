@@ -7,6 +7,7 @@ import (
 	"time"
 )
 
+// GenerateRandomStr 生成给定长度的随机字符串
 func GenerateRandomStr(length int) string {
 	source := rand.NewSource(time.Now().UnixNano())
 	rng := rand.New(source)

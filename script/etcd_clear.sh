@@ -7,6 +7,7 @@ fi
 
 substring=$1
 
+echo "Deleting etcd storage with prefix: $substring"
 
 # 获取 etcd 中所有键值
 keys=$(etcdctl get --prefix / | awk -F'[:]' '{print $1}')

@@ -354,7 +354,8 @@ func GetNodePods(c *gin.Context) {
 	}
 
 	// 遍历所有的Pod，找到属于该Node的Pod
-	var pods []apiObject.PodStore
+	// var pods []apiObject.PodStore
+	var podsAllStr []string
 	for _, v := range res {
 		pod := apiObject.PodStore{}
 		err = json.Unmarshal([]byte(v.Value), &pod)
@@ -366,19 +367,20 @@ func GetNodePods(c *gin.Context) {
 			return
 		}
 		if pod.Spec.NodeName == nodeName {
-			pods = append(pods, pod)
+			podsAllStr = append(podsAllStr, string(v.Value))
 		}
 	}
 
-	if len(pods) == 0 {
+	if len(podsAllStr) == 0 {
 		c.JSON(http.StatusOK, gin.H{
 			"data": "[]",
 		})
+		return
 	}
 
 	// 返回http.StatusOK处理成功
 	c.JSON(http.StatusOK, gin.H{
-		"data": pods,
+		"data": stringutil.StringSliceToJsonArray(podsAllStr),
 	})
 
 }

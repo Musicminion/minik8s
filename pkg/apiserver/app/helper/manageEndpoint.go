@@ -144,8 +144,8 @@ func AddEndPoints(pod apiObject.PodStore) error {
 
 		// 对每个service，发送一个UpdateEndpoint的消息
 		for _, serviceLR := range serviceLRs {
-			service := apiObject.Service{}
-			if err := json.Unmarshal([]byte(serviceLR.Value), &service); err != nil {
+			serviceStore := apiObject.ServiceStore{}
+			if err := json.Unmarshal([]byte(serviceLR.Value), &serviceStore); err != nil {
 				k8log.ErrorLog("APIServer", "unmarshal service failed"+err.Error())
 			}
 			// 创建用于更新service的endpointUpdate对象，
@@ -153,7 +153,7 @@ func AddEndPoints(pod apiObject.PodStore) error {
 				Action: entity.CREATE,
 				ServiceTarget: entity.ServiceWithEndpoints{
 					Endpoints: totalEndpoints,
-					Service:   service,
+					Service:   serviceStore,
 				},
 			}
 			// 加入到消息队列中以便kubeproxy更新service

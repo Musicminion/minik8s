@@ -8,12 +8,26 @@ import (
 type PodLifeCycleEventType string
 
 const (
+	// @Reminder
+	// 本来我想用容器作为最小化的调度，但是后来觉得K8s的调度最小是Pod，所以干脆索性遇到问题重启Pod的方式
+	// 因为我考虑到如果因为一个容器崩溃，可能导致其他容器的某些状态出问题，所以不如发现一个容器崩溃，直接重启Pod，也就是把Pod当做最小的调度单元
+	// 但是这些字段我还是保留在这了，以后在做考虑
 	ContainerNeedStart   PodLifeCycleEventType = "ContainerNeedStart"   // 容器需要启动
 	ContainerNeedCreate  PodLifeCycleEventType = "ContainerNeedCreate"  // 容器需要创建
 	ContainerNeedReStart PodLifeCycleEventType = "ContainerNeedReStart" // 容器需要重新启动
 	ContainerNeedStop    PodLifeCycleEventType = "ContainerNeedStop"    // 容器需要停止
 	ContainerNeedDelete  PodLifeCycleEventType = "ContainerNeedDelete"  // 容器需要删除
 	ContainerNeedUpdate  PodLifeCycleEventType = "ContainerNeedUpdate"  // 容器需要更新
+
+	PodNeedStart   PodLifeCycleEventType = "PodNeedStart"   // Pod需要启动
+	PodNeedStop    PodLifeCycleEventType = "PodNeedStop"    // Pod需要停止
+	PodNeedRestart PodLifeCycleEventType = "PodNeedRestart" // Pod需要重启
+	PodNeedCreate  PodLifeCycleEventType = "PodNeedCreate"  // Pod需要创建
+	PodNeedDelete  PodLifeCycleEventType = "PodNeedDelete"  // Pod需要删除
+	PodNeedUpdate  PodLifeCycleEventType = "PodNeedUpdate"  // Pod需要更新
+
+	PodContainerNeedRecreate PodLifeCycleEventType = "PodContainerNeedRecreate" // Pod的容器需要重新创建
+
 	// 不是上面的任何一个事件，就是PodSync
 	PodSync PodLifeCycleEventType = "PodSync"
 )

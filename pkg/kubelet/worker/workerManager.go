@@ -49,6 +49,7 @@ func NewPodWorkerManager() PodWorkerManager {
 
 // AddPod 添加pod
 func (p *podWorkerManager) AddPod(podStore *apiObject.PodStore) error {
+	k8log.InfoLog("[Pod Worker]", "add pod, pod name is "+podStore.GetPodName())
 	podUUID := podStore.GetPodUUID()
 	// 遍历PodWorkersMap，如果存在podUUID对应的PodWorker，则直接返回
 	if _, ok := p.PodWorkersMap[podUUID]; ok {

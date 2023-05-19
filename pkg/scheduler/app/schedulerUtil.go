@@ -6,6 +6,7 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	netrequest "miniK8s/util/netRequest"
+	"net/http"
 )
 
 func (sch *Scheduler) GetAllNodes() (nodes []apiObject.NodeStore, err error) {
@@ -22,7 +23,7 @@ func (sch *Scheduler) GetAllNodes() (nodes []apiObject.NodeStore, err error) {
 		return nil, err
 	}
 
-	if code != 200 {
+	if code != http.StatusOK {
 		k8log.ErrorLog("Scheduler", "get all nodes failed, code: "+fmt.Sprint(code))
 		return nil, fmt.Errorf("get all nodes failed, code: %d", code)
 	}

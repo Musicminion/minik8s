@@ -36,7 +36,7 @@ func (s *statusManager) PushNodeStatus() error {
 		return err
 	}
 
-	if code != 200 {
+	if code != http.StatusOK {
 		bodyBytes, err := json.Marshal(res)
 		if err != nil {
 			return err
@@ -89,7 +89,7 @@ func (s *statusManager) PushNodePodStatus() error {
 			errorMsgAll += logStr
 		}
 
-		if code != 200 {
+		if code != http.StatusOK {
 			bodyBytes, err := json.Marshal(res)
 			if err != nil {
 				logStr := "Parse Update Pod Status resp Error: " + err.Error()
@@ -127,7 +127,7 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 		return nil, err
 	}
 
-	if code != 200 {
+	if code != http.StatusOK {
 		return nil, errors.New("pull node all pods failed")
 	}
 
@@ -322,7 +322,7 @@ func (s *statusManager) UnRegisterNode() error {
 		return err
 	}
 
-	if code != 200 {
+	if code != http.StatusOK {
 		bodyBytes, err := json.Marshal(res)
 		if err != nil {
 			return err

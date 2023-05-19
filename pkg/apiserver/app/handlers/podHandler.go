@@ -65,7 +65,7 @@ func GetPod(c *gin.Context) {
 	}
 	// 遍历res，返回对应的Node信息
 	targetPod := res[0].Value
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"data": targetPod,
 	})
 }

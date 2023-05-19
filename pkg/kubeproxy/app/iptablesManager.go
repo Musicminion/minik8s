@@ -68,25 +68,6 @@ func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
 }
 
 func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) {
-	clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
-	seviceName := serviceUpdate.ServiceTarget.Metadata.Name
-	ports := serviceUpdate.ServiceTarget.Spec.Ports
-	var pod_ip_list []string
-	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
-		pod_ip_list = append(pod_ip_list, endpoint.IP)
-	}
-
-	if clusterIp == "" {
-		clusterIp, _ = im.allocClusterIP()
-	}
-
-	for _, eachports := range ports {
-		k8log.DebugLog("KUBEPROXY", "port: "+strconv.Itoa(eachports.Port))
-		port := eachports.Port
-		protocol := eachports.Protocol
-		targetPort := eachports.TargetPort
-		im.setIPTablesClusterIp(seviceName, clusterIp, port, protocol, targetPort, pod_ip_list)
-	}
 
 	// 删除 iptables 规则
 	im.ipt.Delete("nat", "KUBE-SERVICES", "-m", "comment", "--comment")
@@ -206,16 +187,29 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 	// 添加 NAT 规则，重定向流量到服务的集群 IP
 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
 		serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
-		"-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH), "-j", kubesvc); err != nil {
+		 "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH), "-j", kubesvc); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for kubesvc chain: "+err.Error())
 	}
+
+// 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
+// 	serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
+// 	"-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH), "-j", kubesvc); err != nil {
+// 	k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for kubesvc chain: "+err.Error())
+// }
 
 	// 添加 NAT 规则，标记流量为 MASQUERADE
 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
 		serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
-		"-j", "KUBE-MARK-MASQ", "-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
+		"-j", "KUBE-MARK-MASQ", "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for KUBE-MARK-MASQ chain: "+err.Error())
 	}
+
+
+// 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
+// 	serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
+// 	"-j", "KUBE-MARK-MASQ", "-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
+// 	k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for KUBE-MARK-MASQ chain: "+err.Error())
+// }
 
 	podNum := len(podIPList)
 	k8log.DebugLog("KUBEPROXY", "podNum is "+strconv.Itoa(podNum))
@@ -253,8 +247,8 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 
 		// 将流量 DNAT 到 Pod IP 和端口
 		if err := im.ipt.Insert("nat", kubesep, 1, "-j", "DNAT",
-			"-p", protocol, "-d", podIPList[i], "--dport", strconv.Itoa(targetPort),
-			"-m", protocol, "--to-destination", podIPList[i]+":"+strconv.Itoa(targetPort)); err != nil {
+			"-p", protocol,
+			 "--to-destination", podIPList[i]+":"+strconv.Itoa(targetPort)); err != nil {
 			k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 		}
 		// 将源 IP 地址标记为 NAT

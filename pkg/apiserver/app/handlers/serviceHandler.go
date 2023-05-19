@@ -212,7 +212,6 @@ func GetServices(c *gin.Context) {
 func DeleteService(c *gin.Context) {
 	// 尝试解析请求里面的name
 	name := c.Params.ByName("name")
-	namespace := c.Params.ByName("namespace")
 	// 如果解析成功，删除对应的Service信息
 	if name != "" {
 		// log
@@ -221,7 +220,7 @@ func DeleteService(c *gin.Context) {
 		service := apiObject.ServiceStore{}
 		// 从etcd中获取
 		// ETCD里面的路径是 /registry/services/<namespace>/<pod-name>
-		key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", namespace, name)
+		key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s", name)
 		res, err := etcdclient.EtcdStore.Get(key)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
@@ -254,6 +253,7 @@ func DeleteService(c *gin.Context) {
 		}
 		// 删除service的所有Label
 		for key, value := range service.Metadata.Labels {
+			k8log.DebugLog("APIServer", "DeleteService: delete service label: "+key+" "+value)
 			err = etcdclient.EtcdStore.PrefixDel(path.Join(serverconfig.EtcdServiceSelectorPath, key, value, service.Metadata.UUID))
 			if err != nil {
 				c.JSON(http.StatusBadRequest, gin.H{

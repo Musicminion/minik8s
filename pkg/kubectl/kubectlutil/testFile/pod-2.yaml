@@ -3,16 +3,10 @@ kind: Pod
 metadata:
   labels:
     app: test
-  name: pod-example1
+  name: net_test
   namespace: default
 spec:
   containers:
-    - image: docker.io/library/redis
-      name: testContainer-1
-      ports:
-        - containerPort: 8080
-    - image: docker.io/library/nginx
-      name: testContainer-2
-      ports:
-        - containerPort: 3000
+    - image: registry.cn-hangzhou.aliyuncs.com/tanjunchen/network-multitool:v1
+      name: network
   nodeName: ubuntu

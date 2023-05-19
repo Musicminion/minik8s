@@ -176,7 +176,7 @@ func GetService(c *gin.Context) {
 		}
 		// 遍历res，返回对应的Service信息
 		targetService := res[0].Value
-		c.JSON(200, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"data": targetService,
 		})
 		return
@@ -203,7 +203,7 @@ func GetServices(c *gin.Context) {
 		services = append(services, service.Value)
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"data": stringutil.StringSliceToJsonArray(services),
 	})
 }
@@ -217,15 +217,52 @@ func DeleteService(c *gin.Context) {
 		// log
 		logStr := "DeleteService: name = " + name
 		k8log.InfoLog("APIServer", logStr)
-
-		err := etcdclient.EtcdStore.Del(serverconfig.EtcdServicePath + name)
+		service := apiObject.ServiceStore{}
+		// 从etcd中获取
+		// ETCD里面的路径是 /registry/services/<namespace>/<pod-name>
+		key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s", name)
+		res, err := etcdclient.EtcdStore.Get(key)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "get service failed " + err.Error(),
+			})
+		}
+		if len(res) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "service not found",
+			})
+		}
+		if len(res) != 1 {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "get service failed, service is not unique",
+			})
+		}
+		// 将json转化为PodStore
+		err = json.Unmarshal([]byte(res[0].Value), &service)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "parser json to service failed " + err.Error(),
+			})
+		}
+		// 删除service
+		err = etcdclient.EtcdStore.Del(serverconfig.EtcdServicePath + name)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "delete service failed " + err.Error(),
 			})
-			return
 		}
-		c.JSON(204, gin.H{
+		// 删除service的所有Label
+		for key, value := range service.Spec.Selector {
+			k8log.DebugLog("APIServer", "DeleteService: delete service label: "+key+" "+value)
+			err = etcdclient.EtcdStore.PrefixDel(path.Join(serverconfig.EtcdServiceSelectorPath, key, value, service.Metadata.UUID))
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "delete service failed " + err.Error(),
+				})
+			}
+		}
+
+		c.JSON(http.StatusNoContent, gin.H{
 			"message": "delete service success",
 		})
 		return

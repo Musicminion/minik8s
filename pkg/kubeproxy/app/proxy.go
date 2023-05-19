@@ -90,6 +90,7 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 			proxy.iptableManager.UpdateService(serviceUpdate)
 
 		case entity.DELETE:
+			proxy.iptableManager.DeleteService(serviceUpdate)
 		}
 	case endpointUpdate := <-endpointUpdates:
 		switch endpointUpdate.Action {

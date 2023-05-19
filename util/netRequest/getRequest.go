@@ -19,7 +19,7 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 		return 0, err
 	}
 
-	if code != 200 {
+	if code != http.StatusOK {
 		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
 		return 0, err
 	}

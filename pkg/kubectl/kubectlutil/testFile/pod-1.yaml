@@ -3,30 +3,16 @@ kind: Pod
 metadata:
   labels:
     app: test
-  name: memory-demo
-  namespace: mem-example
+  name: pod-example1
+  namespace: default
 spec:
-  restartPolicy: Never
-  volumes:
-  - name: sharedData
-    hostPath:
-      path: /data
   containers:
-  - name: memory-demo-ctr
-    image: polinux/stress
-    ports:
-      - containerPort: 80
-    resources:
-      requests:
-        memory: "100Mi"
-      limits:
-        memory: "200Mi"
-    command: ["stress"]
-    args: ["--vm", "1", "--vm-bytes", "150M", "--vm-hang", "1"]
-  - name: nginx
-    image: nginx
-    ports:
-    - containerPort: 8080
-    volumeMounts:
-    - name: sharedData
-      mountPath: /etc/nginx/nginx.conf
+    - image: docker.io/library/redis
+      name: testContainer-1
+      ports:
+        - containerPort: 10180
+    - image: docker.io/library/nginx
+      name: testContainer-2
+      ports:
+        - containerPort: 80
+  nodeName: ubuntu

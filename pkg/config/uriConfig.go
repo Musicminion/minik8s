@@ -46,6 +46,17 @@ const (
 	EndpointURL = "/api/v1/namespaces/:namespace/endpoints"
 	// 某个特定Endpoint的URL
 	EndpointSpecURL = "/api/v1/namespaces/:namespace/services/:name"
+
+	// Job相关操作的URL
+	JobsURL = "/apis/v1/namespaces/:namespace/jobs"
+	// 某个特定Job的URL
+	JobSpecURL = "/apis/v1/namespaces/:namespace/jobs/:name"
+	// 获取Job的某个状态的URL
+	JobSpecStatusURL = "/apis/v1/namespaces/:namespace/jobs/:name/status"
+	// Job的文件的URL
+	JobFileURL = "/apis/v1/namespaces/:namespace/jobfiles"
+	// 某个特定Job的文件的URL
+	JobFileSpecURL = "/apis/v1/namespaces/:namespace/jobfiles/:name"
 )
 
 const (

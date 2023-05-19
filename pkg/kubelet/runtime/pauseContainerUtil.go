@@ -101,6 +101,9 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 				},
 			}
 
+			// 将端口添加到PodAllPortsSet中
+			PodAllPortsSet[string(portBindingKey)] = struct{}{}
+
 			// 本来打算采取下面的写法，但是发现这样写可能会导致所有的容器都绑定到同一个端口上
 			// PodAllPortsBinds[string(portBindingKey)].append(nat.PortBinding{
 			// 	HostIP:   port.HostIP,
@@ -122,6 +125,11 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 	pauseLabels[minik8sTypes.ContainerLabel_PodUID] = string(pod.Metadata.UUID)
 	pauseLabels[minik8sTypes.ContainerLabel_IfPause] = minik8sTypes.ContainerLabel_IfPause_True
 	pauseLabels[minik8sTypes.ContainerLabel_PodNamespace] = pod.Metadata.Namespace
+
+	// 遍历PodAllPortsSet
+	for key, _ := range PodAllPortsSet {
+		k8log.DebugLog("Pause Container", "getPauseContainerConfig "+key)
+	}
 
 	// 返回配置的信息
 	config := minik8sTypes.ContainerConfig{

@@ -12,6 +12,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
+	"github.com/docker/go-connections/nat"
 )
 
 type ContainerManager struct {
@@ -38,6 +39,10 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 
 	// 由于我们这些都是k8s的容器，所以我们需要给这些容器添加一些标签
 	option.Labels[minik8sTypes.ContainerLabel_IfK8S] = minik8sTypes.ContainerLabel_IfK8S_True
+	exposedPortSet := nat.PortSet{}
+	for key, _ := range option.ExposedPorts {
+		exposedPortSet[nat.Port(key)] = struct{}{}
+	}
 
 	// 创建容器的时候需要指定容器的配置、主机配置、网络配置、存储卷配置、容器名
 	result, err := client.ContainerCreate(
@@ -50,6 +55,7 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 			Labels:     option.Labels,
 			Entrypoint: option.Entrypoint,
 			Volumes:    option.Volumes,
+			ExposedPorts: exposedPortSet,
 		},
 		&container.HostConfig{
 			NetworkMode:  container.NetworkMode(option.NetworkMode),

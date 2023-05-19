@@ -125,16 +125,19 @@ func (im *IptableManager) init_iptables() {
 	im.ipt.NewChain("nat", "KUBE-SERVICES")
 	im.ipt.NewChain("nat", "KUBE-POSTROUTING")
 	im.ipt.NewChain("nat", "KUBE-MARK-MASQ")
-	im.ipt.NewChain("nat", "KUBE-NODEPORTS")
+	// im.ipt.NewChain("nat", "KUBE-NODEPORTS")
+
+	time.Sleep(3 * time.Second)
 
 	// 往 NAT 表中的链中添加规则
-	im.ipt.Append("nat", "PREROUTING", "-j KUBE-SERVICES", "-m comment --comment \"kubernetes service portals\"")
-	im.ipt.Append("nat", "OUTPUT", "-j KUBE-SERVICES", "-m comment --comment \"kubernetes service portals\"")
-	im.ipt.Append("nat", "POSTROUTING", "-j KUBE-POSTROUTING", "-m comment --comment \"kubernetes postrouting rules\"")
+	im.ipt.Append("nat", "PREROUTING", "-j", "KUBE-SERVICES", "-m", "comment", "--comment", "kubernetes service portals")
+	im.ipt.Append("nat", "OUTPUT", "-j", "KUBE-SERVICES", "-m", "comment", "--comment", "kubernetes service portals")
+	im.ipt.Append("nat", "POSTROUTING", "-j", "KUBE-POSTROUTING", "-m", "comment", "--comment", "kubernetes postrouting rules")
 
-	im.ipt.Insert("nat", "KUBE-MARK-MASQ", 1, "-j MARK", "--set-xmark 0x4000/0x4000")
-	im.ipt.Insert("nat", "KUBE-POSTROUTING", 1, "-m comment --comment \"kubernetes service traffic requiring SNAT\"", "-j MASQUERADE", "-m mark --mark 0x4000/0x4000")
-
+	im.ipt.Insert("nat", "KUBE-MARK-MASQ", 1, "-j", "MARK", "--or-mark", "0x4000")
+	im.ipt.Insert("nat", "KUBE-POSTROUTING", 1, "-m", "comment", "--comment", "kubernetes service traffic requiring SNAT", "-j", "MASQUERADE", "-m", "mark", "--mark", "0x4000/0x4000")
+	k8log.InfoLog("KUBEPROXY", "init iptables success")
+	im.SaveIPTables("iptables-save")
 }
 
 func (im *IptableManager) allocClusterIP() (string, bool) {
@@ -154,7 +157,8 @@ func (im *IptableManager) allocClusterIP() (string, bool) {
 		// 前两位ip是指定好的
 		num0 := strconv.Itoa(config.SERVICE_IP_PREFIX[0])
 		num1 := strconv.Itoa(config.SERVICE_IP_PREFIX[1])
-		num2 := strconv.Itoa(rng.Intn(256))
+		num2 := strconv.Itoa(config.SERVICE_IP_PREFIX[2])
+		// num2 := strconv.Itoa(rng.Intn(256))
 		num3 := strconv.Itoa(rng.Intn(256))
 		ip = strings.Join([]string{num0, num1, num2, num3}, ".")
 		if _, ok := ipAllocated[ip]; !ok {
@@ -178,7 +182,9 @@ func (im *IptableManager) allocClusterIP() (string, bool) {
  * @Param: targetPort 服务的目标端口
  * @Param: podIPList 服务的 Pod IP 列表
  */
-func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP string, port int, protocol string, targetPort int32, podIPList []string) {
+func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP string, port int, protocol string, targetPort int, podIPList []string) {
+	k8log.DebugLog("KUBEPROXY", "setIPTablesClusterIp: "+serviceName+" "+clusterIP+" "+strconv.Itoa(port)+" "+protocol+" "+strconv.Itoa(targetPort))
+	
 	if im.ipt == nil {
 		k8log.ErrorLog("KUBEPROXY", "im.iptables is nil")
 		return
@@ -247,8 +253,8 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 
 		// 将流量 DNAT 到 Pod IP 和端口
 		if err := im.ipt.Insert("nat", kubesep, 1, "-j", "DNAT",
-			"-p", protocol, "-d", podIPList[i], "--dport", string(targetPort),
-			"-m", protocol, "--to-destination", podIPList[i]+":"+string(targetPort)); err != nil {
+			"-p", protocol, "-d", podIPList[i], "--dport", strconv.Itoa(targetPort),
+			"-m", protocol, "--to-destination", podIPList[i]+":"+strconv.Itoa(targetPort)); err != nil {
 			k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 		}
 		// 将源 IP 地址标记为 NAT
@@ -302,11 +308,9 @@ func (im *IptableManager) RestoreIPTables(path string) error {
 	return nil
 }
 
-
-
 func (im *IptableManager) Run() {
 	// im.init_iptables()
-	im.setIPTablesClusterIp("test", "10.244.10.3", 80, "tcp", 80, []string{"10.1.244.1", "10.1.244.3"})
+	im.setIPTablesClusterIp("test", "10.32.10.3", 80, "tcp", 80, []string{"10.1.32.1", "10.1.32.3"})
 }
 
 func (im *IptableManager) DeletePrefix(table, chain, prefix string) error {

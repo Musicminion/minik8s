@@ -1,6 +1,6 @@
 #!/bin/bash
 
-chainList=$(iptables -L -t nat | grep -vE "^.* (PREROUTING|INPUT|OUTPUT|POSTROUTING) .*"  | grep "Chain" | awk '{print $2}' | tac )
+chainList=$(iptables -L -t nat | grep -vE "^.* (PREROUTING|INPUT|OUTPUT|POSTROUTING|WEAVE|DOCKER) .*"  | grep "Chain" | awk '{print $2}' | tac )
 allChain=$(iptables -L -t nat    | grep "Chain" | awk '{print $2}' | tac )
 for i in $allChain
 do

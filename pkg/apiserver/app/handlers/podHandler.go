@@ -65,7 +65,7 @@ func GetPod(c *gin.Context) {
 	}
 	// 遍历res，返回对应的Node信息
 	targetPod := res[0].Value
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"data": targetPod,
 	})
 }
@@ -105,11 +105,11 @@ func GetPods(c *gin.Context) {
 
 	// 遍历res，返回对应的Node信息
 	targetPods := make([]string, 0)
-	for i, pod := range res {
+	for _, pod := range res {
 		targetPods = append(targetPods, pod.Value)
-		if i < len(res)-1 {
-			targetPods = append(targetPods, ",")
-		}
+		// if i < len(res)-1 {
+		// 	targetPods = append(targetPods, ",")
+		// }
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -145,11 +145,12 @@ func AddPod(c *gin.Context) {
 
 	// 判断PodNamespace是否为空
 	if pod.GetPodNamespace() == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "pod namespace is empty",
-		})
-		k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
-		return
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error": "pod namespace is empty",
+		// })
+		// k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
+		// return
+		pod.Basic.Metadata.Namespace = config.DefaultNamespace
 	}
 
 	// 检查name是否重复
@@ -205,7 +206,7 @@ func AddPod(c *gin.Context) {
 	}
 
 	// 返回
-	c.JSON(201, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "create pod success",
 	})
 
@@ -274,7 +275,7 @@ func DeletePod(c *gin.Context) {
 		})
 	}
 
-	c.JSON(204, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "delete pod success",
 	})
 
@@ -445,7 +446,6 @@ func GetPodStatus(c *gin.Context) {
 // 这样就会导致，删除Pod的时候，Pod又被创建了，死循环，寄中寄
 // "/api/v1/namespaces/:namespace/pods/:name/status"
 func UpdatePodStatus(c *gin.Context) {
-	k8log.DebugLog("APIServer", "UpdatePodStatus")
 
 	podName := c.Param(config.URL_PARAM_NAME)
 	podNamespace := c.Param(config.URL_PARAM_NAMESPACE)

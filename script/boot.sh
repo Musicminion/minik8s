@@ -20,6 +20,22 @@ programs=(
 # 删除除了weave之外的所有容器
 . "$SCRIPTS_ROOT/container_clear.sh" /
 
+# 清空iptables
+echo "清空iptables"
+iptables -t nat -F
+iptables -t nat -X
+
+# 重启weave
+echo "重启weave"
+weave stop
+weave launch
+weave expose
+
+# 重启docker
+echo "重启docker"
+systemctl restart docker
+
+
 # 循环启动程序
 for program in "${programs[@]}"; do
     # 获取程序和日志文件路径
@@ -35,7 +51,7 @@ for program in "${programs[@]}"; do
     sudo go run "$program_file" &> "$log_file" &
     # 如果是apiserver，需要sleep一段时间确保启动成功
     if [[ $program_file == *"apiserver"* ]]; then
-        sleep 5
+        sleep 3
     fi
 done
 

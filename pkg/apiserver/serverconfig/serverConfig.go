@@ -1,7 +1,7 @@
 package serverconfig
 
 const (
-	ResourceName = "ResourceName"
+	ResourceName  = "ResourceName"
 	RequestPrefix = "http://0.0.0.0:8090"
 )
 

@@ -16,7 +16,7 @@ type ServicePort struct {
 	// The port on each node on which this service is exposed when type is NodePort or LoadBalancer. 
 	NodePort   int 				`yaml:"nodePort"`
 
-    TargetPort int32          `yaml:"targetPort,omitempty"`
+    TargetPort int          `yaml:"targetPort"`
 
 	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP". Default is TCP.
     Protocol   string        `yaml:"protocol"`

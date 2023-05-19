@@ -105,12 +105,21 @@ func AddService(c *gin.Context) {
 			} else {
 				// 添加Endpoints到service
 				serviceStore.Status.Endpoints = append(serviceStore.Status.Endpoints, endpoints...)
-				serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoints...)
+				// serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoints...)
 			}
 
 			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
 
 		}(key, value)
+	}
+	// 更新serviceUpdate，并更新etcd中的serviceStore
+	serviceUpdate.ServiceTarget = *serviceStore
+	serviceJson, err = json.Marshal(serviceStore)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "service marshal to json failed" + err.Error(),
+		})
+		return
 	}
 
 	// 将Service信息写入etcd

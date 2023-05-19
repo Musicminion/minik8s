@@ -38,7 +38,7 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 	podJson, err := json.Marshal(pod)
 	if err != nil {
-		k8log.ErrorLog("[msgutil]", "json marshal pod failed")
+		k8log.ErrorLog("msgutil", "json marshal pod failed")
 		return err
 	}
 	message := message.Message{
@@ -152,5 +152,32 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 		return err
 	}
 
+	// 发送给pod所在的Node监听的podUpdate消息队列
 	return PublishMsg(PodUpdateWithNode(podUpdate.PodTarget.Spec.NodeName), jsonMsg)
+}
+
+func PublishDeletePod(pod *apiObject.PodStore) error {
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, pod.GetPodName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+	jsonBytes, err := json.Marshal(pod)
+	if err != nil {
+		k8log.ErrorLog("msgutil", "json marshal pod failed")
+		return err
+	}
+
+	message := message.Message{
+		Type:         message.DELETE,
+		Content:      string(jsonBytes),
+		ResourceURI:  resourceURI,
+		ResourceName: pod.GetPodName(),
+	}
+
+	jsonMsg, err := json.Marshal(message)
+
+	if err != nil {
+		return err
+	}
+
+	// 发送给pod所在的Node监听的podUpdate消息队列
+	return PublishMsg(PodUpdateWithNode(pod.Spec.NodeName), jsonMsg)
 }

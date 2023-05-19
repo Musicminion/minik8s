@@ -9,6 +9,10 @@ spec:
   containers:
     - image: docker.io/library/redis
       name: testContainer-1
+      ports:
+        - containerPort: 8080
     - image: docker.io/library/nginx
       name: testContainer-2
+      ports:
+        - containerPort: 3000
   nodeName: ubuntu

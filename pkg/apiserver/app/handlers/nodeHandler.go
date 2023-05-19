@@ -440,7 +440,7 @@ func GetNodeStatus(c *gin.Context) {
 // /api/v1/nodes/:name/status
 func UpdateNodeStatus(c *gin.Context) {
 	// nodeName := c.Params.ByName("name")
-	k8log.DebugLog("APIServer", "UpdateNodeStatus: start")
+	// k8log.DebugLog("APIServer", "UpdateNodeStatus: start")
 	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
 	if nodeName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{

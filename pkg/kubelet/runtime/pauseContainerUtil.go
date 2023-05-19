@@ -37,7 +37,7 @@ func (r *runtimeManager) removePauseContainer(pod *apiObject.PodStore) (string, 
 	for _, container := range res {
 		retID = container.ID
 		// 删除pause容器
-		k8log.DebugLog("[Pause Container]", "removePauseContainer "+ container.Names[0])
+		k8log.DebugLog("Pause Container", "removePauseContainer "+container.Names[0])
 		if _, err := r.containerManager.RemoveContainer(container.ID); err != nil {
 			return "", err
 		}
@@ -142,7 +142,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	// [镜像检查] 检查pause镜像是否存在，不存在则拉取
 	_, err := r.imageManager.PullImageWithPolicy(PauseContainerImage, minik8sTypes.PullIfNotPresent)
 	if err != nil {
-		k8log.ErrorLog("[Pause Container]", err.Error())
+		k8log.ErrorLog("Pause Container", err.Error())
 		return "", err
 	}
 
@@ -150,7 +150,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	pauseConfig, err := r.getPauseContainerConfig(pod)
 
 	if err != nil {
-		k8log.ErrorLog("[Pause Container]", err.Error())
+		k8log.ErrorLog("Kubelet", err.Error())
 		return "", err
 	}
 
@@ -165,7 +165,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	ID, err := r.containerManager.CreateContainer(newPauseName, pauseConfig)
 
 	if err != nil {
-		k8log.ErrorLog("[Pause Container]", err.Error())
+		k8log.ErrorLog("Pause Container", err.Error())
 		return "", err
 	}
 
@@ -173,23 +173,22 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	_, err = r.containerManager.StartContainer(ID)
 
 	if err != nil {
-		k8log.ErrorLog("[Pause Container]", err.Error())
+		k8log.ErrorLog("Pause Container", err.Error())
 		return "", err
 	}
 
 	// [Weave网络] 为pause容器添加网络
-	if pod.Status.PodIP == ""{
+	if pod.Status.PodIP == "" {
 		res, err := weave.WeaveAttach(ID)
 		if err != nil {
-			k8log.ErrorLog("[Pause Container]", err.Error())
+			k8log.ErrorLog("Pause Container", err.Error())
 			return "", err
 		}
-	
+
 		// TODO: add podIp to pod status
 		pod.Status.PodIP = res
 		k8log.DebugLog("WeaveAttach", "WeaveAttach res "+res)
 	}
-
 
 	return ID, nil
 }
@@ -234,7 +233,7 @@ func (r *runtimeManager) startPauseContainer(pod *apiObject.PodStore) (string, e
 
 // stopPauseContainer
 func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, error) {
-	k8log.InfoLog("[Pause Container]", "stopPauseContainer")
+	k8log.InfoLog("Pause Container", "stopPauseContainer")
 	var filter = make(map[string][]string)
 	// filter[minik8sTypes.ContainerLabel_Pod] = []string{pod.Metadata.Name}
 	filter[minik8sTypes.ContainerLabel_PodName] = []string{pod.Metadata.Name}
@@ -245,7 +244,7 @@ func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, er
 	res, err := r.containerManager.ListContainersWithOpt(filter)
 
 	if err != nil {
-		k8log.ErrorLog("[Pause Container]", err.Error())
+		k8log.ErrorLog("Pause Container", err.Error())
 		return "", err
 	}
 
@@ -254,7 +253,7 @@ func (r *runtimeManager) stopPauseContainer(pod *apiObject.PodStore) (string, er
 	for _, container := range res {
 		retID = container.ID
 		if _, err := r.containerManager.StopContainer(container.ID); err != nil {
-			k8log.DebugLog("[Pause Container]", err.Error())
+			k8log.DebugLog("Pause Container", err.Error())
 			return "", err
 		}
 	}

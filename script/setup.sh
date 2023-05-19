@@ -190,9 +190,13 @@ else
     echo "Weave安装完成"
 fi
 
+# 获取脚本所在目录
+SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
+
 ### 以下内容用于格式化服务器的部分数据
 # 删除 etcd 中所有内容
-. ./script/etcd_clear.sh /
+. "$SCRIPTS_ROOT/etcd_clear.sh" /
+
 
 # 删除除了weave之外的所有容器
-. ./script/container_clear.sh
+. "$SCRIPTS_ROOT/container_clear.sh" /

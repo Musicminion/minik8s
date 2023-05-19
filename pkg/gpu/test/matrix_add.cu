@@ -1,30 +1,32 @@
 #include <stdio.h>
+#include <iostream>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-// Matrix size: 50 * 50
-const int M = 15;
-const int N = 15;
+#define get_tid_x() (blockIdx.x * blockDim.x + threadIdx.x)
+#define get_tid_y() (blockIdx.y * blockDim.y + threadIdx.y)
+
+const int M = 8;
+const int N = 8;
 
 static void HandleError(cudaError_t err,const char *file, int line) {
     if (err != cudaSuccess) {
         printf("%s in %s at line %d\n", cudaGetErrorString(err), file, line);
+        cout<<endl;
         exit(EXIT_FAILURE);
     }
 }
 
 #define HANDLE_ERROR(err) (HandleError(err, __FILE__, __LINE__))
 
-// Matrix add: C = A + B
+//核函数
 __global__ void matrix_add(int **A, int **B, int **C) {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = blockIdx.y * blockDim.y + threadIdx.y;  
+    int i = get_tid_x();
+    int j = get_tid_y();  
     C[i][j] = A[i][j] + B[i][j];
 }
 
 int main() {
-    int count;
-    cudaGetDeviceCount(&count);
-    printf("gpu num %d\n", count);
+    int nbytes=M*N*sizeof(int);
     
     int **A = (int **) malloc(sizeof(int *) * M);
     int **B = (int **) malloc(sizeof(int *) * M);
@@ -33,9 +35,19 @@ int main() {
     int *data_A = (int *) malloc(sizeof(int) * M * N);
     int *data_B = (int *) malloc(sizeof(int) * M * N);
     int *data_C = (int *) malloc(sizeof(int) * M * N);
+
+
+    //这里使用了强制类型转换
+    int *host_A = (int *) malloc(nbytes);
+    int *host_B = (int *) malloc(nbytes);
+    int *host_C = (int *) malloc(nbytes);
+
+
     for (int i = 0; i < M * N; i++) {
         data_A[i] = i;
         data_B[i] = i;
+        host_A[i] = i;
+        host_B[i] = i;
     }
 
     printf("Matrix A is:\n");

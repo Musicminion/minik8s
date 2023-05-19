@@ -37,8 +37,21 @@ type JobStatus struct {
 }
 
 type JobStore struct {
-	Basic `yaml:",inline" json:",inline"`
-	Spec  JobSpec `yaml:"spec" json:"spec"`
+	Basic  `yaml:",inline" json:",inline"`
+	Spec   JobSpec   `yaml:"spec" json:"spec"`
+	Status JobStatus `yaml:"status" json:"status"`
+}
+
+func (j *Job) GetJobName() string {
+	return j.Basic.Metadata.Name
+}
+
+func (j *Job) GetJobNamespace() string {
+	return j.Basic.Metadata.Namespace
+}
+
+func (j *Job) GetJobUUID() string {
+	return j.Basic.Metadata.UUID
 }
 
 func (j *Job) ToJobStore() *JobStore {
@@ -53,4 +66,23 @@ func (js *JobStore) ToJob() *Job {
 		Basic: js.Basic,
 		Spec:  js.Spec,
 	}
+}
+
+type JobFile struct {
+	Basic          `yaml:",inline" json:",inline"`
+	UserUploadFile []byte `yaml:"userUploadFile" json:"userUploadFile"` // 用户上传的文件 zip文件
+	OutputFile     []byte `yaml:"outputFile" json:"outputFile"`         // 输出文件，执行的结果
+	ErrorFile      []byte `yaml:"errorFile" json:"errorFile"`           // 错误文件，执行的结果
+}
+
+func (jf *JobFile) GetJobName() string {
+	return jf.Basic.Metadata.Name
+}
+
+func (jf *JobFile) GetJobNamespace() string {
+	return jf.Basic.Metadata.Namespace
+}
+
+func (jf *JobFile) GetJobFileUUID() string {
+	return jf.Basic.Metadata.UUID
 }

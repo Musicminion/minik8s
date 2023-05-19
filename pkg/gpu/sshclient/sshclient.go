@@ -1,6 +1,12 @@
 package sshclient
 
-import "github.com/melbahja/goph"
+import (
+	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/melbahja/goph"
+)
 
 type SSHClient interface {
 	// 执行命令
@@ -22,6 +28,9 @@ type SSHClient interface {
 	// 上传文件
 	UploadFile(localPath string, remotePath string) error
 	DownloadFile(remotePath string, localPath string) error
+
+	// 上传文件夹
+	UploadDir(localPath string, remotePath string) error
 }
 
 type sshClient struct {
@@ -109,4 +118,39 @@ func (sc *sshClient) RunCmds(cmds []string) (string, error) {
 		out += string(curOut)
 	}
 	return out, err
+}
+
+func (sc *sshClient) UploadDir(localPath string, remotePath string) error {
+	err := filepath.Walk(localPath, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		// 检查是否为文件夹
+		if info.IsDir() {
+			return nil
+		}
+
+		// 获取相对路径
+		relPath, err := filepath.Rel(localPath, path)
+		if err != nil {
+			return err
+		}
+
+		// 构建远程文件路径
+		remotePath := filepath.Join(remotePath, relPath)
+
+		// 使用 SSH 客户端上传文件
+		err = sc.Client.Upload(path, remotePath)
+
+		if err != nil {
+			fmt.Println("上传文件失败:", err)
+		} else {
+			fmt.Println("文件上传成功:", remotePath)
+		}
+
+		return nil
+	})
+
+	return err
 }

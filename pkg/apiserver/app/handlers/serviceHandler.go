@@ -216,7 +216,7 @@ func DeleteService(c *gin.Context) {
 			})
 			return
 		}
-		c.JSON(204, gin.H{
+		c.JSON(http.StatusNoContent, gin.H{
 			"message": "delete service success",
 		})
 		return

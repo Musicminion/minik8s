@@ -99,6 +99,7 @@ func (s *apiServer) bind() {
 	s.router.GET(config.ServiceURL, handlers.GetServices)       // 获取所有service
 	s.router.GET(config.ServiceSpecURL, handlers.GetService)    // 获取单个service
 	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService) // 更新service
+	s.router.DELETE(config.ServiceSpecURL, handlers.DeleteService)
 
 	// Job相关的api
 	s.router.GET(config.JobsURL, handlers.GetJobs)         // 获取所有job

@@ -17,6 +17,7 @@ const (
 	EtcdServicePath = "/registry/services/"
 
 	// 完整路径：/registry/svclabel/<label-key>/<label-value>/<svc-uuid>
+	// 完整路径：/registry/svclabels/<label-key>/<label-value>/<svc-uuid>
 	EtcdServiceSelectorPath = "/registry/svclabels/"
 
 	// 完整路径：/registry/endpoints/<label-key>/<label-value>/<endpoint-uuid> ?

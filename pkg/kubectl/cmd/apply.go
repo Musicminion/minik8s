@@ -4,10 +4,12 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"miniK8s/util/stringutil"
 	"os"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -20,6 +22,7 @@ var applyCmd = &cobra.Command{
 }
 
 func applyHandler(cmd *cobra.Command, args []string) {
+	k8log.DebugLog("applyHandler", "args: "+strings.Join(args, " "))
 	// 打印出来所有的参数
 	// 检查参数的数量是否为1
 	if len(args) != 1 {

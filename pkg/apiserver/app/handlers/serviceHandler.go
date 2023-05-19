@@ -252,7 +252,7 @@ func DeleteService(c *gin.Context) {
 			})
 		}
 		// 删除service的所有Label
-		for key, value := range service.Metadata.Labels {
+		for key, value := range service.Spec.Selector {
 			k8log.DebugLog("APIServer", "DeleteService: delete service label: "+key+" "+value)
 			err = etcdclient.EtcdStore.PrefixDel(path.Join(serverconfig.EtcdServiceSelectorPath, key, value, service.Metadata.UUID))
 			if err != nil {

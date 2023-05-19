@@ -70,7 +70,15 @@ func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
 func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) {
 
 	// 删除 iptables 规则
-	im.ipt.Delete("nat", "KUBE-SERVICES", "-m", "comment", "--comment")
+	rules, err := im.ipt.List("nat", "KUBE-SERVICES")
+	if err != nil {
+		k8log.ErrorLog("KUBEPROXY", "Failed to list iptables rules: "+err.Error())
+	}
+	for _, rule := range rules {
+		im.ipt.Delete("nat", "KUBE-SERVICES", rule)
+	}
+
+	im.ipt.DeleteChain("nat", "KUBE-SERVICES")
 }
 
 func (im *IptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
@@ -118,7 +126,6 @@ func (im *IptableManager) init_iptables() {
 	im.ipt.Insert("nat", "KUBE-MARK-MASQ", 1, "-j", "MARK", "--or-mark", "0x4000")
 	im.ipt.Insert("nat", "KUBE-POSTROUTING", 1, "-m", "comment", "--comment", "kubernetes service traffic requiring SNAT", "-j", "MASQUERADE", "-m", "mark", "--mark", "0x4000/0x4000")
 	k8log.InfoLog("KUBEPROXY", "init iptables success")
-	im.SaveIPTables("iptables-save")
 }
 
 func (im *IptableManager) allocClusterIP() (string, bool) {
@@ -191,11 +198,6 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for kubesvc chain: "+err.Error())
 	}
 
-// 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
-// 	serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
-// 	"-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH), "-j", kubesvc); err != nil {
-// 	k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for kubesvc chain: "+err.Error())
-// }
 
 	// 添加 NAT 规则，标记流量为 MASQUERADE
 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
@@ -203,13 +205,6 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		"-j", "KUBE-MARK-MASQ", "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for KUBE-MARK-MASQ chain: "+err.Error())
 	}
-
-
-// 	if err := im.ipt.Insert("nat", "KUBE-SERVICES", 1, "-m", "comment", "--comment",
-// 	serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
-// 	"-j", "KUBE-MARK-MASQ", "-m", protocol, "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
-// 	k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for KUBE-MARK-MASQ chain: "+err.Error())
-// }
 
 	podNum := len(podIPList)
 	k8log.DebugLog("KUBEPROXY", "podNum is "+strconv.Itoa(podNum))

@@ -56,3 +56,18 @@ func PostAPIObjectToServer(URL string, obj interface{}) error {
 
 	return nil
 }
+
+
+// 发送删除API对象的请求到服务器
+func DeleteAPIObjectToServer(URL string) error {
+	k8log.DebugLog("DeleteAPIObjectToServer", "URL: "+URL)
+	// 发送到服务器
+	code, err := netrequest.DelRequest(URL)
+	if err != nil {
+		k8log.ErrorLog("Kubectl", "DeleteAPIObjectToServer: Delete object failed "+err.Error())
+		return err
+	}
+
+	fmt.Println("code: ", code)
+	return nil
+}

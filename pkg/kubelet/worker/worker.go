@@ -23,6 +23,8 @@ type PodWorker struct {
 	StartPodHandler   func(pod *apiObject.PodStore) error
 	StopPodHandler    func(pod *apiObject.PodStore) error
 	RestartPodHandler func(pod *apiObject.PodStore) error
+	DelPodByIDHandler func(podUUID string) error
+	RecreatePodContainerHandler func(pod *apiObject.PodStore) error
 }
 
 // NewPodWorker
@@ -35,6 +37,8 @@ func NewPodWorker() *PodWorker {
 		StartPodHandler:   runtimeManager.StartPod,
 		StopPodHandler:    runtimeManager.StopPod,
 		RestartPodHandler: runtimeManager.RestartPod,
+		DelPodByIDHandler: runtimeManager.DelPodByPodID,
+		RecreatePodContainerHandler: runtimeManager.RecreatePodContainer,
 	}
 }
 
@@ -48,7 +52,7 @@ func (p *PodWorker) Run() {
 }
 
 func (p *PodWorker) RunTask(task WorkTask) {
-	k8log.DebugLog("[Pod Worker]", "run task, task type is "+string(task.TaskType))
+	k8log.DebugLog("Pod Worker", "run task, task type is "+string(task.TaskType))
 	switch task.TaskType {
 	case Task_AddPod:
 		p.AddPodHandler(task.TaskArgs.(Task_AddPodArgs).Pod)
@@ -60,15 +64,19 @@ func (p *PodWorker) RunTask(task WorkTask) {
 		p.StopPodHandler(task.TaskArgs.(Task_StopPodArgs).Pod)
 	case Task_Restart:
 		p.RestartPodHandler(task.TaskArgs.(Task_RestartPodArgs).Pod)
+	case Task_DelPodByPodID:
+		p.DelPodByIDHandler(task.TaskArgs.(Task_DelPodByPodIDArgs).PodUUID)
+	case Task_RecreatePodContainer:
+		p.RecreatePodContainerHandler(task.TaskArgs.(Task_RecreatePodContainerArgs).Pod)
 	default:
-		k8log.ErrorLog("[Pod Worker]", "unknown task type")
+		k8log.ErrorLog("Pod Worker", "unknown task type")
 	}
 }
 
 // Worker添加任务
 func (p *PodWorker) AddTask(task WorkTask) error {
 	// TODO: 这里需要考虑任务队列满的情况
-	k8log.DebugLog("[Pod Worker]", "add task, task type is "+string(task.TaskType))
+	k8log.DebugLog("Pod Worker", "add task, task type is "+string(task.TaskType))
 
 	// 检查队列是否已经满了
 	if len(p.TaskQueue) == WorkerChannelBufferSize {

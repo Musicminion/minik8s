@@ -29,9 +29,9 @@ jobs:
 
     - name: Build Production
       run: |
-        go build  -o ./build/apiserver/apiserver ./pkg/apiserver/main/main.go 
-        go build  -o ./build/kubelet/kubelet ./pkg/kubelet/main/main.go
-        go build  -o ./build/kubectl/kubectl ./pkg/kubectl/main/main.go 
+        go build  -o ./build/apiserver/apiserver ./pkg/apiserver/main
+        go build  -o ./build/kubelet/kubelet ./pkg/kubelet/main
+        go build  -o ./build/kubectl/kubectl ./pkg/kubectl/main
         mkdir -p ~/minik8s
         mkdir -p ~/minik8s/bin
         cp -r ./build ~/minik8s/bin

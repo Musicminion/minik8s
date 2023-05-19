@@ -24,6 +24,7 @@ var cache = struct {
 	sync.RWMutex
 }{endpoints: make(map[string][]apiObject.Endpoint)}
 
+// 根据key和value获取所有的endpoints
 func GetEndpoints(key, value string) ([]apiObject.Endpoint, error) {
 	// 构建终端数组URL
 	endpointsKVURL := path.Join(serverconfig.EndpointPath, key, value)
@@ -84,55 +85,54 @@ func GetEndpoints(key, value string) ([]apiObject.Endpoint, error) {
 	return endpointArray, nil
 }
 
-func AddEndPoints(pod apiObject.PodStore) error {
+func UpdateEndPoints(pod apiObject.PodStore) error {
 	// 构建终端数组URL
 	for key, value := range pod.Metadata.Labels {
 		endpointsKVURL := path.Join(serverconfig.EndpointPath, key, value)
-		// 从ETCD取出所有符合该Label的endpoints
-		endpointLRs, err := etcdclient.EtcdStore.PrefixGet(endpointsKVURL)
+		totalEndpoints, err := GetEndpoints(key, value)
 		if err != nil {
 			k8log.ErrorLog("APIServer", "get endpoints failed"+err.Error())
 			return err
 		}
 
-		// unmarshall endpoint
-		totalEndpoints := make([]apiObject.Endpoint, 0)
-		for _, endpointLR := range endpointLRs {
-			endpoint := apiObject.Endpoint{}
-			// endpoint的存储URL ：EndpointURL + key + value + endpointUUID
-			if json.Unmarshal([]byte(endpointLR.Value), &endpoint); err != nil {
-				k8log.ErrorLog("APIServer", "unmarshal endpoint failed"+err.Error())
-				return err
+		exist := false
+
+		// 寻找totalEndpoints中是否已经存在对应该pod的endpoint
+		for _, endpoint := range totalEndpoints {
+			if endpoint.PodUUID == pod.Metadata.UUID {
+				exist = true
+				break
 			}
-			totalEndpoints = append(totalEndpoints, endpoint)
 		}
 
-		// 添加新的endpoint
-		// newEndpoints := make([]apiObject.Endpoint, 0)
-		for _, container := range pod.Spec.Containers {
-			for _, port := range container.Ports {
-				endpoint := apiObject.Endpoint{
-					Basic: apiObject.Basic{
-						Metadata: apiObject.Metadata{
-							UUID: uuid.NewUUID(),
-						},
+		if !exist {
+			// 添加新的endpoint
+			endpoint := apiObject.Endpoint{
+				Basic: apiObject.Basic{
+					Metadata: apiObject.Metadata{
+						UUID: uuid.NewUUID(),
 					},
-					IP:   pod.Status.PodIP, // TODO: alloc ip for pod
-					Port: port.ContainerPort,
-				}
-				// 更新endpoint map
-				k8log.DebugLog("APIServer", "add endpoint uuid: "+endpoint.Metadata.UUID)
-				endpointJson, err := json.Marshal(endpoint)
-				if err != nil {
-					k8log.ErrorLog("APIServer", "marshal endpoint failed"+err.Error())
-					return err
-				}
-
-				// 将新的endpoint添加到etcd中
-				etcdclient.EtcdStore.Put(path.Join(endpointsKVURL, endpoint.Metadata.UUID), endpointJson)
-				// newEndpoints = append(newEndpoints, endpoint)
-				totalEndpoints = append(totalEndpoints, endpoint)
+				},
+				IP:      pod.Status.PodIP,
+				Ports:   []string{},
+				PodUUID: pod.Metadata.UUID,
 			}
+			for _, container := range pod.Spec.Containers {
+				for _, port := range container.Ports {
+					// 更新endpoint的port
+					k8log.DebugLog("APIServer", "add endpoint uuid: "+endpoint.Metadata.UUID)
+					endpoint.Ports = append(endpoint.Ports, port.ContainerPort)
+				}
+			}
+			// 将新的endpoint添加到etcd中
+			// endpoint的URL： /registry/endpoint/key/value/podUUID
+			endpointJson, err := json.Marshal(endpoint)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "marshal endpoint failed"+err.Error())
+				return err
+			}
+			etcdclient.EtcdStore.Put(path.Join(endpointsKVURL, endpoint.PodUUID), endpointJson)
+			totalEndpoints = append(totalEndpoints, endpoint)
 		}
 
 		// 根据Label从etcd找出所有匹配的service
@@ -161,19 +161,8 @@ func AddEndPoints(pod apiObject.PodStore) error {
 			if err != nil {
 				k8log.ErrorLog("APIServer", "publish endpoint update message failed"+err.Error())
 			}
-
-			// // 将endpoint持久化到etcd中
-			// endpointJson, err := json.Marshal(endpointMap)
-			// if err != nil {
-			// 	k8log.ErrorLog("APIServer", "marshal endpoint failed"+err.Error())
-			// 	return err
-			// }
-			// if err := etcdclient.EtcdStore.Put(endpointsKVURL, endpointJson); err != nil {
-			// 	k8log.ErrorLog("APIServer", "put endpoint failed"+err.Error())
-			// 	return err
-			// }
 		}
-		// TODO: 更新缓存数组
+
 		cache.Lock()
 		cache.endpoints[endpointsKVURL] = totalEndpoints
 		cache.Unlock()

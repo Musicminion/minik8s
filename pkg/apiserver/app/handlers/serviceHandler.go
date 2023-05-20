@@ -38,7 +38,7 @@ func AddService(c *gin.Context) {
 	}
 
 	// 检查name是否重复
-	key := fmt.Sprintf(serverconfig.EtcdServicePath + "%s/%s", service.Metadata.Namespace,  service.Metadata.Name)
+	key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", service.Metadata.Namespace, service.Metadata.Name)
 	res, err := etcdclient.EtcdStore.PrefixGet(key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -73,7 +73,7 @@ func AddService(c *gin.Context) {
 				"error": "service ip address is not valid",
 			})
 			return
-		} 
+		}
 	} else {
 		service.Spec.ClusterIP, err = helper.AllocClusterIP()
 		if err != nil {
@@ -143,16 +143,16 @@ func AddService(c *gin.Context) {
 	}
 
 	// 将Service信息写入etcd
-	key = fmt.Sprintf(serverconfig.EtcdServicePath + "%s/%s", service.Metadata.Namespace,  service.Metadata.Name)
+	key = fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", service.Metadata.Namespace, service.Metadata.Name)
 	err = etcdclient.EtcdStore.Put(key, serviceJson)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put service to etcd failed" + err.Error(),
 		})
 		return
 	}
 	// 返回201处理成功
-	c.JSON(201, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "create service success",
 	})
 
@@ -160,7 +160,6 @@ func AddService(c *gin.Context) {
 	msgutil.PublishUpdateService(serviceUpdate)
 
 }
-
 
 // 获取单个Service信息
 // 某个特定的Service状态 对应的ServiceSpecURL = "/api/v1/services/:name"
@@ -245,8 +244,8 @@ func DeleteService(c *gin.Context) {
 
 		// 从etcd中获取
 		// ETCD里面的路径是 /registry/services/<namespace>/<pod-name>
-		key := fmt.Sprintf(serverconfig.EtcdServicePath + "%s/%s", namespace, name)
-		k8log.DebugLog("APIServer", "DeleteService: path: " + key)
+		key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", namespace, name)
+		k8log.DebugLog("APIServer", "DeleteService: path: "+key)
 		res, err := etcdclient.EtcdStore.Get(key)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{

@@ -140,6 +140,7 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 		Volumes:      nil,
 		Env:          nil,
 		IpcMode:      minik8sTypes.Contianer_IPCMode_Sharable,
+		// NetworkMode:  minik8sTypes.Contianer_NetMode_Host,
 	}
 
 	return &config, nil
@@ -189,7 +190,7 @@ func (r *runtimeManager) createPauseContainer(pod *apiObject.PodStore) (string, 
 	if pod.Status.PodIP == "" {
 		res, err := weave.WeaveAttach(ID)
 		if err != nil {
-			k8log.ErrorLog("Pause Container", err.Error())
+			k8log.ErrorLog("Pause Container", err.Error()+res)
 			return "", err
 		}
 

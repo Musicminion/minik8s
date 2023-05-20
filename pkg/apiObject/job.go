@@ -44,6 +44,18 @@ type JobStore struct {
 	Status JobStatus `yaml:"status" json:"status"`
 }
 
+func (js *JobStore) GetJobName() string {
+	return js.Metadata.Name
+}
+
+func (js *JobStore) GetJobNamespace() string {
+	return js.Metadata.Namespace
+}
+
+func (js *JobStore) GetJobUUID() string {
+	return js.Metadata.UUID
+}
+
 func (j *Job) GetJobName() string {
 	return j.Basic.Metadata.Name
 }

@@ -91,6 +91,7 @@ const (
 
 const (
 	Contianer_IPCMode_Sharable = "shareable"
+	Contianer_NetMode_Host     = "host"
 )
 
 // 系统保留字段，给容器的标签使用

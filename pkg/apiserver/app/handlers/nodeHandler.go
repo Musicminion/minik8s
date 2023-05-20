@@ -333,6 +333,7 @@ func selectiveUpdateNode(oldNode *apiObject.NodeStore, postNode *apiObject.NodeS
 // NodeAllPodsURL = "/api/v1/nodes/:name/pods"
 func GetNodePods(c *gin.Context) {
 	// nodeName := c.Params.ByName("name")
+	k8log.InfoLog("APIServer", "GetNodePods")
 
 	nodeName := c.Params.ByName(config.URL_PARAM_NAME)
 	if nodeName == "" {

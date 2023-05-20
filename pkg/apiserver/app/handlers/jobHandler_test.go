@@ -3,8 +3,10 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"miniK8s/pkg/apiObject"
+	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/config"
 	"miniK8s/util/stringutil"
 	"miniK8s/util/zip"
@@ -20,6 +22,14 @@ func TestMain(m *testing.M) {
 	// 删除 ./testFile/zipFile/ 目录下的所有文件
 	os.RemoveAll("./testFile/zipFile/outPut/")
 	os.Mkdir("./testFile/zipFile/outPut/", os.ModePerm)
+
+	// 清空etcd 中的数据
+	res := etcdclient.EtcdStore.DelAll()
+
+	if res != nil {
+		panic(res)
+	}
+
 	m.Run()
 }
 
@@ -46,9 +56,17 @@ func TestAddJobFile(t *testing.T) {
 		},
 	}
 
-	zip.CompressToZip("./testFile/zipFile/zipFolder/", "./testFile/zipFile/outPut/test-job.zip")
+	err := zip.CompressToZip("./testFile/zipFile/zipFolder", "./testFile/zipFile/outPut/test-job.zip")
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	res, err := zip.ComvertZipToBytes("./testFile/zipFile/outPut/test-job.zip")
+
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	if err != nil {
 		t.Fatal(err)
@@ -119,4 +137,59 @@ func TestGetJobFile(t *testing.T) {
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("expected status code %d, got %d", http.StatusOK, resp.StatusCode)
 	}
+
+	// t.Logf("resp: %v", resp.Body)
+
+	// 读取response body
+	var result map[string]interface{}
+
+	err = json.NewDecoder(resp.Body).Decode(&result)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	data, ok := result["data"]
+
+	if !ok {
+		t.Fatal("data not found")
+	}
+
+	dataStr := fmt.Sprint(data)
+
+	jobfile := &apiObject.JobFile{}
+	err = json.Unmarshal([]byte(dataStr), jobfile)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if jobfile.Metadata.Name != "job1" {
+		t.Errorf("expected jobfile name %s, got %s", "job1", jobfile.Metadata.Name)
+	}
+
+	err = zip.ConvertBytesToZip(jobfile.UserUploadFile, "./testFile/zipFile/outPut/test-job-resp.zip")
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	res := zip.DecompressZip("./testFile/zipFile/outPut/test-job-resp.zip", "./testFile/zipFile/outPut/test-job-resp/")
+
+	if res != nil {
+		t.Fatal(res)
+	}
+}
+
+func TestClear(t *testing.T) {
+	// 清空etcd 中的数据
+	res := etcdclient.EtcdStore.DelAll()
+
+	if res != nil {
+		panic(res)
+	}
+
+	// 删除 ./testFile/zipFile/ 目录下的所有文件
+	os.RemoveAll("./testFile/zipFile/outPut/")
+	os.Mkdir("./testFile/zipFile/outPut/", os.ModePerm)
 }

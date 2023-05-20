@@ -216,6 +216,8 @@ func AddPod(c *gin.Context) {
 	msgutil.PublishRequestNodeScheduleMsg(podStore)
 }
 
+// 删除的时候直接删除etcd中的数据即可
+// 目前来说暂时不检查是否已经存在
 // "/api/v1/namespaces/:namespace/pods/:name"
 func DeletePod(c *gin.Context) {
 	// log
@@ -225,54 +227,33 @@ func DeletePod(c *gin.Context) {
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	name := c.Param(config.URL_PARAM_NAME)
 
+	// 检查参数
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "namespace or name is empty",
+		})
+		k8log.ErrorLog("APIServer", "DeletePod: namespace or name is empty")
+		return
+	}
+
 	// 从etcd中获取Pod
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", namespace, name)
 	k8log.InfoLog("APIServer", "DeletePod: path = "+key)
-	podLRs, err := etcdclient.EtcdStore.Get(key)
-	if err != nil {
-		k8log.DebugLog("APIServer", "DeletePod: get pod failed "+err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "get pod failed " + err.Error(),
-		})
-		return
-	}
-
-	if len(podLRs) == 0 {
-		k8log.DebugLog("APIServer", "DeletePod: get pod failed, pod does not exist")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "get pod failed,  pod does not exist",
-		})
-		return
-	}
-
-	if len(podLRs) > 1 {
-		k8log.DebugLog("APIServer", "DeletePod: get pod failed, pod is not unique")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "get pod failed, pod is not unique",
-		})
-		return
-	}
-
-	// 将json转化为PodStore
-	err = json.Unmarshal([]byte(podLRs[0].Value), &pod)
-	if err != nil {
-		k8log.DebugLog("APIServer", "DeletePod: parser json to pod failed "+err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "parser json to pod failed " + err.Error(),
-		})
-		return
-	}
-
-	logStr := fmt.Sprintf("DeletePod: namespace = %s, name = %s", pod.GetPodNamespace(), pod.GetPodName())
-	k8log.InfoLog("APIServer", logStr)
 
 	// 从etcd中删除Pod
-	err = etcdclient.EtcdStore.Del(key)
+	err := etcdclient.EtcdStore.Del(key)
 	if err != nil {
 		k8log.DebugLog("APIServer", "DeletePod: delete pod failed "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "delete pod failed " + err.Error(),
 		})
+		return
+	}
+
+	// 删除该pod对应的endpoint
+	err = helper.DeleteEndpoints(pod)
+	if err != nil {
+		k8log.DebugLog("APIServer", "DeletePod: delete endpoint failed "+err.Error())
 	}
 
 	c.JSON(http.StatusNoContent, gin.H{
@@ -553,7 +534,7 @@ func selectiveUpdatePodStatus(oldPod *apiObject.PodStore, podStatus *apiObject.P
 		oldPod.Status.Phase = podStatus.Phase
 	}
 
-	if podStatus.PodIP != oldPod.Status.PodIP {
+	if podStatus.PodIP != "" && podStatus.PodIP != oldPod.Status.PodIP {
 		k8log.DebugLog("APIServer", "selectiveUpdatePodStatus: podIP changed")
 		// 更新podIP, 若当前pod存在Label，则涉及endpoint的创建/更新
 		for key, value := range oldPod.Metadata.Labels {

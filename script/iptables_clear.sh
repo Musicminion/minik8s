@@ -1,7 +1,7 @@
 #!/bin/bash
 
-chainList=$(iptables -L -t nat | grep -vE "^.* (PREROUTING|INPUT|OUTPUT|POSTROUTING|WEAVE|DOCKER) .*"  | grep "Chain" | awk '{print $2}' | tac )
-allChain=$(iptables -L -t nat    | grep "Chain" | awk '{print $2}' | tac )
+chainList=$(iptables -S -t nat | grep -vE "^.* (PREROUTING|INPUT|OUTPUT|POSTROUTING|WEAVE|DOCKER|KUBE-POSTROUTING) .*"  | grep "KUBE-SVC\|KUBE-SERVICES\|KUBE-SEP" | awk '{print $2}' | tac )
+allChain=$(iptables -S -t nat    | grep "KUBE-SVC\|KUBE-SEP" | awk '{print $2}' | tac )
 for i in $allChain
 do
     iptables -t nat -F $i

@@ -45,7 +45,7 @@ func (proxy *KubeProxy) HandleServiceUpdate(msg amqp.Delivery) {
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "消息格式错误,无法转换为Message")
 	}
-	if parsedMsg.Type == message.PUT {
+	if parsedMsg.Type == message.CREATE {
 		serviceUpdate := &entity.ServiceUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), serviceUpdate)
 		if err != nil {
@@ -62,7 +62,7 @@ func (proxy *KubeProxy) HandleEndpointUpdate(msg amqp.Delivery) {
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "消息格式错误,无法转换为Message")
 	}
-	if parsedMsg.Type == message.PUT {
+	if parsedMsg.Type == message.CREATE {
 		endpointUpdate := &entity.EndpointUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), endpointUpdate)
 		if err != nil {
@@ -77,28 +77,38 @@ func (proxy *KubeProxy) HandleEndpointUpdate(msg amqp.Delivery) {
 func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceUpdate, endpointUpdates <-chan *entity.EndpointUpdate) bool {
 	k8log.InfoLog("Kubeproxy", "syncLoopIteration: Sync loop Iteration")
 
-	select {
+	// select {
 
-	case serviceUpdate := <-serviceUpdates:
-		switch serviceUpdate.Action {
-		case entity.CREATE:
-			k8log.InfoLog("Kubeproxy", "syncLoopIteration: create Service action")
-			proxy.iptableManager.CreateService(serviceUpdate)
-
-		case entity.UPDATE:
-			k8log.InfoLog("Kubeproxy", "syncLoopIteration: update Service action")
-			proxy.iptableManager.UpdateService(serviceUpdate)
-
-		case entity.DELETE:
-			proxy.iptableManager.DeleteService(serviceUpdate)
-		}
-	case endpointUpdate := <-endpointUpdates:
-		switch endpointUpdate.Action {
-		case entity.CREATE:
-		case entity.UPDATE:
-		case entity.DELETE:
-		}
+	serviceUpdate, ok := <-serviceUpdates
+	if !ok {
+		k8log.InfoLog("Kubeproxy", "syncLoopIteration: serviceUpdates channel closed")
 	}
+	switch serviceUpdate.Action {
+	case message.CREATE:
+		k8log.InfoLog("Kubeproxy", "syncLoopIteration: create Service action")
+		proxy.iptableManager.CreateService(serviceUpdate)
+
+	case message.UPDATE:
+		k8log.InfoLog("Kubeproxy", "syncLoopIteration: update Service action")
+		proxy.iptableManager.UpdateService(serviceUpdate)
+
+	case message.DELETE:
+		k8log.InfoLog("Kubeproxy", "syncLoopIteration: delete Service action")
+		proxy.iptableManager.DeleteService(serviceUpdate)
+	}
+	// case endpointUpdate := <-endpointUpdates:
+	// 	switch endpointUpdate.Action {
+	// 	case message.CREATE:
+	// 		k8log.InfoLog("Kubeproxy", "syncLoopIteration: create Endpoint action")
+	// 		proxy.iptableManager.CreateEndpoint(endpointUpdate)
+	// 	case message.UPDATE:
+	// 		k8log.InfoLog("Kubeproxy", "syncLoopIteration: update Endpoint action")
+	// 		proxy.iptableManager.UpdateEndpoint(endpointUpdate)
+	// 	case message.DELETE:
+	// 		k8log.InfoLog("Kubeproxy", "syncLoopIteration: delete Endpoint action")
+	// 		proxy.iptableManager.DeleteEndpoint(endpointUpdate)
+	// 	}
+	// }
 	return true
 }
 

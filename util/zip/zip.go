@@ -7,6 +7,7 @@ import (
 )
 
 // 压缩文件或文件夹为ZIP格式
+// 压缩文件夹 /path/to/your/folder， 建议不要写作 /path/to/your/folder/，否则会出问题
 func CompressToZip(source, target string) error {
 	return archiver.DefaultZip.Archive([]string{source}, target)
 }

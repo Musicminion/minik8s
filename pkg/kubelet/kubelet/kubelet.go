@@ -125,7 +125,7 @@ func (k *Kubelet) HandlePodUpdate(msg amqp.Delivery) {
 	if err != nil {
 		k8log.ErrorLog("Kubelet", "消息格式错误,无法转换为Message")
 	}
-	if parsedMsg.Type == message.PUT {
+	if parsedMsg.Type == message.CREATE {
 		k8log.DebugLog("Kubelet", "HandlePodUpdate: PUT")
 		podUpdate := &entity.PodUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
@@ -147,7 +147,7 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 	k8log.InfoLog("Kubelet", "podUpdate.Action: "+podUpdate.Action)
 
 	switch podUpdate.Action {
-	case entity.CREATE:
+	case message.CREATE:
 		err := k.workManager.AddPod(&podUpdate.PodTarget)
 		if err != nil {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPod failed, for "+err.Error())
@@ -156,8 +156,8 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 		if err != nil {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPodToCache failed, for "+err.Error())
 		}
-	case entity.UPDATE:
-	case entity.DELETE:
+	case message.UPDATE:
+	case message.DELETE:
 		err := k.workManager.DelPodByPodID(podUpdate.PodTarget.Metadata.UUID)
 		if err != nil {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: DelPodByPodID failed, for "+err.Error())

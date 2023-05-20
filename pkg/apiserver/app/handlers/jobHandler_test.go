@@ -199,7 +199,7 @@ func TestAddJob(t *testing.T) {
 	job := &apiObject.Job{
 		Basic: apiObject.Basic{
 			APIVersion: "v1",
-			Kind:       "job",
+			Kind:       "Job",
 			Metadata: apiObject.Metadata{
 				Name:      "job1",
 				Namespace: "default",

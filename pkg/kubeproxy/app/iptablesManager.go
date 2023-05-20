@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math/rand"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
@@ -12,7 +11,6 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/coreos/go-iptables/iptables"
 )
@@ -51,8 +49,8 @@ func New() *IptableManager {
 	return iptableManager
 }
 
-func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
-	clusterIp := serviceUpdate.ServiceTarget.Spec.ClusterIP
+func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) error {
+	var clusterIp = serviceUpdate.ServiceTarget.Spec.ClusterIP
 	seviceName := serviceUpdate.ServiceTarget.Metadata.Name
 	ports := serviceUpdate.ServiceTarget.Spec.Ports
 	var pod_ip_list []string
@@ -60,17 +58,22 @@ func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) {
 		pod_ip_list = append(pod_ip_list, endpoint.IP)
 	}
 
-	if clusterIp == "" {
-		clusterIp, _ = im.allocClusterIP()
-	}
+	// if clusterIp == "" {
+	// 	clusterIp, _ = im.allocClusterIP()
+	// }
 
 	for _, eachports := range ports {
 		k8log.DebugLog("KUBEPROXY", "port: "+strconv.Itoa(eachports.Port))
 		port := eachports.Port
 		protocol := eachports.Protocol
 		targetPort := eachports.TargetPort
-		im.setIPTablesClusterIp(seviceName, clusterIp, port, protocol, targetPort, pod_ip_list)
+		err := im.setIPTablesClusterIp(seviceName, clusterIp, port, protocol, targetPort, pod_ip_list)
+		if err != nil {
+			k8log.ErrorLog("KUBEPROXY", "CreateService: setIPTablesClusterIp failed")
+			return err
+		}
 	}
+	return nil
 }
 
 func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) error {
@@ -78,16 +81,25 @@ func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) err
 	// 根据serviceName查找对应的chain
 	serviceName := serviceUpdate.ServiceTarget.Metadata.Name
 	chainList := im.service2chain[serviceName]
+	// TODO: KUBE-SERVICES对应的链没有删掉
 	for _, chain := range chainList {
 		// 删除chain下的规则
 		im.ipt.ClearChain("nat", chain)
 		im.ipt.DeleteChain("nat", chain)
 	}
+	im.service2chain[serviceName] = nil
 	return nil
 }
 
 func (im *IptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
-
+	err := im.DeleteService(serviceUpdate)
+	if err != nil {
+		k8log.ErrorLog("KUBEPROXY", "UpdateService: delete service failed")
+	}
+	err = im.CreateService(serviceUpdate)
+	if err != nil {
+		k8log.ErrorLog("KUBEPROXY", "UpdateService: create service failed")
+	}
 }
 
 func (im *IptableManager) CreateEndpoint(endpointUpdate *entity.EndpointUpdate) {
@@ -130,38 +142,39 @@ func (im *IptableManager) init_iptables() {
 	k8log.InfoLog("KUBEPROXY", "init iptables success")
 }
 
-func (im *IptableManager) allocClusterIP() (string, bool) {
+// TODO: 应该在apiserver完成
+// func (im *IptableManager) allocClusterIP() (string, error) {
 
-	maxTryTime := 1000 // 最大尝试次数
-	ipAllocated := make(map[string]bool)
-	ip := ""
-	for _, service := range im.serviceDict {
-		if service["clusterIP"] != "" {
-			ipAllocated[service["clusterIP"]] = true
-		}
-	}
-	source := rand.NewSource(time.Now().UnixNano()) // 以当前时间作为随机数种子
-	rng := rand.New(source)
-	for maxTryTime > 0 {
-		maxTryTime--
-		// 前三位ip是指定好的
-		num0 := strconv.Itoa(config.SERVICE_IP_PREFIX[0])
-		num1 := strconv.Itoa(config.SERVICE_IP_PREFIX[1])
-		num2 := strconv.Itoa(config.SERVICE_IP_PREFIX[2])
-		// num2 := strconv.Itoa(rng.Intn(256))
-		num3 := strconv.Itoa(rng.Intn(256))
-		ip = strings.Join([]string{num0, num1, num2, num3}, ".")
-		if _, ok := ipAllocated[ip]; !ok {
-			break
-		}
-	}
-	if maxTryTime <= 0 {
-		log.Fatal("No available service cluster IP address")
-		return ip, false
-	}
-	k8log.DebugLog("KUBEPROXY", "allocClusterIP succeeded, ip is "+ip)
-	return ip, true
-}
+	// maxTryTime := 1000 // 最大尝试次数
+	// ipAllocated := make(map[string]bool)
+	// ip := ""
+	// for _, service := range im.serviceDict {
+	// 	if service["clusterIP"] != "" {
+	// 		ipAllocated[service["clusterIP"]] = true
+	// 	}
+	// }
+	// source := rand.NewSource(time.Now().UnixNano()) // 以当前时间作为随机数种子
+	// rng := rand.New(source)
+	// for maxTryTime > 0 {
+	// 	maxTryTime--
+	// 	// 前三位ip是指定好的
+	// 	num0 := strconv.Itoa(config.SERVICE_IP_PREFIX[0])
+	// 	num1 := strconv.Itoa(config.SERVICE_IP_PREFIX[1])
+	// 	num2 := strconv.Itoa(config.SERVICE_IP_PREFIX[2])
+	// 	// num2 := strconv.Itoa(rng.Intn(256))
+	// 	num3 := strconv.Itoa(rng.Intn(256))
+	// 	ip = strings.Join([]string{num0, num1, num2, num3}, ".")
+	// 	if _, ok := ipAllocated[ip]; !ok {
+	// 		break
+	// 	}
+	// }
+	// if maxTryTime <= 0 {
+	// 	log.Fatal("No available service cluster IP address")
+	// 	return ip, fmt.Errorf("No available service cluster IP address")
+	// }
+	// k8log.DebugLog("KUBEPROXY", "allocClusterIP succeeded, ip is "+ip)
+	// return ip, nil
+// }
 
 /**
  * @Description: 为每个服务创建 iptables 规则
@@ -172,12 +185,12 @@ func (im *IptableManager) allocClusterIP() (string, bool) {
  * @Param: targetPort 服务的目标端口
  * @Param: podIPList 服务的 Pod IP 列表
  */
-func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP string, port int, protocol string, targetPort int, podIPList []string) {
+func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP string, port int, protocol string, targetPort int, podIPList []string) error {
 	k8log.DebugLog("KUBEPROXY", "setIPTablesClusterIp: "+serviceName+" "+clusterIP+" "+strconv.Itoa(port)+" "+protocol+" "+strconv.Itoa(targetPort))
 
 	if im.ipt == nil {
 		k8log.ErrorLog("KUBEPROXY", "im.iptables is nil")
-		return
+		return fmt.Errorf("im.iptables is nil")
 	}
 
 	// 添加 NAT 链
@@ -192,6 +205,7 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
 		"--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH), "-j", kubesvc); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for kubesvc chain: "+err.Error())
+		return err
 	}
 	im.chain2rule[kubesvc] = append(im.chain2rule[kubesvc], "KUBE-SERVICES")
 
@@ -200,6 +214,7 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		serviceName+": cluster IP", "-p", protocol, "--dport", strconv.Itoa(port),
 		"-j", "KUBE-MARK-MASQ", "--destination", clusterIP+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
 		k8log.ErrorLog("KUBEPROXY", "Failed to insert KUBE-SERVICES rule for KUBE-MARK-MASQ chain: "+err.Error())
+		return err
 	}
 	im.chain2rule["KUBE-MARK-MASQ"] = append(im.chain2rule["KUBE-MARK-MASQ"], "KUBE-SERVICES")
 
@@ -214,15 +229,17 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		im.service2chain[serviceName] = append(im.service2chain[serviceName], kubesep)
 
 		if im.stragegy == RANDOM {
-			var prob float64 = 1 / (float64)(podNum - i)
+			var prob float64 = 1 / (float64)(podNum-i)
 			if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
 					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+					return err
 				}
 			} else { // 使用 im.iptables 的随机策略，将流量随机重定向到某个 Pod
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
 					"-m", "statistic", "--mode", "random", "--probability", strconv.FormatFloat(prob, 'f', -1, 64)); err != nil {
 					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+					return err
 				}
 			}
 			im.chain2rule[kubesvc] = append(im.chain2rule[kubesvc], kubesep)
@@ -230,11 +247,13 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 			if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
 					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+					return err
 				}
 			} else { // 使用 roundrobin 策略，将流量重定向到下一个 Pod
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
 					"-m", "statistic", "--mode", "nth", "--every", strconv.Itoa(podNum-i)); err != nil {
 					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+					return err
 				}
 			}
 			im.chain2rule[kubesvc] = append(im.chain2rule[kubesvc], kubesep)
@@ -245,17 +264,21 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 			"-p", protocol,
 			"--to-destination", podIPList[i]+":"+strconv.Itoa(targetPort)); err != nil {
 			k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+			return err
 		}
 		im.chain2rule[kubesep] = append(im.chain2rule[kubesep], "DNAT")
 		// 将源 IP 地址标记为 NAT
 		if err := im.ipt.Insert("nat", kubesep, 1, "-j", "KUBE-MARK-MASQ",
 			"-s", podIPList[i]+"/"+strconv.Itoa(config.IP_PREFIX_LENGTH)); err != nil {
 			k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
+			return err
 		}
 
 	}
 	k8log.DebugLog("KUBEPROXY", "iptables rules have been set for service: "+serviceName)
+	// TODO: Only for test
 	im.SaveIPTables("test-save-iptables")
+	return nil
 }
 
 // SaveIPTables将iptables规则保存到一个文件中。
@@ -328,9 +351,6 @@ func (im *IptableManager) DeletePrefix(table, chain, prefix string) error {
 func (im *IptableManager) ClearIPTables() {
 	im.ipt.ClearAll()
 	im.ipt.DeleteAll()
-	// im.ipt.ClearChain("nat", "KUBE-SVC")
-	im.ipt.ClearAndDeleteChain("nat", "KUBE-SVC")
-	im.DeletePrefix("nat", "KUBE-SERVICES", "KUBE-SVC-")
 
 	log.Printf("iptables rules have been cleared")
 }

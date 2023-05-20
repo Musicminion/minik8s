@@ -25,7 +25,6 @@ import (
 // 添加新的Service
 // POST "/api/v1/namespaces/:namespace/services"
 func AddService(c *gin.Context) {
-	// log
 	k8log.InfoLog("APIServer", "AddService: add new service")
 	// POST请求，获取请求体
 	var service apiObject.Service
@@ -65,6 +64,26 @@ func AddService(c *gin.Context) {
 		return
 	}
 
+	// 为service分配IP
+	if service.Spec.ClusterIP != "" {
+		// 已有IP，检验合法性
+		err = helper.JudgeServiceIPAddress(service.Spec.ClusterIP)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "service ip address is not valid",
+			})
+			return
+		} 
+	} else {
+		service.Spec.ClusterIP, err = helper.AllocClusterIP()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "alloc cluster ip failed",
+			})
+			return
+		}
+	}
+
 	// 给Service设置UUID, 所以哪怕用户故意设置UUID也会被覆盖
 	service.Metadata.UUID = uuid.NewUUID()
 
@@ -85,7 +104,6 @@ func AddService(c *gin.Context) {
 		ServiceTarget: *serviceStore,
 	}
 
-	// TODO: scan etcd and find all endpoints of this service
 	for key, value := range service.Spec.Selector {
 		func(key, value string) {
 			// 替换可变参 namespace
@@ -142,6 +160,7 @@ func AddService(c *gin.Context) {
 	msgutil.PublishUpdateService(serviceUpdate)
 
 }
+
 
 // 获取单个Service信息
 // 某个特定的Service状态 对应的ServiceSpecURL = "/api/v1/services/:name"

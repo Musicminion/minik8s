@@ -10,11 +10,8 @@ import (
 )
 
 func (sch *Scheduler) GetAllNodes() (nodes []apiObject.NodeStore, err error) {
-	// TODO: fix url
-	uriPrefix := "http://" + sch.apiServerHost + ":" + fmt.Sprint(sch.apiServerPort)
+	uriPrefix := config.API_Server_URL_Prefix
 	uri := uriPrefix + config.NodesURL
-	// nodes = make([]apiObject.NodeStore, 0)
-	// nodes = []apiObject.NodeStore{}
 	var allNodes []apiObject.NodeStore
 	code, err := netrequest.GetRequestByTarget(uri, &allNodes, "data")
 

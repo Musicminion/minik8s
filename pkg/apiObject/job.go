@@ -76,13 +76,13 @@ type JobFile struct {
 }
 
 func (jf *JobFile) GetJobName() string {
-	return jf.Basic.Metadata.Name
+	return jf.Metadata.Name
 }
 
 func (jf *JobFile) GetJobNamespace() string {
-	return jf.Basic.Metadata.Namespace
+	return jf.Metadata.Namespace
 }
 
 func (jf *JobFile) GetJobFileUUID() string {
-	return jf.Basic.Metadata.UUID
+	return jf.Metadata.UUID
 }

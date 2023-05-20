@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/serverconfig"
@@ -20,7 +21,6 @@ import (
 // @Summary 获取单个的Job
 // "/apis/v1/namespaces/:namespace/jobs/:name"
 func GetJob(c *gin.Context) {
-	// TODO
 
 	// 解析里面的参数
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
@@ -171,6 +171,7 @@ func AddJob(c *gin.Context) {
 	}
 
 	// 给Job设置UUID，用于后续的操作
+	// 哪怕用户自己设置了UUID，也会被覆盖
 	job.Metadata.UUID = uuid.NewUUID()
 
 	// 将Job转化为JobStore
@@ -233,10 +234,12 @@ func DeleteJob(c *gin.Context) {
 	logStr := "DeleteJob: namespace=" + namespace + ", name=" + name
 	k8log.InfoLog("APIServer", logStr)
 
-	// 检查Job是否存在
-	err := etcdclient.EtcdStore.Del(fmt.Sprintf(serverconfig.EtcdJobPath+"%s/%s", namespace, name))
+	key := fmt.Sprintf(serverconfig.EtcdJobPath+"%s/%s", namespace, name)
+	// 删除Job
+	err := etcdclient.EtcdStore.Del(key)
 
 	if err != nil {
+		k8log.DebugLog("APIServer", "delete job err, "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "delete job err, " + err.Error(),
 		})
@@ -451,6 +454,7 @@ func GetJobFile(c *gin.Context) {
 
 	// 检查参数是否为空
 	if jobNamespace == "" || jobName == "" {
+		k8log.ErrorLog("APIServer", "GetJobFile: namespace or name is empty")
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace or name is empty",
 		})
@@ -511,6 +515,12 @@ func AddJobFile(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(jobFile)
+	// 打印请求体c
+	body, _ := ioutil.ReadAll(c.Request.Body)
+	k8log.InfoLog("APIServer", "request body: "+string(body))
+
+	k8log.InfoLog("APIServer", "api version: "+jobFile.APIVersion)
 	// 检查参数是否为空
 	newJobName := jobFile.GetJobName()
 
@@ -573,7 +583,7 @@ func AddJobFile(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "add job file success",
 	})
 }

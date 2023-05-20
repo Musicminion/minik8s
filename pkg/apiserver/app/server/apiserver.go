@@ -108,8 +108,8 @@ func (s *apiServer) bind() {
 	s.router.DELETE(config.JobSpecURL, handlers.DeleteJob) // 删除job
 
 	// JobStatus相关的api
-	s.router.GET(config.JobSpecStatusURL, handlers.GetJobStatus)     // 获取jobStatus
-	s.router.POST(config.JobSpecStatusURL, handlers.UpdateJobStatus) // 更新jobStatus
+	s.router.GET(config.JobSpecStatusURL, handlers.GetJobStatus)    // 获取jobStatus
+	s.router.PUT(config.JobSpecStatusURL, handlers.UpdateJobStatus) // 更新jobStatus
 
 	// JobFile相关的api
 	s.router.GET(config.JobFileSpecURL, handlers.GetJobFile) // 获取jobFile

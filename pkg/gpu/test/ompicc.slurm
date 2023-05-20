@@ -12,5 +12,7 @@ ulimit -s unlimited
 ulimit -l unlimited
 
 module load cuda/9.2.88-gcc-4.8.5
+nvcc matrix_add.cu -o matrix_add
+nvcc matrix_multiply.cu -o matrix_multiply
 ./matrix_add
 ./matrix_multiply

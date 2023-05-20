@@ -7,6 +7,7 @@ import (
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/message"
 	"miniK8s/util/uuid"
 
 	// "miniK8s/pkg/apiserver/app/handlers"
@@ -150,7 +151,7 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 			}
 			// 创建用于更新service的endpointUpdate对象，
 			endpointUpdate := &entity.EndpointUpdate{
-				Action: entity.CREATE,
+				Action: message.UPDATE,
 				ServiceTarget: entity.ServiceWithEndpoints{
 					Endpoints: totalEndpoints,
 					Service:   serviceStore,

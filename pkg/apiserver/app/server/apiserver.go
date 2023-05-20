@@ -95,11 +95,11 @@ func (s *apiServer) bind() {
 	s.router.POST(config.PodSpecStatusURL, handlers.UpdatePodStatus) // 更新PodStatus
 
 	// Service相关的api
-	s.router.POST(config.ServiceURL, handlers.AddService)       // 创建service
-	s.router.GET(config.ServiceURL, handlers.GetServices)       // 获取所有service
-	s.router.GET(config.ServiceSpecURL, handlers.GetService)    // 获取单个service
-	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService) // 更新service
-	s.router.DELETE(config.ServiceSpecURL, handlers.DeleteService)
+	s.router.POST(config.ServiceURL, handlers.AddService)          // 创建service
+	s.router.GET(config.ServiceURL, handlers.GetServices)          // 获取所有service
+	s.router.GET(config.ServiceSpecURL, handlers.GetService)       // 获取单个service
+	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService)    // 更新service
+	s.router.DELETE(config.ServiceSpecURL, handlers.DeleteService) // 删除service
 
 	// Job相关的api
 	s.router.GET(config.JobsURL, handlers.GetJobs)         // 获取所有job

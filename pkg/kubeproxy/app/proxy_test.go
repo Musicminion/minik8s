@@ -11,6 +11,7 @@ import (
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
+	"miniK8s/pkg/message"
 	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"os"
@@ -52,8 +53,8 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	// serviceStore := service.ToServiceStore()
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action:        entity.CREATE,
-		ServiceTarget: *&apiObject.ServiceStore{},
+		Action:        message.CREATE,
+		ServiceTarget: apiObject.ServiceStore{},
 	}
 
 	for key, value := range service.Spec.Selector {

@@ -119,7 +119,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 
 	// TODO: 将podUpdate发送给对应的Node
 	podUpdate := &entity.PodUpdate{
-		Action:    entity.CREATE,
+		Action:    message.CREATE,
 		PodTarget: *podStore,
 		Node:      scheduledNode,
 	}

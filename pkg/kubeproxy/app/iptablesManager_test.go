@@ -1,9 +1,36 @@
 package proxy
 
 import (
+	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/entity"
+	"miniK8s/pkg/message"
 	"os"
 	"testing"
 )
+
+var testService = apiObject.ServiceStore{
+	Basic: apiObject.Basic{
+		APIVersion: "v1",
+		Kind:       "Service",
+		Metadata: apiObject.Metadata{
+			Name:      "testService",
+			Namespace: "testNamespace",
+			UUID:      "1f3a54a3-c1b9-4e47-b063-2a6d84fde222",
+		},
+	},
+	Spec: apiObject.ServiceSpec{
+		Selector: map[string]string{
+			"app": "test",
+		},
+		Ports: []apiObject.ServicePort{
+			{
+				Port:       80,
+				TargetPort: 80,
+				Name:       "testService",
+			},
+		},
+	},
+}
 
 func TestSaveIPTables(t *testing.T) {
 	im := New()
@@ -27,6 +54,20 @@ func TestSaveIPTables(t *testing.T) {
 
 	// Cleanup
 	// os.Remove(path)
+}
+
+func TestDeleteService(t *testing.T) {
+	im := New()
+	serviceUpdate := &entity.ServiceUpdate{
+		Action:        message.DELETE,
+		ServiceTarget: testService,
+	}
+	// im.CreateService(serviceUpdate)
+
+	err := im.DeleteService(serviceUpdate)
+	if err != nil {
+		t.Error(err)
+	}
 }
 
 // func TestRestoreIPTables(t *testing.T) {

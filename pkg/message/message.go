@@ -14,8 +14,9 @@ const (
 )
 
 const (
-	PUT string = "PUT"
+	CREATE string = "CREATE"
 	DELETE string = "DELETE"
+	UPDATE string = "UPDATE"
 )
 
 type Message struct {

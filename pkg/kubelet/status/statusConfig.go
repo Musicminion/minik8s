@@ -24,12 +24,12 @@ var (
 // pull pod item
 var (
 	PodPullDelay    = 0 * time.Second
-	PodPullInterval = []time.Duration{30 * time.Second}
+	PodPullInterval = []time.Duration{10 * time.Second}
 	PodPullIfLoop   = true
 )
 
 var (
 	PodPushDelay    = 0 * time.Second
-	PodPushInterval = []time.Duration{30 * time.Second}
+	PodPushInterval = []time.Duration{10 * time.Second}
 	PodPushIfLoop   = true
 )

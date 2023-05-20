@@ -22,18 +22,18 @@ programs=(
 
 # 清空iptables
 echo "清空iptables"
-iptables -t nat -F
-iptables -t nat -X
+. "$SCRIPTS_ROOT/iptables_clear.sh" 
 
-# 重启weave
-echo "重启weave"
-weave stop
-weave launch
-weave expose
 
-# 重启docker
-echo "重启docker"
-systemctl restart docker
+# # 重启weave
+# echo "重启weave"
+# weave stop
+# weave launch
+# weave expose
+
+# # 重启docker
+# echo "重启docker"
+# systemctl restart docker
 
 
 # 循环启动程序

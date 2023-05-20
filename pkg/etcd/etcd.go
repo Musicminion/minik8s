@@ -57,6 +57,8 @@ func NewEtcdStore(endpoints []string, timeout time.Duration) (*Store, error) {
 	return &Store{client: cli}, nil
 }
 
+
+
 // 修复了一下逻辑，通过返回的时候创建一个切片，而不是直接组装
 func (s *Store) Get(key string) ([]ListRes, error) {
 	response, err := s.client.Get(context.TODO(), key)

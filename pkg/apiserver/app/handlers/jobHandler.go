@@ -6,6 +6,7 @@ import (
 	"io"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
@@ -587,6 +588,11 @@ func AddJobFile(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "add job file success",
 	})
+	/*
+		首次创建了JobFile，需要给消息队列发送消息
+	*/
+	msgutil.PublishUpdateJobFile(&jobFile.Basic)
+
 }
 
 // "/apis/v1/namespaces/:namespace/jobfiles/:name"
@@ -681,6 +687,7 @@ func UpdateJobFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "update job file success",
 	})
+
 }
 
 // 为了简单处理，只更新 UserUploadFile、OutputFile、ErrorFile

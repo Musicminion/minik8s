@@ -67,7 +67,7 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 		podURL = stringutil.Replace(podURL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
 		podURL = stringutil.Replace(podURL, config.URL_PARAM_NAME_PART, pod.GetPodName())
 
-		err = kubectlutil.DeleteAPIObjectToServer(podURL)
+		_, err = kubectlutil.DeleteAPIObjectToServer(podURL)
 		if err != nil {
 			fmt.Println(err.Error())
 			return
@@ -81,7 +81,7 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 		serviceURL = stringutil.Replace(serviceURL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace)
 		serviceURL = stringutil.Replace(serviceURL, config.URL_PARAM_NAME_PART, service.Metadata.Name)
 
-		err = kubectlutil.DeleteAPIObjectToServer(serviceURL)
+		_, err = kubectlutil.DeleteAPIObjectToServer(serviceURL)
 		if err != nil {
 			fmt.Println(err.Error())
 			return

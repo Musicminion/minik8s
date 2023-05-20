@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
-	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"miniK8s/util/stringutil"
+	"miniK8s/util/zip"
 	"net/http"
 	"os"
-	"strings"
 
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/table"
@@ -45,7 +44,7 @@ const (
 )
 
 func applyHandler(cmd *cobra.Command, args []string) {
-	k8log.DebugLog("applyHandler", "args: "+strings.Join(args, " "))
+	// k8log.DebugLog("applyHandler", "args: "+strings.Join(args, " "))
 	// 打印出来所有的参数
 	// 检查参数的数量是否为1
 	if len(args) != 1 {
@@ -85,9 +84,10 @@ func applyHandler(cmd *cobra.Command, args []string) {
 	case string(Apply_kind_Service):
 		applyServiceHandler(fileContent)
 	case string(Apply_kind_Deploy):
-		fmt.Println("Deployment not support now")
+		// applyDeployHandler(fileContent)
+		fmt.Println("not support yet")
 	case string(Apply_Kind_Job):
-		fmt.Println("Job not support now")
+		applyJobHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
@@ -188,6 +188,137 @@ func applyServiceHandler(fileContent []byte) {
 	}
 }
 
+// =========================================================
+//
+// 处理Job的Apply
+// 测试用例  go run ./main/ apply ./kubectlutil/testFile/job-with-pwd.yaml
+//
+// =========================================================
+
+// 逻辑如下
+// 1. 检查Job的名字是否为空
+// 2. 检查Job的Namespace是否为空
+// 3. 上传Job对应yaml信息，创建api对象
+// 4. 检查Job对应的文件是否存在
+// 5. 上传Job对应的文件
+// 6. 检查Job对应的文件是否上传成功
+
+func applyJobHandler(fileContent []byte) {
+	// fmt.Println("Kind: Job")
+	var job apiObject.Job
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &job)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Job的名字是否为空
+	if job.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "empty name", "job name is empty")
+		return
+	}
+
+	// 检查Job的Namespace是否为空
+	if job.Metadata.Namespace == "" {
+		job.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 检查Job对应的文件是否存在
+	submitFolder := job.Spec.SubmitDirectory
+
+	if submitFolder == "" {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "empty submit folder", "job submit folder is empty")
+		return
+	}
+
+	// 检查文件夹是否存在
+	// 使用Stat函数检查文件夹是否存在
+	fileInfo, err := os.Stat(submitFolder)
+	if err == nil && fileInfo.IsDir() {
+		// fmt.Println("文件夹存在")
+		// 发请求
+		URL := config.API_Server_URL_Prefix + config.JobsURL
+		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, job.Metadata.Namespace)
+		code, err, msg := kubectlutil.PostAPIObjectToServer(URL, job)
+
+		if err != nil {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "post obj failed", err.Error())
+			return
+		}
+
+		if code != http.StatusCreated {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "failed", msg)
+			return
+		}
+
+		// 然后将文件夹中的文件压缩为zip文件
+		err = zip.CompressToZip(submitFolder, submitFolder+".zip")
+
+		// 如果在这个时候发现错误，就会删除之前的Job
+		if err != nil {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "zip folder failed", err.Error())
+			delUnusedJob(job.Metadata.Name, job.Metadata.Namespace)
+			return
+		}
+
+		zipFileBytes, err := os.ReadFile(submitFolder + ".zip")
+		// 如果在这个时候发现错误，就会删除之前的Job
+		if err != nil {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "read zip file failed", err.Error())
+			delUnusedJob(job.Metadata.Name, job.Metadata.Namespace)
+			return
+		}
+
+		// 然后将zip文件上传到服务器
+		userZipFile := apiObject.JobFile{
+			Basic: apiObject.Basic{
+				Kind: "JobFile",
+				Metadata: apiObject.Metadata{
+					Name:      job.Metadata.Name,
+					Namespace: job.Metadata.Namespace,
+				},
+			},
+			UserUploadFile: zipFileBytes,
+		}
+
+		// 然后将userZipFile上传到服务器
+		fileURL := config.API_Server_URL_Prefix + config.JobFileURL
+
+		code, err, msg = kubectlutil.PostAPIObjectToServer(fileURL, userZipFile)
+
+		if err != nil || code != http.StatusCreated {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "upload zip file failed", err.Error())
+			delUnusedJob(job.Metadata.Name, job.Metadata.Namespace)
+			return
+		}
+
+		// 最后删除zip文件
+		_ = os.Remove(submitFolder + ".zip")
+
+		// 打印结果
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Success, "created", msg)
+
+	} else if os.IsNotExist(err) {
+		// fmt.Println("文件夹不存在")
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "submit folder not exist", "job submit folder not exist")
+
+	} else if err != nil {
+		// fmt.Println("发生错误:", err)
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "check submit folder failed", err.Error())
+		return
+	} else if !fileInfo.IsDir() {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "submit folder not a folder", "job submit folder is not a folder")
+		return
+	} else {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "unknow error", "unknow error")
+		return
+	}
+
+}
+
+// ==============================================
+
 // 打印Apply的结果和报错信息，尽可能对用户友好
 // ==============================================
 //
@@ -240,4 +371,27 @@ func printApplyObjectInfo(kind ApplyObject, name string, namespace string) {
 	})
 
 	t.Render()
+}
+
+// ==============================================
+//
+//	Other Util Functions
+//
+// ==============================================
+func delUnusedJob(name string, namespace string) {
+	URL := config.API_Server_URL_Prefix + config.JobSpecURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, name)
+
+	code, err := kubectlutil.DeleteAPIObjectToServer(URL)
+
+	if err != nil {
+		// fmt.Println("Delete unused job failed: ", err)
+		return
+	}
+
+	if code != http.StatusNoContent {
+		// fmt.Println("Delete unused job failed: ")
+		return
+	}
 }

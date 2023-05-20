@@ -2,6 +2,7 @@ package proxy
 
 import (
 	"encoding/json"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
@@ -113,8 +114,11 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 }
 
 func (proxy *KubeProxy) Run() {
-	go proxy.lw.WatchQueue_Block("serviceUpdate", proxy.HandleServiceUpdate, make(chan struct{}))
-	go proxy.lw.WatchQueue_Block("endpointUpdate", proxy.HandleEndpointUpdate, make(chan struct{}))
+	// serviceUpdate
+	go proxy.lw.WatchQueue_Block(msgutil.ServiceUpdate, proxy.HandleServiceUpdate, make(chan struct{}))
+
+	// endpointUpdate
+	go proxy.lw.WatchQueue_Block(msgutil.EndpointUpdate, proxy.HandleEndpointUpdate, make(chan struct{}))
 	// 持续监听serviceUpdates和endpointUpdates的channel
 	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.endpointUpdates) {
 	}

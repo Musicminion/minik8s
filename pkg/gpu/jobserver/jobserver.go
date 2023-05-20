@@ -281,7 +281,7 @@ func (js *JobServer) Run() {
 
 			if err != nil {
 				fmt.Println("UploadResult failed, for err" + err.Error())
-				return true // 任务出错，结束循环
+				return false // 任务出错，结束循环
 			}
 			return true // 任务完成，结束循环
 		case -1:
@@ -301,19 +301,20 @@ func (js *JobServer) Run() {
 // const config.JobFileSpecURL untyped string = "/apis/v1/namespaces/:namespace/jobfiles/:name"
 func (js *JobServer) UploadResult() error {
 	jobfile := &apiObject.JobFile{}
-
 	remoteOutFilePath := js.conf.RemoteWorkDir + "/" + js.conf.OutputFile
 	remoteErrFilePath := js.conf.RemoteWorkDir + "/" + js.conf.ErrorFile
 
 	err := js.sshClient.DownloadFile(remoteOutFilePath, js.conf.WorkDir+"/"+js.conf.OutputFile)
 
 	if err != nil {
+		fmt.Println("[1] DownloadFile failed, for err " + err.Error() + remoteOutFilePath)
 		return err
 	}
 
 	err = js.sshClient.DownloadFile(remoteErrFilePath, js.conf.WorkDir+"/"+js.conf.ErrorFile)
 
 	if err != nil {
+		fmt.Println("[2] DownloadFile failed, for err " + err.Error() + remoteErrFilePath)
 		return err
 	}
 
@@ -334,8 +335,6 @@ func (js *JobServer) UploadResult() error {
 	jobfile.OutputFile = outFileContent
 	jobfile.ErrorFile = errFileContent
 
-	fmt.Println(len(jobfile.OutputFile))
-
 	// 上传数据到API Server
 	URL := stringutil.Replace(config.JobFileSpecURL, config.URL_PARAM_NAMESPACE_PART, js.conf.JobNamespace)
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, js.conf.JobName)
@@ -355,5 +354,13 @@ func (js *JobServer) UploadResult() error {
 	}
 
 	fmt.Println("UploadResult-finish")
+
+	// 删除远端文件
+	_, err = js.sshClient.RemoveDirectory(js.conf.RemoteWorkDir)
+
+	if err != nil {
+		fmt.Println("RemoveDirectory failed, for err" + err.Error())
+		return err
+	}
 	return nil
 }

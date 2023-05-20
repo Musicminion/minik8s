@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/serverconfig"
@@ -517,7 +517,7 @@ func AddJobFile(c *gin.Context) {
 
 	fmt.Println(jobFile)
 	// 打印请求体c
-	body, _ := ioutil.ReadAll(c.Request.Body)
+	body, _ := io.ReadAll(c.Request.Body)
 	k8log.InfoLog("APIServer", "request body: "+string(body))
 
 	k8log.InfoLog("APIServer", "api version: "+jobFile.APIVersion)

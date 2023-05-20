@@ -29,8 +29,8 @@ type IptableManager struct {
 	// serviceIPMap map[string]string
 	serviceDict map[string]map[string]string
 	// 一个service下有一条KUBE-SVC链（规则数量取决于service数量），一条KUBE-SEP链（规则数量取决于endpoint数）
-	service2chain map[string][]string  
-	chain2rule   map[string][]string
+	service2chain map[string][]string
+	chain2rule    map[string][]string
 }
 
 // var ipt *iptables.IPTables
@@ -42,10 +42,10 @@ const (
 
 func New() *IptableManager {
 	iptableManager := &IptableManager{
-		stragegy: RANDOM,
-		serviceDict: make(map[string]map[string]string),
+		stragegy:      RANDOM,
+		serviceDict:   make(map[string]map[string]string),
 		service2chain: make(map[string][]string),
-		chain2rule: make(map[string][]string),
+		chain2rule:    make(map[string][]string),
 	}
 	iptableManager.init_iptables()
 	return iptableManager
@@ -80,11 +80,8 @@ func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) err
 	chainList := im.service2chain[serviceName]
 	for _, chain := range chainList {
 		// 删除chain下的规则
-		err := im.ipt.ClearAndDeleteChain("nat", chain)
-		if err != nil {
-			k8log.ErrorLog("KUBEPROXY", "DeleteService: failed to delete chain "+ chain)
-			return err
-		}
+		im.ipt.ClearChain("nat", chain)
+		im.ipt.DeleteChain("nat", chain)
 	}
 	return nil
 }
@@ -128,8 +125,8 @@ func (im *IptableManager) init_iptables() {
 	im.ipt.Append("nat", "OUTPUT", "-j", "KUBE-SERVICES", "-m", "comment", "--comment", "kubernetes service portals")
 	im.ipt.Append("nat", "POSTROUTING", "-j", "KUBE-POSTROUTING", "-m", "comment", "--comment", "kubernetes postrouting rules")
 
-	im.ipt.Insert("nat", "KUBE-MARK-MASQ", 1, "-j", "MARK", "--or-mark", "0x4000")
-	im.ipt.Insert("nat", "KUBE-POSTROUTING", 1, "-m", "comment", "--comment", "kubernetes service traffic requiring SNAT", "-j", "MASQUERADE", "-m", "mark", "--mark", "0x4000/0x4000")
+	im.ipt.AppendUnique("nat", "KUBE-MARK-MASQ", "-j", "MARK", "--or-mark", "0x4000")
+	im.ipt.AppendUnique("nat", "KUBE-POSTROUTING", "-m", "comment", "--comment", "kubernetes service traffic requiring SNAT", "-j", "MASQUERADE", "-m", "mark", "--mark", "0x4000/0x4000")
 	k8log.InfoLog("KUBEPROXY", "init iptables success")
 }
 
@@ -217,14 +214,14 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 		im.service2chain[serviceName] = append(im.service2chain[serviceName], kubesep)
 
 		if im.stragegy == RANDOM {
-			prob := 1 / (podNum - i)
+			var prob float64 = 1 / (float64)(podNum - i)
 			if i == podNum-1 { // 在最后一个 Pod 上，直接将流量重定向到 KUBE-SEP-UUID 链
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep); err != nil {
 					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 				}
 			} else { // 使用 im.iptables 的随机策略，将流量随机重定向到某个 Pod
 				if err := im.ipt.Insert("nat", kubesvc, 1, "-j", kubesep,
-					"-m", "statistic", "--mode", "random", "--probability", strconv.Itoa(prob)); err != nil {
+					"-m", "statistic", "--mode", "random", "--probability", strconv.FormatFloat(prob, 'f', -1, 64)); err != nil {
 					k8log.ErrorLog("KUBEPROXY", "Failed to create kubesvc chain: "+err.Error())
 				}
 			}

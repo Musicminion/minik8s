@@ -5,9 +5,15 @@ import (
 	"fmt"
 	"io/fs"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/gpu/sshclient"
 	"miniK8s/util/executor"
+	netrequest "miniK8s/util/netRequest"
+	"miniK8s/util/stringutil"
+	"net/http"
+	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -35,28 +41,37 @@ func (js *JobServer) FindJobFiles() []string {
 	checkFun := func(path string, d fs.DirEntry, err error) error {
 		if !d.IsDir() {
 			fileName := d.Name()
-
 			// 遍历AcceptFileSuffix
 			for _, suffix := range AcceptFileSuffix {
 				if filepath.Ext(fileName) == suffix {
-					filesPath = append(filesPath, fileName)
+					// 添加绝对路径
+					filesPath = append(filesPath, path)
 					break
 				}
 			}
-
 		}
 		return nil
 	}
 
-	_ = filepath.WalkDir("", checkFun)
+	_ = filepath.WalkDir(js.conf.WorkDir, checkFun)
 
 	return filesPath
 }
 
-func (js *JobServer) UpdateJobFiles(filePaths []string) {
+func (js *JobServer) UpdateJobFiles(filePaths []string) error {
 	for _, filePath := range filePaths {
-		js.sshClient.UploadFile(filePath, js.conf.WorkDir)
+		// 获取本地的相对路径
+		fileRelativePath, err := filepath.Rel(js.conf.WorkDir, filePath)
+		if err != nil {
+			return err
+		}
+		// 拼接获取远程路径
+		fileRemotePath := filepath.Join(js.conf.RemoteWorkDir, fileRelativePath)
+
+		// 上传文件
+		js.sshClient.UploadFile(filePath, fileRemotePath)
 	}
+	return nil
 }
 
 func (js *JobServer) CompileJobFiles() {
@@ -81,25 +96,26 @@ func (js *JobServer) CompactJobFiles() string {
 	fileContent += fmt.Sprintf(SBATCH_GPUS, js.conf.GPUNums) + SBATCH_NEXT_LINE
 	fileContent += fmt.Sprintf(SBATCH_TOTAL_CPUS, js.conf.CPUNums) + SBATCH_NEXT_LINE
 	fileContent += fmt.Sprintf(SBATCH_NODE_CPUS, js.conf.NodeCPUNums) + SBATCH_NEXT_LINE
+	fileContent += fmt.Sprintf(SBATCH_NODE_NUMS, 1) + SBATCH_NEXT_LINE
 	fileContent += SBATCH_NEXT_LINE
 	fileContent += js.CompactRunCmd() + SBATCH_NEXT_LINE
 	return fileContent
 }
 
-func (js *JobServer) CompactJobPath() string {
-	path := js.conf.WorkDir + js.conf.JobName + SBATCH_SUFFIX
+func (js *JobServer) CompactJobScriptPath() string {
+	path := js.conf.RemoteWorkDir + "/" + js.conf.JobName + SBATCH_SUFFIX
 	return path
 }
 
 // 运行Job开始之前的准备工作
 func (js *JobServer) SetupJob() error {
 	// 清空工作目录
-	_, err := js.sshClient.RemoveDirectory(js.conf.WorkDir)
+	_, err := js.sshClient.RemoveDirectory(js.conf.RemoteWorkDir)
 	if err != nil {
 		fmt.Println("RemoveDirectory failed, for err" + err.Error())
 		return err
 	}
-	_, err = js.sshClient.MakeDirectory(js.conf.WorkDir)
+	_, err = js.sshClient.MakeDirectory(js.conf.RemoteWorkDir)
 
 	if err != nil {
 		fmt.Println("MakeDirectory failed, for err" + err.Error())
@@ -108,8 +124,14 @@ func (js *JobServer) SetupJob() error {
 
 	// 获取所有需要上传的文件
 	uploadFiles := js.FindJobFiles()
+
 	// 上传文件
-	js.UpdateJobFiles(uploadFiles)
+	err = js.UpdateJobFiles(uploadFiles)
+
+	if err != nil {
+		fmt.Println("UpdateJobFiles failed, for err" + err.Error())
+		return err
+	}
 
 	// 编译文件
 	js.CompileJobFiles()
@@ -118,7 +140,7 @@ func (js *JobServer) SetupJob() error {
 	jobFileContent := js.CompactJobFiles()
 
 	// 上传Job文件
-	_, err = js.sshClient.WriteFile(jobFileContent, js.CompactJobPath())
+	_, err = js.sshClient.WriteFile(js.CompactJobScriptPath(), jobFileContent)
 
 	if err != nil {
 		fmt.Println("WriteFile failed, for err" + err.Error())
@@ -130,8 +152,11 @@ func (js *JobServer) SetupJob() error {
 
 // 返回任务的ID
 func (js *JobServer) SubmitJob() (string, error) {
+
 	// 提交Job的命令
-	command := fmt.Sprintf(SBATCH_SUBMIT, js.CompactJobPath())
+	command := fmt.Sprintf(SBATCH_SUBMIT, js.conf.RemoteWorkDir, js.CompactJobScriptPath())
+
+	println(command)
 	result, err := js.sshClient.RunCmd(command)
 
 	if err != nil {
@@ -201,7 +226,24 @@ func (js *JobServer) CheckAndUpdateJobStatus(jobID string) int {
 		}
 
 		// 更新任务状态 TODO 写入到apiServer【TODO】
-		fmt.Println(jobStatus)
+		// JobSpecStatusURL = "/apis/v1/namespaces/:namespace/jobs/:name/status"
+
+		URL := stringutil.Replace(config.JobSpecStatusURL, config.URL_PARAM_NAMESPACE_PART, js.conf.JobNamespace)
+		URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, js.conf.JobName)
+		URL = js.conf.APIServerAddr + URL
+
+		code, _, err := netrequest.PutRequestByTarget(URL, jobStatus)
+
+		if err != nil {
+			fmt.Println("PutRequestByTarget failed, for err" + err.Error())
+			return -1
+		}
+
+		if code != http.StatusOK {
+			fmt.Println("PutRequestByTarget failed, for code" + strconv.Itoa(code))
+			return -1
+		}
+
 		return 1
 	}
 	return 0
@@ -231,10 +273,19 @@ func (js *JobServer) Run() {
 	periodCheck := func() bool {
 		switch js.CheckAndUpdateJobStatus(jobID) {
 		case 0:
+			fmt.Println("Job not complete")
 			return false // 任务未完成，继续循环
 		case 1:
+			fmt.Println("Job complete")
+			err := js.UploadResult()
+
+			if err != nil {
+				fmt.Println("UploadResult failed, for err" + err.Error())
+				return true // 任务出错，结束循环
+			}
 			return true // 任务完成，结束循环
 		case -1:
+			fmt.Println("Job error")
 			return true // 任务出错，结束循环
 		}
 		return false
@@ -245,4 +296,64 @@ func (js *JobServer) Run() {
 	// 完成任务，等待
 	// 自旋等待
 	js.Spin()
+}
+
+// const config.JobFileSpecURL untyped string = "/apis/v1/namespaces/:namespace/jobfiles/:name"
+func (js *JobServer) UploadResult() error {
+	jobfile := &apiObject.JobFile{}
+
+	remoteOutFilePath := js.conf.RemoteWorkDir + "/" + js.conf.OutputFile
+	remoteErrFilePath := js.conf.RemoteWorkDir + "/" + js.conf.ErrorFile
+
+	err := js.sshClient.DownloadFile(remoteOutFilePath, js.conf.WorkDir+"/"+js.conf.OutputFile)
+
+	if err != nil {
+		return err
+	}
+
+	err = js.sshClient.DownloadFile(remoteErrFilePath, js.conf.WorkDir+"/"+js.conf.ErrorFile)
+
+	if err != nil {
+		return err
+	}
+
+	// 读取输出文件
+	outFileContent, err := os.ReadFile(js.conf.WorkDir + "/" + js.conf.OutputFile)
+	if err != nil {
+		fmt.Println("ReadFile failed, for err" + err.Error())
+		return err
+	}
+
+	// 读取错误文件
+	errFileContent, err := os.ReadFile(js.conf.WorkDir + "/" + js.conf.ErrorFile)
+	if err != nil {
+		fmt.Println("ReadFile failed, for err" + err.Error())
+		return err
+	}
+
+	jobfile.OutputFile = outFileContent
+	jobfile.ErrorFile = errFileContent
+
+	fmt.Println(len(jobfile.OutputFile))
+
+	// 上传数据到API Server
+	URL := stringutil.Replace(config.JobFileSpecURL, config.URL_PARAM_NAMESPACE_PART, js.conf.JobNamespace)
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, js.conf.JobName)
+	URL = js.conf.APIServerAddr + URL
+	// 上传数据
+
+	code, _, err := netrequest.PutRequestByTarget(URL, jobfile)
+
+	if err != nil {
+		fmt.Println("PutRequestByTarget failed, for err" + err.Error())
+		return err
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("PutRequestByTarget failed, for code" + strconv.Itoa(code))
+		return errors.New("PutRequestByTarget failed, for code" + strconv.Itoa(code))
+	}
+
+	fmt.Println("UploadResult-finish")
+	return nil
 }

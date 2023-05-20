@@ -18,18 +18,21 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+const ifClear = true
+
 func TestMain(m *testing.M) {
-	// 删除 ./testFile/zipFile/ 目录下的所有文件
-	os.RemoveAll("./testFile/zipFile/outPut/")
-	os.Mkdir("./testFile/zipFile/outPut/", os.ModePerm)
+	if ifClear {
+		// 删除 ./testFile/zipFile/ 目录下的所有文件
+		os.RemoveAll("./testFile/zipFile/outPut/")
+		os.Mkdir("./testFile/zipFile/outPut/", os.ModePerm)
 
-	// 清空etcd 中的数据
-	res := etcdclient.EtcdStore.DelAll()
+		// 清空etcd 中的数据
+		res := etcdclient.EtcdStore.DelAll()
 
-	if res != nil {
-		panic(res)
+		if res != nil {
+			panic(res)
+		}
 	}
-
 	m.Run()
 }
 
@@ -181,15 +184,84 @@ func TestGetJobFile(t *testing.T) {
 	}
 }
 
-func TestClear(t *testing.T) {
-	// 清空etcd 中的数据
-	res := etcdclient.EtcdStore.DelAll()
+func TestAddJob(t *testing.T) {
+	gin.SetMode(gin.ReleaseMode)
+	// 创建一个新的gin引擎，并注册AddPod处理函数。
+	r := gin.New()
+	// 关闭gin的日志输出
+	r.Use(gin.LoggerWithWriter(io.Discard))
+	// 设置gin为生产模式
+	gin.SetMode(gin.ReleaseMode)
+	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
 
-	if res != nil {
-		panic(res)
+	r.POST(config.JobsURL, AddJob)
+
+	job := &apiObject.Job{
+		Basic: apiObject.Basic{
+			APIVersion: "v1",
+			Kind:       "job",
+			Metadata: apiObject.Metadata{
+				Name:      "job1",
+				Namespace: "default",
+			},
+		},
+		Spec: apiObject.JobSpec{
+			JobPartition:    "dgx2",
+			NTasks:          1,
+			NTasksPerNode:   6,
+			SubmitDirectory: "./testFile/zipFile/zipFolder",
+			CompileCommands: []string{"ls"},
+			RunCommands:     []string{"ls", "echo hello", "pwd", "echo 123"},
+			OutputFile:      "test-out",
+			ErrorFile:       "test-error",
+			JobUsername:     os.Getenv("GPU_SSH_USERNAME"),
+			JobPassword:     os.Getenv("GPU_SSH_PASSWORD"),
+			GPUNums:         1,
+		},
 	}
 
-	// 删除 ./testFile/zipFile/ 目录下的所有文件
-	os.RemoveAll("./testFile/zipFile/outPut/")
-	os.Mkdir("./testFile/zipFile/outPut/", os.ModePerm)
+	// 读取的内容转化为json
+	jsonBytes, err := json.Marshal(job)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	jobReader := bytes.NewReader(jsonBytes)
+
+	url := stringutil.Replace(config.JobsURL, config.URL_PARAM_NAMESPACE_PART, "default")
+
+	req, err := http.NewRequest(http.MethodPost, url, jobReader)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// 创建响应写入器
+	w := httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	resp := w.Result()
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("Status code error: %d", resp.StatusCode)
+	}
+}
+
+func TestClear(t *testing.T) {
+
+	if ifClear {
+		// 清空etcd 中的数据
+		res := etcdclient.EtcdStore.DelAll()
+
+		if res != nil {
+			panic(res)
+		}
+
+		// 删除 ./testFile/zipFile/ 目录下的所有文件
+		os.RemoveAll("./testFile/zipFile/outPut/")
+		os.Mkdir("./testFile/zipFile/outPut/", os.ModePerm)
+	}
+
 }

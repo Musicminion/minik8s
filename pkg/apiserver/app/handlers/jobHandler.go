@@ -117,6 +117,7 @@ func GetJobs(c *gin.Context) {
 }
 
 // 创建Job
+// "/apis/v1/namespaces/:namespace/jobs"
 func AddJob(c *gin.Context) {
 	// log
 	k8log.InfoLog("APIServer", "AddJob")
@@ -444,7 +445,7 @@ func selectiveUpdateJobStatus(oldJob *apiObject.JobStore, newJob *apiObject.JobS
 		oldJob.Status.State = newJob.State
 	}
 
-	newJob.UpdateTime = time.Now()
+	oldJob.Status.UpdateTime = time.Now()
 }
 
 // "/apis/v1/namespaces/:namespace/jobs/:name/file"

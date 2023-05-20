@@ -3,7 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/serverconfig"
@@ -117,6 +117,7 @@ func GetJobs(c *gin.Context) {
 }
 
 // 创建Job
+// "/apis/v1/namespaces/:namespace/jobs"
 func AddJob(c *gin.Context) {
 	// log
 	k8log.InfoLog("APIServer", "AddJob")
@@ -444,7 +445,7 @@ func selectiveUpdateJobStatus(oldJob *apiObject.JobStore, newJob *apiObject.JobS
 		oldJob.Status.State = newJob.State
 	}
 
-	newJob.UpdateTime = time.Now()
+	oldJob.Status.UpdateTime = time.Now()
 }
 
 // "/apis/v1/namespaces/:namespace/jobs/:name/file"
@@ -517,7 +518,7 @@ func AddJobFile(c *gin.Context) {
 
 	fmt.Println(jobFile)
 	// 打印请求体c
-	body, _ := ioutil.ReadAll(c.Request.Body)
+	body, _ := io.ReadAll(c.Request.Body)
 	k8log.InfoLog("APIServer", "request body: "+string(body))
 
 	k8log.InfoLog("APIServer", "api version: "+jobFile.APIVersion)

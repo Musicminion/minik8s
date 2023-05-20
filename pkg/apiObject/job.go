@@ -11,16 +11,18 @@ type Job struct {
 // https://docs.hpc.sjtu.edu.cn/job/slurm.html
 type JobSpec struct {
 	JobPartition    string   `yaml:"partition" json:"partition"`             // 分区
-	NTasks          int      `yaml:"nTasks" json:"nTasks"`                   // 进程总数
+	NTasks          int      `yaml:"nTasks" json:"nTasks"`                   // 进程总数，也是CPU核心数
 	NTasksPerNode   int      `yaml:"nTasksPerNode" json:"nTasksPerNode"`     // 每个节点请求的任务数
 	SubmitDirectory string   `yaml:"submitDirectory" json:"submitDirectory"` // 提交目录
-	SubmitHost      string   `yaml:"submitHost" json:"submitHost"`           // 提交主机
 	CompileCommands []string `yaml:"compileCommands" json:"compileCommands"` // 编译命令
 	RunCommands     []string `yaml:"runCommands" json:"runCommands"`         // 运行命令
 	OutputFile      string   `yaml:"outputFile" json:"outputFile"`           // 输出文件
 	ErrorFile       string   `yaml:"errorFile" json:"errorFile"`             // 错误文件
 	JobUsername     string   `yaml:"username" json:"username"`               // 用户名
 	JobPassword     string   `yaml:"password" json:"password"`               // 密码
+	GPUNums         int      `yaml:"gpuNums" json:"gpuNums"`                 // GPU数目
+
+	// SubmitHost      string   `yaml:"submitHost" json:"submitHost"`           // 提交主机
 }
 
 // 任务状态，参考：https://docs.hpc.sjtu.edu.cn/job/slurm.html
@@ -76,13 +78,13 @@ type JobFile struct {
 }
 
 func (jf *JobFile) GetJobName() string {
-	return jf.Basic.Metadata.Name
+	return jf.Metadata.Name
 }
 
 func (jf *JobFile) GetJobNamespace() string {
-	return jf.Basic.Metadata.Namespace
+	return jf.Metadata.Namespace
 }
 
 func (jf *JobFile) GetJobFileUUID() string {
-	return jf.Basic.Metadata.UUID
+	return jf.Metadata.UUID
 }

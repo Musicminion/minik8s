@@ -84,11 +84,9 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 	if err != nil {
 		return err
 	}
-	// serviceUpdateReader := bytes.NewReader(jsonBytes)
-	// change serviceUpdateReader to string
 
 	message := message.Message{
-		Type:         message.PUT,
+		Type:         message.CREATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: serviceUpdate.ServiceTarget.GetName(),
@@ -115,7 +113,7 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 	// change serviceUpdateReader to string
 
 	message := message.Message{
-		Type:         message.PUT,
+		Type:         message.CREATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: endpointUpdate.ServiceTarget.Service.GetName(),
@@ -140,7 +138,7 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 	}
 
 	message := message.Message{
-		Type:         message.PUT,
+		Type:         message.CREATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: podUpdate.PodTarget.GetPodName(),

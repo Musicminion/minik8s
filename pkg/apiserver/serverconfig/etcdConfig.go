@@ -5,6 +5,9 @@ package serverconfig
 import "time"
 
 const (
+	//用来记录分配的最大的ServiceIP
+	EtcdIPPath = "/registry/allocatedIP"
+
 	EtcdTokenPath = "/registry/tokens/"
 
 	// 完整路径：/registry/nodes/<node-name>
@@ -12,15 +15,12 @@ const (
 
 	// 完整路径：/registry/pods/<namespace>/<pod-name>
 	EtcdPodPath = "/registry/pods/"
-
-	// 完整路径：/registry/services/<svc-name>
+	// 完整路径：/registry/services/<namespace>/<svc-name>
 	EtcdServicePath = "/registry/services/"
 
-	// 完整路径：/registry/svclabel/<label-key>/<label-value>/<svc-uuid>
 	// 完整路径：/registry/svclabels/<label-key>/<label-value>/<svc-uuid>
 	EtcdServiceSelectorPath = "/registry/svclabels/"
 
-	// 完整路径：/registry/endpoints/<label-key>/<label-value>/<endpoint-uuid> ?
 	// 完整路径：/registry/endpoints/<label-key>/<label-value>/<pod-uuid> ?
 	EndpointPath = "/registry/endpoints/"
 

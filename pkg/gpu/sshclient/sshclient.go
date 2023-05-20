@@ -102,7 +102,8 @@ func (sc *sshClient) UploadFile(localPath string, remotePath string) error {
 }
 
 func (sc *sshClient) DownloadFile(remotePath string, localPath string) error {
-	// 下载文件
+	fmt.Println("remotePath:", remotePath)
+	fmt.Println("localPath:", localPath)
 	err := sc.Client.Download(remotePath, localPath)
 	return err
 }

@@ -1,35 +1,19 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
+	"os"
 
-	"github.com/gin-gonic/gin"
+	"github.com/jedib0t/go-pretty/table"
 )
 
 func main() {
-	data := []string{"123", "123"}
-	// data := []int{1, 2, 3}
-
-	jsonDatas, err := json.Marshal(data)
-
-	if err != nil {
-		fmt.Println(err)
-	}
-
-	jsonDatasStr := string(jsonDatas)
-	fmt.Println(jsonDatasStr)
-
-	// 使用 gin.H 生成包含 error 和 data 两个键的 JSON 数据
-	result := gin.H{
-		"data": jsonDatasStr,
-	}
-
-	result2 := gin.H{
-		"data": data,
-	}
-
-	fmt.Println(result)
-	fmt.Println(result2)
-
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"First Name", "Last Name", "Age"})
+	t.AppendRows([]table.Row{
+		{"John", "Doe", "30"},
+		{"Jane", "Smith", "25"},
+		{"Bob", "Johnson", "45"},
+	})
+	t.Render()
 }

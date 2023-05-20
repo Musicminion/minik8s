@@ -196,6 +196,8 @@ func prepareJobConfig() (*jobserver.JobServerConfig, error) {
 
 // 主函数体的接受的参数尽可能的简介，然后他会主动的去请求api server
 // 根据请求的结果去决定任务的执行
+// 程序的使用方法： -jobName YourJobName -jobNamespace YourJobNamespace -apiServerAddr YourAPIServerAddr
+// YourAPIServerAddr: http://192.168.126.130:8090
 func main() {
 	// 第一个参数 指针、第二个参数的名字 第三个参数默认值 第四个参数的描述帮助信息
 	flag.StringVar(&args.JobName, "jobName", "", "-jobName YourJobName")

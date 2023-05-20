@@ -179,3 +179,33 @@ func PublishDeletePod(pod *apiObject.PodStore) error {
 	// 发送给pod所在的Node监听的podUpdate消息队列
 	return PublishMsg(PodUpdateWithNode(pod.Spec.NodeName), jsonMsg)
 }
+
+// 接受的消息是job的metadata
+// 这里资源的URL是job的spec的URL，而不是文件的URL
+// 但是最终处理的时候会检查两者都存在的时候才会创建Pod，去执行任务
+func PublishUpdateJobFile(jobMeta *apiObject.Basic) error {
+	resourceURI := stringutil.Replace(config.JobSpecURL, config.URL_PARAM_NAMESPACE_PART, jobMeta.Metadata.Namespace)
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAME_PART, jobMeta.Metadata.Name)
+
+	jsonBytes, err := json.Marshal(jobMeta)
+
+	if err != nil {
+		k8log.ErrorLog("msgutil", "json marshal job failed")
+		return err
+	}
+
+	message := message.Message{
+		Type:         message.UPDATE,
+		Content:      string(jsonBytes),
+		ResourceURI:  resourceURI,
+		ResourceName: jobMeta.Metadata.Name,
+	}
+
+	jsonMsg, err := json.Marshal(message)
+
+	if err != nil {
+		return err
+	}
+
+	return PublishMsg(JobUpdate, jsonMsg)
+}

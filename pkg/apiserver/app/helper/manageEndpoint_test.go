@@ -101,7 +101,7 @@ func TestAddEndPoints(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	etcdURL := path.Join(serverconfig.EtcdServicePath, testService.Metadata.Name)
+	etcdURL := path.Join(serverconfig.EtcdServicePath, testService.Metadata.Namespace , testService.Metadata.Name)
 	etcdclient.EtcdStore.Put(etcdURL, serviceJson)
 
 	// etcdclient.EtcdStore.PrefixGet(path.Join(config.ServiceURL, "app", testService.Spec.Selector["app"]))

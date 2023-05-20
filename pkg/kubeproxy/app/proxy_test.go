@@ -7,14 +7,12 @@ import (
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
-	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
-	"miniK8s/util/stringutil"
+	"miniK8s/pkg/message"
 	"miniK8s/util/uuid"
 	"os"
-	"path"
 	"strconv"
 	"testing"
 	"time"
@@ -52,15 +50,13 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	// serviceStore := service.ToServiceStore()
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action:        entity.CREATE,
-		ServiceTarget: *&apiObject.ServiceStore{},
+		Action:        message.CREATE,
+		ServiceTarget: apiObject.ServiceStore{},
 	}
 
 	for key, value := range service.Spec.Selector {
 		func(key, value string) {
 			// 替换可变参 namespace
-			etcdURL := path.Join(config.ServiceURL, key, value, service.Metadata.UUID)
-			etcdURL = stringutil.Replace(etcdURL, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace())
 			res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdPodPath)
 
 			if err != nil {

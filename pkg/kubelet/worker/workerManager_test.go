@@ -3,6 +3,7 @@ package worker
 import (
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/entity"
+	"miniK8s/pkg/message"
 	"miniK8s/util/uuid"
 	"testing"
 	"time"
@@ -41,10 +42,10 @@ var workerManager = NewPodWorkerManager()
 func TestAddPod(t *testing.T) {
 	// 添加 Pod
 	podUpdate := &entity.PodUpdate{
-		Action: entity.CREATE,
+		Action:    message.CREATE,
 		PodTarget: testPod,
-		Node: "testNode",
-	} 
+		Node:      "testNode",
+	}
 	err := workerManager.AddPod(&podUpdate.PodTarget)
 	if err != nil {
 		if err.Error() != "pod already exists" {

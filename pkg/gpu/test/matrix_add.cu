@@ -1,118 +1,105 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 #include "cuda_runtime.h"
 #include "device_launch_parameters.h"
-#define get_tid_x() (blockIdx.x * blockDim.x + threadIdx.x)
-#define get_tid_y() (blockIdx.y * blockDim.y + threadIdx.y)
-
+using namespace std;
 const int M = 8;
 const int N = 8;
 
-static void HandleError(cudaError_t err,const char *file, int line) {
-    if (err != cudaSuccess) {
-        printf("%s in %s at line %d\n", cudaGetErrorString(err), file, line);
-        cout<<endl;
-        exit(EXIT_FAILURE);
-    }
-}
-
-#define HANDLE_ERROR(err) (HandleError(err, __FILE__, __LINE__))
-
-//核函数
 __global__ void matrix_add(int **A, int **B, int **C) {
-    int i = get_tid_x();
-    int j = get_tid_y();  
+    int i = (blockIdx.x * blockDim.x + threadIdx.x);
+    int j = (blockIdx.y * blockDim.y + threadIdx.y);
     C[i][j] = A[i][j] + B[i][j];
 }
 
 int main() {
     int nbytes=M*N*sizeof(int);
-    
-    int **A = (int **) malloc(sizeof(int *) * M);
-    int **B = (int **) malloc(sizeof(int *) * M);
-    int **C = (int **) malloc(sizeof(int *) * M);
-
-    int *data_A = (int *) malloc(sizeof(int) * M * N);
-    int *data_B = (int *) malloc(sizeof(int) * M * N);
-    int *data_C = (int *) malloc(sizeof(int) * M * N);
-
-
-    //这里使用了强制类型转换
-    int *host_A = (int *) malloc(nbytes);
-    int *host_B = (int *) malloc(nbytes);
-    int *host_C = (int *) malloc(nbytes);
-
-
-    for (int i = 0; i < M * N; i++) {
-        data_A[i] = i;
-        data_B[i] = i;
-        host_A[i] = i;
-        host_B[i] = i;
+    //这两个是位于host机上的
+    int **host_A = (int **) malloc(M * sizeof(int *));
+    int **host_B = (int **) malloc(M * sizeof(int *));
+    int **host_C = (int **) malloc(M * sizeof(int *));
+    int *data_A = (int *) malloc(nbytes);
+    int *data_B = (int *) malloc(nbytes);
+    int *data_C = (int *) malloc(nbytes);
+    for (int i = 0; i < M; i++) {
+        host_A[i] = &data_A[i * N];
+        host_B[i] = &data_B[i * N];
+        host_C[i] = &data_C[i * N];
+        for (int j = 0; j < N ; j++) {
+            data_A[i*N+j] = i*N+j;
+            data_B[i*N+j] = i*N+j;
+            data_C[i*N+j] = 0;
+        }
     }
 
-    printf("Matrix A is:\n");
+    //这里说明了在host上的指针组成的数组是好的
+    cout<<"host上面的矩阵A:"<<endl;
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N ; j++) {
-            printf("%d ", data_A[i * N + j]);
+            cout<<host_A[i][j]<<" ";
         }
-        printf("\n");
+        cout<<endl;
     }
 
-    printf("Matrix B is:\n");
+    cout<<"host上面的矩阵B:"<<endl;
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N ; j++) {
-            printf("%d ", data_B[i * N + j]);
+            cout<<host_B[i][j]<<" ";
         }
-        printf("\n");
+        cout<<endl;
     }
 
-    int *dev_data_A;
-    int *dev_data_B;
-    int *dev_data_C;
+    int **dev_A, **dev_B, **dev_C;
+    int *dev_A1, *dev_B1, *dev_C1;
+    cudaMalloc((void **)&dev_A1, nbytes);
+    cudaMalloc((void **)&dev_B1, nbytes);
+    cudaMalloc((void **)&dev_C1, nbytes);
+    //数据拷贝
+    cudaMemcpy((void *)dev_A1, (void *)data_A, nbytes, cudaMemcpyHostToDevice);
+    cudaMemcpy((void *)dev_B1, (void *)data_B, nbytes, cudaMemcpyHostToDevice);
 
-    // malloc matrix (size = M*N) in GPU device
-    HANDLE_ERROR(cudaMalloc((void **) &dev_data_A, sizeof(int) * M * N));
-    HANDLE_ERROR(cudaMalloc((void **) &dev_data_B, sizeof(int) * M * N));
-    HANDLE_ERROR(cudaMalloc((void **) &dev_data_C, sizeof(int) * M * N));
-
-    // copy data from host to GPU device
-    HANDLE_ERROR(cudaMemcpy((void *) dev_data_A, (void *) data_A, sizeof(int) * M * N, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy((void *) dev_data_B, (void *) data_B, sizeof(int) * M * N, cudaMemcpyHostToDevice));
-    // init C
-    HANDLE_ERROR(cudaMemset((void *) dev_data_C, 0, sizeof(int) * M * N));
-
+    cudaMemset((void *)dev_C1, 0, nbytes);
     for (int i = 0; i < M; i++) {
-        A[i] = dev_data_A + i * N;
-        B[i] = dev_data_B + i * N;
-        C[i] = dev_data_C + i * N;
+        host_A[i] = dev_A1 + i * N;
+        host_B[i] = dev_B1 + i * N;
+        host_C[i] = dev_C1 + i * N;
     }
 
-    int **dev_A;
-    int **dev_B;
-    int **dev_C;
+    cudaMalloc((void **)&dev_A, sizeof(int *) * M);
+    cudaMalloc((void **)&dev_B, sizeof(int *) * M);
+    cudaMalloc((void **)&dev_C, sizeof(int *) * M);
 
-    HANDLE_ERROR(cudaMalloc((void **) &dev_A, sizeof(int *) * M));
-    HANDLE_ERROR(cudaMalloc((void **) &dev_B, sizeof(int *) * M));
-    HANDLE_ERROR(cudaMalloc((void **) &dev_C, sizeof(int *) * M));
+    cudaMemcpy((void *)dev_A, (void *)host_A, sizeof(int *) * M, cudaMemcpyHostToDevice);
+    cudaMemcpy((void *)dev_B, (void *)host_B, sizeof(int *) * M, cudaMemcpyHostToDevice);
+    cudaMemcpy((void *)dev_C, (void *)host_C, sizeof(int *) * M, cudaMemcpyHostToDevice);
 
-    HANDLE_ERROR(cudaMemcpy((void *) dev_A, (void *) A, sizeof(int *) * M, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy((void *) dev_B, (void *) B, sizeof(int *) * M, cudaMemcpyHostToDevice));
-    HANDLE_ERROR(cudaMemcpy((void *) dev_C, (void *) C, sizeof(int *) * M, cudaMemcpyHostToDevice));
 
-    dim3 threadPerBlock(5, 5);
-    dim3 numBlocks(M / threadPerBlock.x, N / threadPerBlock.y);
+    dim3 grid(M / 2, N / 2);
+    dim3 block(2, 2);
+    matrix_add<<<grid, block>>>(dev_A, dev_B, dev_C);
 
-    matrix_add <<<numBlocks, threadPerBlock>>> (dev_A, dev_B, dev_C);
+    cudaMemcpy((void *) data_C,(void *) dev_C1, nbytes, cudaMemcpyDeviceToHost);
 
-    // copy result to host
-    HANDLE_ERROR(cudaMemcpy((void *) data_C, (void *) dev_data_C, sizeof(int) * M * N, cudaMemcpyDeviceToHost));
-
-    // print result: 
-    printf("The matrix add result is:\n");
+    cout<<"矩阵加法的结果:"<<endl;
     for (int i = 0; i < M; i++) {
         for (int j = 0; j < N ; j++) {
-            printf("%d ", data_C[i * N + j]);
+            cout<<data_C[i*N+j]<<" ";
         }
-        printf("\n");
+        cout<<endl;
     }
+    free(data_A);
+    free(data_B);
+    free(data_C);
+    free(host_A);
+    free(host_B);
+    free(host_C);
+    cudaFree(dev_A);
+    cudaFree(dev_B);
+    cudaFree(dev_C);
+    cudaFree(dev_A1);
+    cudaFree(dev_B1);
+    cudaFree(dev_C1);
+
+    return 0;
 }

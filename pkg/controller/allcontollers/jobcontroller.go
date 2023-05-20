@@ -70,7 +70,13 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 	// 因为是jobfile主动发送的消息，所以jobfile一定是存在的
 
 	// /bin/job-server -jobName YourJobName -jobNamespace YourJobNamespace -apiServerAddr YourAPIServerAddr
-	containerCmd := "/bin/job-server -jobName " + job.Metadata.Name + " -jobNamespace " + job.Metadata.Namespace + " -apiServerAddr http://192.168.126.130:8090"
+	// "/bin/job-server --jobName=" + job.Metadata.Name + " --jobNamespace=" + job.Metadata.Namespace + " --apiServerAddr=http://192.168.126.130:8090"
+	containerCmd := []string{
+		"/bin/job-server",
+		"--jobName=" + job.Metadata.Name,
+		"--jobNamespace=" + job.Metadata.Namespace,
+		"--apiServerAddr=" + "http://192.168.126.130:8090",
+	}
 
 	// 创建一个pod
 	pod := &apiObject.Pod{
@@ -83,11 +89,12 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 			},
 		},
 		Spec: apiObject.PodSpec{
+			NodeName: "ubuntu",
 			Containers: []apiObject.Container{
 				{
 					Name:    "gpu-server" + job.Metadata.UUID,
 					Image:   GPU_Server_Image,
-					Command: []string{containerCmd},
+					Command: containerCmd,
 				},
 			},
 		},

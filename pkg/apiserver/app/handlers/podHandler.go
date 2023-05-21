@@ -230,11 +230,14 @@ func DeletePod(c *gin.Context) {
 	name := c.Param(config.URL_PARAM_NAME)
 
 	// 检查参数
-	if namespace == "" || name == "" {
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace or name is empty",
+			"error": "name is empty",
 		})
-		k8log.ErrorLog("APIServer", "DeletePod: namespace or name is empty")
+		k8log.ErrorLog("APIServer", "DeletePod: name is empty")
 		return
 	}
 

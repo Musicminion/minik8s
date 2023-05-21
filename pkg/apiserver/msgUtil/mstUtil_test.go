@@ -32,7 +32,7 @@ func TestPublishUpdateService(t *testing.T) {
 	fmt.Println("service Info:", serviceStore)
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action:        entity.CREATE,
+		Action:        message.CREATE,
 		ServiceTarget: serviceStore,
 	}
 	PublishUpdateService(serviceUpdate)

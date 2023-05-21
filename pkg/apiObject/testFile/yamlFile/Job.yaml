@@ -1,0 +1,23 @@
+kind: Job
+apiVersion: v1
+metadata:
+  name: job-example
+  namespace: test-job-space
+spec:
+  partition: small
+  nTasks: 1
+  nTasksPerNode: 1
+  submitDirectory: ""
+  submitHost: ""
+  compileCommands: [
+    "ls"
+    "echo 'Hello World'"
+  ]
+  runCommands: [
+    "ls"
+    "echo 'Hello World'"
+  ]
+  outputFile: test-out 
+  errorFile: test-err
+  username: change-it
+  password: change-it

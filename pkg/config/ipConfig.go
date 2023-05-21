@@ -9,4 +9,4 @@ const (
 	API_Server_URL_Prefix = "http://127.0.0.1:8090"
 )
 
-var SERVICE_IP_PREFIX = [2]int{10, 244}
+var SERVICE_IP_PREFIX = [2]int{192, 168}

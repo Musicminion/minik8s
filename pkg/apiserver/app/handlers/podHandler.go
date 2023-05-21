@@ -65,7 +65,7 @@ func GetPod(c *gin.Context) {
 	}
 	// 遍历res，返回对应的Node信息
 	targetPod := res[0].Value
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"data": targetPod,
 	})
 }
@@ -105,11 +105,11 @@ func GetPods(c *gin.Context) {
 
 	// 遍历res，返回对应的Node信息
 	targetPods := make([]string, 0)
-	for i, pod := range res {
+	for _, pod := range res {
 		targetPods = append(targetPods, pod.Value)
-		if i < len(res)-1 {
-			targetPods = append(targetPods, ",")
-		}
+		// if i < len(res)-1 {
+		// 	targetPods = append(targetPods, ",")
+		// }
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -145,11 +145,12 @@ func AddPod(c *gin.Context) {
 
 	// 判断PodNamespace是否为空
 	if pod.GetPodNamespace() == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "pod namespace is empty",
-		})
-		k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
-		return
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error": "pod namespace is empty",
+		// })
+		// k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
+		// return
+		pod.Basic.Metadata.Namespace = config.DefaultNamespace
 	}
 
 	// 检查name是否重复
@@ -205,7 +206,7 @@ func AddPod(c *gin.Context) {
 	}
 
 	// 返回
-	c.JSON(201, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "create pod success",
 	})
 
@@ -215,6 +216,8 @@ func AddPod(c *gin.Context) {
 	msgutil.PublishRequestNodeScheduleMsg(podStore)
 }
 
+// 删除的时候直接删除etcd中的数据即可
+// 目前来说暂时不检查是否已经存在
 // "/api/v1/namespaces/:namespace/pods/:name"
 func DeletePod(c *gin.Context) {
 	// log
@@ -224,57 +227,36 @@ func DeletePod(c *gin.Context) {
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	name := c.Param(config.URL_PARAM_NAME)
 
+	// 检查参数
+	if namespace == "" || name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "namespace or name is empty",
+		})
+		k8log.ErrorLog("APIServer", "DeletePod: namespace or name is empty")
+		return
+	}
+
 	// 从etcd中获取Pod
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", namespace, name)
 	k8log.InfoLog("APIServer", "DeletePod: path = "+key)
-	podLRs, err := etcdclient.EtcdStore.Get(key)
-	if err != nil {
-		k8log.DebugLog("APIServer", "DeletePod: get pod failed "+err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "get pod failed " + err.Error(),
-		})
-		return
-	}
-
-	if len(podLRs) == 0 {
-		k8log.DebugLog("APIServer", "DeletePod: get pod failed, pod does not exist")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "get pod failed,  pod does not exist",
-		})
-		return
-	}
-
-	if len(podLRs) > 1 {
-		k8log.DebugLog("APIServer", "DeletePod: get pod failed, pod is not unique")
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "get pod failed, pod is not unique",
-		})
-		return
-	}
-
-	// 将json转化为PodStore
-	err = json.Unmarshal([]byte(podLRs[0].Value), &pod)
-	if err != nil {
-		k8log.DebugLog("APIServer", "DeletePod: parser json to pod failed "+err.Error())
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": "parser json to pod failed " + err.Error(),
-		})
-		return
-	}
-
-	logStr := fmt.Sprintf("DeletePod: namespace = %s, name = %s", pod.GetPodNamespace(), pod.GetPodName())
-	k8log.InfoLog("APIServer", logStr)
 
 	// 从etcd中删除Pod
-	err = etcdclient.EtcdStore.Del(key)
+	err := etcdclient.EtcdStore.Del(key)
 	if err != nil {
 		k8log.DebugLog("APIServer", "DeletePod: delete pod failed "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "delete pod failed " + err.Error(),
 		})
+		return
 	}
 
-	c.JSON(204, gin.H{
+	// 删除该pod对应的endpoint
+	err = helper.DeleteEndpoints(pod)
+	if err != nil {
+		k8log.DebugLog("APIServer", "DeletePod: delete endpoint failed "+err.Error())
+	}
+
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "delete pod success",
 	})
 
@@ -445,7 +427,6 @@ func GetPodStatus(c *gin.Context) {
 // 这样就会导致，删除Pod的时候，Pod又被创建了，死循环，寄中寄
 // "/api/v1/namespaces/:namespace/pods/:name/status"
 func UpdatePodStatus(c *gin.Context) {
-	k8log.DebugLog("[APIServer]", "UpdatePodStatus")
 
 	podName := c.Param(config.URL_PARAM_NAME)
 	podNamespace := c.Param(config.URL_PARAM_NAMESPACE)
@@ -461,7 +442,7 @@ func UpdatePodStatus(c *gin.Context) {
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/<pod-name>
 	logStr := fmt.Sprintf("UpdatePodStatus: namespace = %s, name = %s", podNamespace, podName)
-	k8log.InfoLog("[APIServer]", logStr)
+	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", podNamespace, podName)
 	res, err := etcdclient.EtcdStore.Get(key)
@@ -553,8 +534,8 @@ func selectiveUpdatePodStatus(oldPod *apiObject.PodStore, podStatus *apiObject.P
 		oldPod.Status.Phase = podStatus.Phase
 	}
 
-	if podStatus.PodIP != oldPod.Status.PodIP {
-
+	if podStatus.PodIP != "" && podStatus.PodIP != oldPod.Status.PodIP {
+		k8log.DebugLog("APIServer", "selectiveUpdatePodStatus: podIP changed")
 		// 更新podIP, 若当前pod存在Label，则涉及endpoint的创建/更新
 		for key, value := range oldPod.Metadata.Labels {
 			endpoints, err := helper.GetEndpoints(key, value)

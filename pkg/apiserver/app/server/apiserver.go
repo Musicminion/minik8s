@@ -95,8 +95,26 @@ func (s *apiServer) bind() {
 	s.router.POST(config.PodSpecStatusURL, handlers.UpdatePodStatus) // 更新PodStatus
 
 	// Service相关的api
-	s.router.POST(config.ServiceURL, handlers.AddService)       // 创建service
-	s.router.GET(config.ServiceURL, handlers.GetServices)       // 获取所有service
-	s.router.GET(config.ServiceSpecURL, handlers.GetService)    // 获取单个service
-	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService) // 更新service
+	s.router.POST(config.ServiceURL, handlers.AddService)          // 创建service
+	s.router.GET(config.ServiceURL, handlers.GetServices)          // 获取所有service
+	s.router.GET(config.ServiceSpecURL, handlers.GetService)       // 获取单个service
+	s.router.PUT(config.ServiceSpecURL, handlers.UpdateService)    // 更新service
+	s.router.DELETE(config.ServiceSpecURL, handlers.DeleteService) // 删除service
+
+	// Job相关的api
+	s.router.GET(config.JobsURL, handlers.GetJobs)         // 获取所有job
+	s.router.GET(config.JobSpecURL, handlers.GetJob)       // 获取单个job
+	s.router.POST(config.JobsURL, handlers.AddJob)         // 创建job
+	s.router.DELETE(config.JobSpecURL, handlers.DeleteJob) // 删除job
+
+	// JobStatus相关的api
+	s.router.GET(config.JobSpecStatusURL, handlers.GetJobStatus)    // 获取jobStatus
+	s.router.PUT(config.JobSpecStatusURL, handlers.UpdateJobStatus) // 更新jobStatus
+
+	// JobFile相关的api
+	s.router.GET(config.JobFileSpecURL, handlers.GetJobFile) // 获取jobFile
+	s.router.POST(config.JobFileURL, handlers.AddJobFile)    // 创建jobFile
+
+	s.router.PUT(config.JobFileSpecURL, handlers.UpdateJobFile) // 更新jobFile
+
 }

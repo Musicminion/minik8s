@@ -86,8 +86,8 @@ func TestGetEndpoints(t *testing.T) {
 	}
 
 	// 验证结果
-	if len(endpoints) != len(testPod.Spec.Containers) {
-		t.Errorf("expected %+v, but got %+v", len(testPod.Spec.Containers), len(endpoints))
+	if len(endpoints) != len(testPod.Metadata.Labels) {
+		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
 	}
 
 	// 清空etcd
@@ -101,7 +101,7 @@ func TestAddEndPoints(t *testing.T) {
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	etcdURL := path.Join(serverconfig.EtcdServicePath, testService.Metadata.Name)
+	etcdURL := path.Join(serverconfig.EtcdServicePath, testService.Metadata.Namespace , testService.Metadata.Name)
 	etcdclient.EtcdStore.Put(etcdURL, serviceJson)
 
 	// etcdclient.EtcdStore.PrefixGet(path.Join(config.ServiceURL, "app", testService.Spec.Selector["app"]))
@@ -116,8 +116,8 @@ func TestAddEndPoints(t *testing.T) {
 	}
 
 	// 验证endpoints的size
-	if len(endpoints) != len(testPod.Spec.Containers) {
-		t.Errorf("expected %+v, but got %+v", len(testPod.Spec.Containers), len(endpoints))
+	if len(endpoints) != len(testPod.Metadata.Labels) {
+		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
 	}
 
 	// 清空etcd

@@ -7,8 +7,12 @@ import (
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"miniK8s/util/stringutil"
+	"miniK8s/util/zip"
+	"net/http"
 	"os"
 
+	"github.com/fatih/color"
+	"github.com/jedib0t/go-pretty/table"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +23,28 @@ var applyCmd = &cobra.Command{
 	Run:   applyHandler,
 }
 
+type ApplyObject string
+
+// Apply的对象名字
+const (
+	Apply_Kind_Pod     ApplyObject = "Pod"
+	Apply_Kind_Job     ApplyObject = "Job"
+	Apply_kind_Service ApplyObject = "Service"
+	Apply_kind_Deploy  ApplyObject = "Deployment"
+)
+
+// Apply的Result
+
+type ApplyResult string
+
+const (
+	ApplyResult_Success ApplyResult = "Success"
+	ApplyResult_Failed  ApplyResult = "Failed"
+	ApplyResult_Unknow  ApplyResult = "Unknow"
+)
+
 func applyHandler(cmd *cobra.Command, args []string) {
+	// k8log.DebugLog("applyHandler", "args: "+strings.Join(args, " "))
 	// 打印出来所有的参数
 	// 检查参数的数量是否为1
 	if len(args) != 1 {
@@ -54,33 +79,319 @@ func applyHandler(cmd *cobra.Command, args []string) {
 	}
 
 	switch Kind {
-	case "Pod":
-		fmt.Println("Kind: Pod")
-		// 完成YAML转化为POD对象
-		var pod apiObject.Pod
-		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
-		// // 发请求，走你！
-		URL := config.API_Server_URL_Prefix + config.PodsURL
-		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
-		err := kubectlutil.PostAPIObjectToServer(URL, pod)
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-	case "Service":
-		fmt.Println("Kind: Service")
-		var service apiObject.Service
-		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &service)
-		URL := config.API_Server_URL_Prefix + config.ServiceURL
-		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace)
-		kubectlutil.PostAPIObjectToServer(URL, service)
-
-	case "Deployment":
-		fmt.Println("Deployment")
-	// 其他默认的
+	case string(Apply_Kind_Pod):
+		applyPodHandler(fileContent)
+	case string(Apply_kind_Service):
+		applyServiceHandler(fileContent)
+	case string(Apply_kind_Deploy):
+		// applyDeployHandler(fileContent)
+		fmt.Println("not support yet")
+	case string(Apply_Kind_Job):
+		applyJobHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
+}
 
-	println("apply Handle finish")
+// =========================================================
+//
+// 处理Pod的Apply
+//
+// =========================================================
+
+func applyPodHandler(fileContent []byte) {
+	// fmt.Println("Kind: Pod")
+	// 完成YAML转化为POD对象
+	var pod apiObject.Pod
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &pod)
+
+	if err != nil {
+		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Pod的名字是否为空
+	if pod.GetPodName() == "" {
+		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "empty name", "pod name is empty")
+		return
+	}
+
+	// 发请求
+	URL := config.API_Server_URL_Prefix + config.PodsURL
+
+	if pod.GetPodNamespace() == "" {
+		pod.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, pod)
+	if err != nil {
+		// fmt.Println(err.Error())
+		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
+
+	if code == http.StatusCreated {
+		printApplyResult(Apply_Kind_Pod, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_Kind_Pod, pod.GetPodName(), pod.GetPodNamespace())
+	} else {
+		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "failed", msg)
+	}
+}
+
+// =========================================================
+//
+// 处理Service的Apply
+//
+// =========================================================
+
+func applyServiceHandler(fileContent []byte) {
+	// fmt.Println("Kind: Service")
+	var service apiObject.Service
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &service)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Service, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Service的名字是否为空
+	if service.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Service, ApplyResult_Failed, "empty name", "service name is empty")
+		return
+	}
+
+	// 检查Service的Namespace是否为空
+	if service.Metadata.Namespace == "" {
+		service.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 发请求
+	URL := config.API_Server_URL_Prefix + config.ServiceURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace)
+
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, service)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Service, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
+
+	if code == http.StatusCreated {
+		printApplyResult(Apply_kind_Service, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_kind_Service, service.Metadata.Name, service.Metadata.Namespace)
+	} else {
+		printApplyResult(Apply_kind_Service, ApplyResult_Failed, "failed", msg)
+	}
+}
+
+// =========================================================
+//
+// 处理Job的Apply
+// 测试用例  go run ./main/ apply ./kubectlutil/testFile/job-with-pwd.yaml
+//
+// =========================================================
+
+// 逻辑如下
+// 1. 检查Job的名字是否为空
+// 2. 检查Job的Namespace是否为空
+// 3. 上传Job对应yaml信息，创建api对象
+// 4. 检查Job对应的文件是否存在
+// 5. 上传Job对应的文件
+// 6. 检查Job对应的文件是否上传成功
+
+func applyJobHandler(fileContent []byte) {
+	// fmt.Println("Kind: Job")
+	var job apiObject.Job
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &job)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Job的名字是否为空
+	if job.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "empty name", "job name is empty")
+		return
+	}
+
+	// 检查Job的Namespace是否为空
+	if job.Metadata.Namespace == "" {
+		job.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 检查Job对应的文件是否存在
+	submitFolder := job.Spec.SubmitDirectory
+
+	if submitFolder == "" {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "empty submit folder", "job submit folder is empty")
+		return
+	}
+
+	// 检查文件夹是否存在
+	// 使用Stat函数检查文件夹是否存在
+	fileInfo, err := os.Stat(submitFolder)
+	if err == nil && fileInfo.IsDir() {
+		// fmt.Println("文件夹存在")
+		// 发请求
+		URL := config.API_Server_URL_Prefix + config.JobsURL
+		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, job.Metadata.Namespace)
+		code, err, msg := kubectlutil.PostAPIObjectToServer(URL, job)
+
+		if err != nil {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "post obj failed", err.Error())
+			return
+		}
+
+		if code != http.StatusCreated {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "failed", msg)
+			return
+		}
+
+		// 然后将文件夹中的文件压缩为zip文件
+		err = zip.CompressToZip(submitFolder, submitFolder+".zip")
+
+		// 如果在这个时候发现错误，就会删除之前的Job
+		if err != nil {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "zip folder failed", err.Error())
+			delUnusedJob(job.Metadata.Name, job.Metadata.Namespace)
+			return
+		}
+
+		zipFileBytes, err := os.ReadFile(submitFolder + ".zip")
+		// 如果在这个时候发现错误，就会删除之前的Job
+		if err != nil {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "read zip file failed", err.Error())
+			delUnusedJob(job.Metadata.Name, job.Metadata.Namespace)
+			return
+		}
+
+		// 然后将zip文件上传到服务器
+		userZipFile := apiObject.JobFile{
+			Basic: apiObject.Basic{
+				Kind: "JobFile",
+				Metadata: apiObject.Metadata{
+					Name:      job.Metadata.Name,
+					Namespace: job.Metadata.Namespace,
+				},
+			},
+			UserUploadFile: zipFileBytes,
+		}
+
+		// 然后将userZipFile上传到服务器
+		fileURL := config.API_Server_URL_Prefix + config.JobFileURL
+
+		code, err, msg = kubectlutil.PostAPIObjectToServer(fileURL, userZipFile)
+
+		if err != nil || code != http.StatusCreated {
+			printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "upload zip file failed", err.Error())
+			delUnusedJob(job.Metadata.Name, job.Metadata.Namespace)
+			return
+		}
+
+		// 最后删除zip文件
+		_ = os.Remove(submitFolder + ".zip")
+
+		// 打印结果
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Success, "created", msg)
+
+	} else if os.IsNotExist(err) {
+		// fmt.Println("文件夹不存在")
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "submit folder not exist", "job submit folder not exist")
+
+	} else if err != nil {
+		// fmt.Println("发生错误:", err)
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "check submit folder failed", err.Error())
+		return
+	} else if !fileInfo.IsDir() {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "submit folder not a folder", "job submit folder is not a folder")
+		return
+	} else {
+		printApplyResult(Apply_kind_Deploy, ApplyResult_Failed, "unknow error", "unknow error")
+		return
+	}
+
+}
+
+// ==============================================
+
+// 打印Apply的结果和报错信息，尽可能对用户友好
+// ==============================================
+//
+//	Colorful Print Functions
+//
+// ==============================================
+// 带有颜色的表格输出
+func printApplyResult(kind ApplyObject, result ApplyResult, info string, reason string) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Result", "Info", "Reason(Msg)"})
+
+	coloredKind := color.GreenString(string(kind))
+	var coloredResult string
+	var coloredInfo string
+	var coloredReason string
+
+	switch result {
+	case ApplyResult_Success:
+		coloredResult = color.GreenString(string(result))
+	case ApplyResult_Failed:
+		coloredResult = color.RedString(string(result))
+	case ApplyResult_Unknow:
+		coloredResult = color.YellowString(string(result))
+	default:
+		coloredResult = color.BlueString(string(result))
+	}
+
+	coloredInfo = color.CyanString(info)
+	coloredReason = color.CyanString(reason)
+
+	t.AppendRows([]table.Row{
+		{coloredKind, coloredResult, coloredInfo, coloredReason},
+	})
+
+	t.Render()
+}
+
+func printApplyObjectInfo(kind ApplyObject, name string, namespace string) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Name", "Namespace"})
+
+	coloredKind := color.GreenString(string(kind))
+	coloredName := color.GreenString(name)
+	coloredNamespace := color.GreenString(namespace)
+
+	t.AppendRows([]table.Row{
+		{coloredKind, coloredName, coloredNamespace},
+	})
+
+	t.Render()
+}
+
+// ==============================================
+//
+//	Other Util Functions
+//
+// ==============================================
+func delUnusedJob(name string, namespace string) {
+	URL := config.API_Server_URL_Prefix + config.JobSpecURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, name)
+
+	code, err := kubectlutil.DeleteAPIObjectToServer(URL)
+
+	if err != nil {
+		// fmt.Println("Delete unused job failed: ", err)
+		return
+	}
+
+	if code != http.StatusNoContent {
+		// fmt.Println("Delete unused job failed: ")
+		return
+	}
 }

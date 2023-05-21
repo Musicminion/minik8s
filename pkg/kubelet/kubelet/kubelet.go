@@ -103,10 +103,10 @@ func (k *Kubelet) Run() {
 
 	// 启动所有的Manager
 	// TODO: 开启pleg的时候，有时候会把新建的pod给删除，奇怪
-	// k.statusManager.Run()
-	// k.plegManager.Run()
+	k.statusManager.Run()
+	k.plegManager.Run()
 
-	// go k.ListenChan()
+	go k.ListenChan()
 
 	// 监听 podUpdate 的消息队列
 
@@ -121,16 +121,16 @@ func (k *Kubelet) Run() {
 
 func (k *Kubelet) HandlePodUpdate(msg amqp.Delivery) {
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
-	k8log.InfoLog("[Kubelet]", "HandlePodUpdate: receive message"+string(msg.Body))
+	k8log.InfoLog("Kubelet", "HandlePodUpdate: receive message"+string(msg.Body))
 	if err != nil {
-		k8log.ErrorLog("[Kubelet]", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("Kubelet", "消息格式错误,无法转换为Message")
 	}
-	if parsedMsg.Type == message.PUT {
-		k8log.DebugLog("[Kubelet]", "HandlePodUpdate: PUT")
+	if parsedMsg.Type == message.CREATE {
+		k8log.DebugLog("Kubelet", "HandlePodUpdate: PUT")
 		podUpdate := &entity.PodUpdate{}
 		err := json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
 		if err != nil {
-			k8log.ErrorLog("[Kubelet]", "HandlePodUpdate: failed to unmarshal")
+			k8log.ErrorLog("Kubelet", "HandlePodUpdate: failed to unmarshal")
 			return
 		}
 		k.podUpdates <- podUpdate
@@ -147,10 +147,27 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 	k8log.InfoLog("Kubelet", "podUpdate.Action: "+podUpdate.Action)
 
 	switch podUpdate.Action {
-	case entity.CREATE:
-		k.workManager.AddPod(&podUpdate.PodTarget)
-	case entity.UPDATE:
-	case entity.DELETE:
+	case message.CREATE:
+		err := k.workManager.AddPod(&podUpdate.PodTarget)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPod failed, for "+err.Error())
+		}
+		err = k.statusManager.AddPodToCache(&podUpdate.PodTarget)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPodToCache failed, for "+err.Error())
+		}
+	case message.UPDATE:
+	case message.DELETE:
+		err := k.workManager.DelPodByPodID(podUpdate.PodTarget.Metadata.UUID)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: DelPodByPodID failed, for "+err.Error())
+			break
+		}
+		err = k.statusManager.DelPodFromCache(podUpdate.PodTarget.Metadata.UUID)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: DelPodFromCache failed, for "+err.Error())
+			break
+		}
 	}
 	return true
 }

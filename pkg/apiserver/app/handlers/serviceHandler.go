@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/message"
 	"net/http"
 	"path"
 	"strconv"
@@ -24,7 +25,6 @@ import (
 // 添加新的Service
 // POST "/api/v1/namespaces/:namespace/services"
 func AddService(c *gin.Context) {
-	// log
 	k8log.InfoLog("APIServer", "AddService: add new service")
 	// POST请求，获取请求体
 	var service apiObject.Service
@@ -38,7 +38,8 @@ func AddService(c *gin.Context) {
 	}
 
 	// 检查name是否重复
-	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + service.Metadata.Name)
+	key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", service.Metadata.Namespace, service.Metadata.Name)
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "get service failed " + err.Error(),
@@ -63,6 +64,26 @@ func AddService(c *gin.Context) {
 		return
 	}
 
+	// 为service分配IP
+	if service.Spec.ClusterIP != "" {
+		// 已有IP，检验合法性
+		err = helper.JudgeServiceIPAddress(service.Spec.ClusterIP)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "service ip address is not valid",
+			})
+			return
+		}
+	} else {
+		service.Spec.ClusterIP, err = helper.AllocClusterIP()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "alloc cluster ip failed",
+			})
+			return
+		}
+	}
+
 	// 给Service设置UUID, 所以哪怕用户故意设置UUID也会被覆盖
 	service.Metadata.UUID = uuid.NewUUID()
 
@@ -79,11 +100,10 @@ func AddService(c *gin.Context) {
 	}
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action:        entity.CREATE,
+		Action:        message.CREATE,
 		ServiceTarget: *serviceStore,
 	}
 
-	// TODO: scan etcd and find all endpoints of this service
 	for key, value := range service.Spec.Selector {
 		func(key, value string) {
 			// 替换可变参 namespace
@@ -105,25 +125,34 @@ func AddService(c *gin.Context) {
 			} else {
 				// 添加Endpoints到service
 				serviceStore.Status.Endpoints = append(serviceStore.Status.Endpoints, endpoints...)
-				serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoints...)
+				// serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoints...)
 			}
 
 			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
 
 		}(key, value)
 	}
+	// 更新serviceUpdate，并更新etcd中的serviceStore
+	serviceUpdate.ServiceTarget = *serviceStore
+	serviceJson, err = json.Marshal(serviceStore)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "service marshal to json failed" + err.Error(),
+		})
+		return
+	}
 
 	// 将Service信息写入etcd
-	etcdURL := serverconfig.EtcdServicePath + service.Metadata.Name
-	err = etcdclient.EtcdStore.Put(etcdURL, serviceJson)
+	key = fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", service.Metadata.Namespace, service.Metadata.Name)
+	err = etcdclient.EtcdStore.Put(key, serviceJson)
 	if err != nil {
-		c.JSON(500, gin.H{
+		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "put service to etcd failed" + err.Error(),
 		})
 		return
 	}
 	// 返回201处理成功
-	c.JSON(201, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "create service success",
 	})
 
@@ -137,13 +166,14 @@ func AddService(c *gin.Context) {
 func GetService(c *gin.Context) {
 	// 尝试解析请求里面的name
 	name := c.Param("name")
+	namespace := c.Param("namespace")
 	// log
 	logStr := "GetSerive: name = " + name
 	k8log.InfoLog("APIServer", logStr)
 
 	// 如果解析成功，返回对应的Service信息
 	if name != "" {
-		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + name)
+		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + namespace + name)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "get service failed " + err.Error(),
@@ -167,7 +197,7 @@ func GetService(c *gin.Context) {
 		}
 		// 遍历res，返回对应的Service信息
 		targetService := res[0].Value
-		c.JSON(200, gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"data": targetService,
 		})
 		return
@@ -181,6 +211,7 @@ func GetService(c *gin.Context) {
 
 // 获取所有Service信息
 func GetServices(c *gin.Context) {
+	// TODO: 根据namespace查出所有的Service
 	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -194,38 +225,91 @@ func GetServices(c *gin.Context) {
 		services = append(services, service.Value)
 	}
 
-	c.JSON(200, gin.H{
+	c.JSON(http.StatusOK, gin.H{
 		"data": stringutil.StringSliceToJsonArray(services),
 	})
 }
 
 // 删除Service信息
 func DeleteService(c *gin.Context) {
-	// 尝试解析请求里面的name
+	// 尝试解析请求里面的name和namespace
 	name := c.Params.ByName("name")
+	namespace := c.Params.ByName("namespace")
+	service := apiObject.ServiceStore{}
 	// 如果解析成功，删除对应的Service信息
 	if name != "" {
 		// log
 		logStr := "DeleteService: name = " + name
 		k8log.InfoLog("APIServer", logStr)
 
-		err := etcdclient.EtcdStore.Del(serverconfig.EtcdServicePath + name)
+		// 从etcd中获取
+		// ETCD里面的路径是 /registry/services/<namespace>/<pod-name>
+		key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", namespace, name)
+		k8log.DebugLog("APIServer", "DeleteService: path: "+key)
+		res, err := etcdclient.EtcdStore.Get(key)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"error": "get service failed " + err.Error(),
+			})
+			return
+		}
+		if len(res) == 0 {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "service not found",
+			})
+			return
+		}
+		if len(res) != 1 {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "get service failed, service is not unique",
+			})
+			return
+		}
+		// 将json转化为PodStore
+		err = json.Unmarshal([]byte(res[0].Value), &service)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "parser json to service failed " + err.Error(),
+			})
+			return
+		}
+		// 删除service
+		err = etcdclient.EtcdStore.Del(key)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "delete service failed " + err.Error(),
 			})
 			return
 		}
-		c.JSON(204, gin.H{
-			"message": "delete service success",
-		})
-		return
+		// 删除service的所有Label
+		for key, value := range service.Spec.Selector {
+			k8log.DebugLog("APIServer", "DeleteService: delete service label: "+key+" "+value)
+			err = etcdclient.EtcdStore.PrefixDel(path.Join(serverconfig.EtcdServiceSelectorPath, key, value, service.Metadata.UUID))
+			if err != nil {
+				c.JSON(http.StatusBadRequest, gin.H{
+					"error": "delete service failed " + err.Error(),
+				})
+				return
+			}
+		}
+
 	} else {
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "name is empty",
 		})
 		return
 	}
+
+	serviceUpdate := &entity.ServiceUpdate{
+		Action:        message.DELETE,
+		ServiceTarget: service,
+	}
+
+	msgutil.PublishUpdateService(serviceUpdate)
+
+	c.JSON(http.StatusNoContent, gin.H{
+		"message": "delete service success",
+	})
 }
 
 // 更新Service信息

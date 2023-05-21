@@ -21,7 +21,7 @@ import (
 
 func TestGetAPIObjectTypeFromPodYamlFile(t *testing.T) {
 	// 读取文件
-	content, err := file.ReadFile("./testFile/pod.yaml")
+	content, err := file.ReadFile("./testFile/pod-1.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,7 +48,7 @@ func TestGetAPIObjectTypeFromServiceYamlFile(t *testing.T) {
 }
 
 func TestParseAPIObjectFromYamlfileContent(t *testing.T) {
-	fileContent, err := file.ReadFile("./testFile/pod.yaml")
+	fileContent, err := file.ReadFile("./testFile/pod-1.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

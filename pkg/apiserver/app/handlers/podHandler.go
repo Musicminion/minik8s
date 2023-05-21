@@ -50,6 +50,7 @@ func GetPod(c *gin.Context) {
 	}
 
 	if len(res) == 0 {
+		k8log.InfoLog("APIServer", "GetPod: not find pod")
 		c.JSON(http.StatusNotFound, gin.H{
 			"error": "get pod err, not find pod",
 		})
@@ -68,6 +69,7 @@ func GetPod(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": targetPod,
 	})
+
 }
 
 // 获取所有的Pod的信息
@@ -588,6 +590,11 @@ func selectiveUpdatePod(oldPod *apiObject.PodStore, putPod *apiObject.PodStore) 
 		for key, value := range putPod.Metadata.Annotations {
 			oldPod.Metadata.Annotations[key] = value
 		}
+	}
+
+	// 更新nodeName
+	if putPod.Spec.NodeName != "" {
+		oldPod.Spec.NodeName = putPod.Spec.NodeName
 	}
 
 	// Spec暂时不可以更新

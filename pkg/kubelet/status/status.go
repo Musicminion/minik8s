@@ -62,6 +62,7 @@ func NewStatusManager(apiserverURLPrefix string) StatusManager {
 // ************************************************************
 // 这里都是缓存的增删改查函数
 func (s *statusManager) AddPodToCache(pod *apiObject.PodStore) error {
+	k8log.DebugLog("Kubelet-StatusManager", "Add Pod To Cache")
 	return s.cache.Put(pod.GetPodUUID(), pod)
 }
 
@@ -81,6 +82,7 @@ func (s *statusManager) GetPodFromCache(podUUID string) (*apiObject.PodStore, er
 }
 
 func (s *statusManager) DelPodFromCache(podUUID string) error {
+	k8log.DebugLog("Kubelet-StatusManager", "Del Pod From Cache")
 	return s.cache.Delete(podUUID)
 }
 

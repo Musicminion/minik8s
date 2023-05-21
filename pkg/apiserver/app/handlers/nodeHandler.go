@@ -63,7 +63,9 @@ func GetNode(c *gin.Context) {
 }
 
 // 获取所有Node信息
+// 某个特定的Node状态 对应的NodeSpecURL = "/api/v1/nodes
 func GetNodes(c *gin.Context) {
+	k8log.DebugLog("APIServer", "GetNodes")
 	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdNodePath)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

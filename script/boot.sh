@@ -16,6 +16,9 @@ programs=(
 # 删除 etcd 中所有内容
 . "$SCRIPTS_ROOT/etcd_clear.sh" /
 
+# 清空Reids
+. "$SCRIPTS_ROOT/redis_clear.sh"
+
 
 # 删除除了weave之外的所有容器
 . "$SCRIPTS_ROOT/container_clear.sh" /

@@ -4,12 +4,10 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
-	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"miniK8s/util/stringutil"
 	"os"
-	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -21,8 +19,17 @@ var deleteCmd = &cobra.Command{
 	Run:   deleteHandler,
 }
 
+type DeleteObject string
+
+const (
+	Delete_Kind_Pod     ApplyObject = "Pod"
+	Delete_Kind_Service ApplyObject = "Service"
+	Delete_Kind_Job     ApplyObject = "Job"
+	Delete_Kind_Deploy  ApplyObject = "Deployment"
+)
+
 func deleteHandler(cmd *cobra.Command, args []string) {
-	k8log.DebugLog("deleteHandler", "args: "+strings.Join(args, " "))
+	// k8log.DebugLog("deleteHandler", "args: "+strings.Join(args, " "))
 
 	// 打印出来所有的参数
 	// 检查参数的数量是否为1
@@ -58,7 +65,7 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 	}
 
 	switch Kind {
-	case "Pod":
+	case string(Delete_Kind_Pod):
 		fmt.Println("Kind: Pod")
 		// 完成YAML转化为POD对象
 		var pod apiObject.Pod
@@ -73,7 +80,7 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 
-	case "Service":
+	case string(Delete_Kind_Service):
 		fmt.Println("Kind: Service")
 		var service apiObject.Service
 		kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &service)
@@ -87,8 +94,11 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 			return
 		}
 
-	case "Deployment":
-		fmt.Println("Deployment")
+	case string(Delete_Kind_Deploy):
+		fmt.Println("Deployment not support now")
+
+	case string(Delete_Kind_Job):
+		fmt.Println("Job not support now")
 	// 其他默认的
 	default:
 		fmt.Println("default")

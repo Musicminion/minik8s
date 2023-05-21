@@ -173,7 +173,8 @@ func GetService(c *gin.Context) {
 
 	// 如果解析成功，返回对应的Service信息
 	if name != "" {
-		res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + namespace + name)
+		// serverconfig.EtcdServicePath + namespace + "/" + name
+		res, err := etcdclient.EtcdStore.PrefixGet(path.Join(serverconfig.EtcdServicePath, namespace, name))
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": "get service failed " + err.Error(),

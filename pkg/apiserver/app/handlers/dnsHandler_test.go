@@ -87,7 +87,6 @@ func TestAddDns(t *testing.T) {
 	}
 }
 
-
 func TestGetDns(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	// 创建一个新的gin引擎，并注册GetDns处理函数。
@@ -119,7 +118,7 @@ func TestGetDns(t *testing.T) {
 	}
 }
 
-func TestDeleteDns(t *testing.T){
+func TestDeleteDns(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	// 创建一个新的gin引擎，并注册DeleteDns处理函数。
 	r := gin.New()

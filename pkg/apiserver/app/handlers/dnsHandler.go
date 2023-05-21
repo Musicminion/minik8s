@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
+	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/message"
 	"miniK8s/util/uuid"
 	"net/http"
 	"path"
@@ -89,8 +92,11 @@ func AddDns(c *gin.Context) {
 		"message": "create dns success",
 	})
 
-	k8log.InfoLog("APIServer", "create dns success")
-
+	dnsUpdate := entity.DnsUpdate{
+		Action:    message.CREATE,
+		DnsTarget: dns,
+	}
+	msgutil.PublishUpdateDns(&dnsUpdate)
 }
 
 // 删除Dns
@@ -126,6 +132,18 @@ func DeleteDns(c *gin.Context) {
 	})
 
 	k8log.InfoLog("APIServer", "delete dns success")
+	dnsUpdate := entity.DnsUpdate{
+		Action:    message.DELETE,
+		DnsTarget: apiObject.Dns{
+			Basic: apiObject.Basic{
+				Metadata: apiObject.Metadata{
+					Name:      name,
+					Namespace: namespace,
+				},
+			},
+		},
+	}
+	msgutil.PublishUpdateDns(&dnsUpdate)
 }
 
 // 获取Dns
@@ -172,10 +190,10 @@ func GetDns(c *gin.Context) {
 
 	// 返回
 	c.JSON(http.StatusOK, gin.H{
-		"data":    string(res[0].Value),
+		"data": string(res[0].Value),
 	})
 
-	k8log.DebugLog("APIServer", "dns : "+ res[0].Value)
+	k8log.DebugLog("APIServer", "dns : "+res[0].Value)
 
 	k8log.InfoLog("APIServer", "get dns success")
 }

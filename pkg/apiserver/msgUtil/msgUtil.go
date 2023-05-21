@@ -57,25 +57,6 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 	return PublishMsg(NodeSchedule, jsonMsg)
 }
 
-// func PublishUpdateService(service *apiObject.ServiceStore) error {
-// 	resourceURI := strings.Replace(config.PodSpecURL, config.URI_PARAM_NAME_PART, service.GetName(), -1)
-// 	resourceURI = strings.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, service.GetNamespace(), -1)
-// 	message := message.Message{
-// 		Type:         message.PUT,
-// 		Content:      service.GetName(),
-// 		ResourceURI:  resourceURI,
-// 		ResourceName: service.GetName(),
-// 	}
-
-// 	jsonMsg, err := json.Marshal(message)
-
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return PublishMsg("apiServer", jsonMsg)
-// }
-
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 	resourceURI := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAME_PART, serviceUpdate.ServiceTarget.GetName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, serviceUpdate.ServiceTarget.GetNamespace())
@@ -109,8 +90,6 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 	if err != nil {
 		return err
 	}
-	// serviceUpdateReader := bytes.NewReader(jsonBytes)
-	// change serviceUpdateReader to string
 
 	message := message.Message{
 		Type:         message.CREATE,
@@ -138,7 +117,7 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 	}
 
 	message := message.Message{
-		Type:         message.CREATE,
+		Type:         podUpdate.Action,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: podUpdate.PodTarget.GetPodName(),
@@ -149,8 +128,6 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 	if err != nil {
 		return err
 	}
-
-	
 
 	// 发送给pod所在的Node监听的podUpdate消息队列
 	return PublishMsg(PodUpdateWithNode(podUpdate.PodTarget.Spec.NodeName), jsonMsg)
@@ -210,4 +187,32 @@ func PublishUpdateJobFile(jobMeta *apiObject.Basic) error {
 	}
 
 	return PublishMsg(JobUpdate, jsonMsg)
+}
+
+func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
+	resourceURI := stringutil.Replace(config.DnsSpecURL, config.URL_PARAM_NAMESPACE_PART, dnsUpdate.DnsTarget.Metadata.Namespace)
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAME_PART, dnsUpdate.DnsTarget.Metadata.Name)
+
+	jsonBytes, err := json.Marshal(dnsUpdate)
+
+	if err != nil {
+		k8log.ErrorLog("msgutil", "json marshal dns failed")
+		return err
+	}
+
+	message := message.Message{
+		Type:         dnsUpdate.Action,
+		Content:      string(jsonBytes),
+		ResourceURI:  resourceURI,
+		ResourceName: dnsUpdate.DnsTarget.Metadata.Name,
+	}
+
+	jsonMsg, err := json.Marshal(message)
+
+	if err != nil {
+		k8log.ErrorLog("msgutil", "json marshal dns failed")
+		return err
+	}
+
+	return PublishMsg(DnsUpdate, jsonMsg)
 }

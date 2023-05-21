@@ -42,6 +42,9 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
 	service := &apiObject.Service{}
 	err = yaml.Unmarshal(content, service)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// 给Service设置UUID, 所以哪怕用户故意设置UUID也会被覆盖
 	service.Metadata.UUID = uuid.NewUUID()

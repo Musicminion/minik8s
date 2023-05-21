@@ -27,6 +27,8 @@ type DnsController interface {
 
 type dnsController struct {
 	lw *listwatcher.Listwatcher
+	hostList []string
+	nginxSvcIp string
 }
 
 func NewDnsController() (DnsController, error) {
@@ -39,6 +41,7 @@ func NewDnsController() (DnsController, error) {
 
 	return &dnsController{
 		lw: newlw,
+		hostList: make([]string, 0),
 	}, nil
 }
 
@@ -57,6 +60,12 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 		k8log.ErrorLog("Job-Controller", "HandleServiceUpdate: failed to create nginx conf")
 		return
 	}
+
+	// 修改/etc/hosts
+	newHostEntry := dc.nginxSvcIp + " " + dns.Spec.Host
+	dc.hostList = append(dc.hostList, newHostEntry)
+
+	// TODO: 通知所有的节点进行hosts文件的修改
 
 }
 
@@ -77,10 +86,13 @@ func (dc *dnsController) MsgHandler(msg amqp.Delivery) {
 	}
 
 	switch parsedMsg.Type {
-	case message.UPDATE:
+	case message.CREATE:
 		dc.DnsCreateHandler(parsedMsg)
 	case message.DELETE:
 		dc.DnsDeleteHandler(parsedMsg)
+	case message.UPDATE:
+		dc.DnsDeleteHandler(parsedMsg)
+		dc.DnsCreateHandler(parsedMsg)
 	}
 }
 
@@ -92,6 +104,10 @@ func (dc *dnsController) CreateNginxConf(dns *apiObject.Dns) error {
 		return err
 	}
 	return nil
+}
+
+func (dc *dnsController) DeleteNginxConf() error{
+	
 }
 
 func (dc *dnsController) CreateNginxPod() {
@@ -157,6 +173,8 @@ func (dc *dnsController) CreateNginxService() {
 		return
 	}
 
+	dc.nginxSvcIp = nginxService.Spec.ClusterIP
+
 	k8log.InfoLog("Job-Controller", "HandleServiceUpdate: success to create nginx service")
 }
 
@@ -167,7 +185,6 @@ func (dc *dnsController) Run() {
 	// 3. 创建nginx dns
 	dc.CreateNginxPod()
 	dc.CreateNginxService()
-
 
 	dc.lw.WatchQueue_Block(msgutil.DnsUpdate, dc.MsgHandler, make(chan struct{}))
 }

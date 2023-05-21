@@ -141,7 +141,7 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 	// 先把拉取到的Pod的状态信息转化为map
 
 	remotePodsMap := s.PodsArrayToMap(&pods)
-	// 然后条件性更新本地缓存，跟新的规则是：如果本地缓存中没有这个Pod，就添加，如果远端的Pod没有这个Pod，就删除
+	// 然后条件性更新本地缓存，更新的规则是：如果本地缓存中没有这个Pod，就添加，如果远端的Pod没有这个Pod，就删除
 	updateResult := s.UpdatePulledPodsToCache(remotePodsMap)
 
 	if updateResult != nil {
@@ -175,6 +175,7 @@ func (s *statusManager) UpdatePulledPodsToCache(remotePodsMap map[string]*apiObj
 	// 遍历localPodsMap，如果remotePodsMap中没有，就删除
 	for uuid, localPod := range localPodsMap {
 		if _, ok := remotePodsMap[uuid]; !ok {
+			k8log.DebugLog("kubelet", "DelPodFromCache: "+uuid)
 			result := s.DelPodFromCache(uuid)
 			if result != nil {
 				errorInfo += result.Error() + "\n"

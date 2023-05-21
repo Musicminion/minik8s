@@ -150,6 +150,8 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 		return err
 	}
 
+	
+
 	// 发送给pod所在的Node监听的podUpdate消息队列
 	return PublishMsg(PodUpdateWithNode(podUpdate.PodTarget.Spec.NodeName), jsonMsg)
 }

@@ -592,6 +592,11 @@ func selectiveUpdatePod(oldPod *apiObject.PodStore, putPod *apiObject.PodStore) 
 		}
 	}
 
+	// 更新nodeName
+	if putPod.Spec.NodeName != "" {
+		oldPod.Spec.NodeName = putPod.Spec.NodeName
+	}
+
 	// Spec暂时不可以更新
 	// Status选择性更新
 	selectiveUpdatePodStatus(oldPod, &(putPod.Status))

@@ -4,20 +4,28 @@ import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
+	netrequest "miniK8s/util/netRequest"
+	"miniK8s/util/stringutil"
+	"net/http"
+	"strconv"
 
-	"github.com/streadway/amqp"
+	"math/rand"
 	"sync"
 	"time"
-	"math/rand"
+
+	"github.com/streadway/amqp"
 )
 
 type SchedulePolicy string
+
 var globalCount int
 var lock sync.Mutex
+
 const (
 	RoundRobin SchedulePolicy = "RoundRobin" // 轮询调度策略
 	Random     SchedulePolicy = "Random"     // Random调度,产生一个随机数
@@ -80,6 +88,7 @@ func schRoundRobin(nodes []apiObject.NodeStore) string {
 	}
 	idx := globalCount % cnt
 	globalCount++
+	k8log.DebugLog("Scheduler", "RoundRobin调度策略选择节点"+nodes[idx].GetName())
 	return nodes[idx].GetName()
 }
 func schRandom(nodes []apiObject.NodeStore) string {
@@ -91,7 +100,7 @@ func schRandom(nodes []apiObject.NodeStore) string {
 	}
 	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
 	rand.Seed(seconds)           //播种随机生成器
-	idx := rand.Intn(cnt) //生成一个介于0和cnt-1之间的整数
+	idx := rand.Intn(cnt)        //生成一个介于0和cnt-1之间的整数
 	return nodes[idx].GetName()
 }
 func schLeastPod(nodes []apiObject.NodeStore) string {
@@ -124,14 +133,15 @@ func schLeastMem(nodes []apiObject.NodeStore) string {
 	//to do
 	return ""
 }
+
 /*********************************************************************/
 /*********************************************************************/
 // 从所有的节点里面选择一个节点
 func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 	if len(nodes) == 0 {
-        return ""
-    }
-    switch sch.polocy {
+		return ""
+	}
+	switch sch.polocy {
 	case RoundRobin:
 		return schRoundRobin(nodes)
 	case Random:
@@ -143,7 +153,7 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 	case LeastMem:
 		return schLeastMem(nodes)
 	default:
-	}	
+	}
 	// TODO
 	return "ubuntu"
 }
@@ -166,19 +176,6 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		return
 	}
 
-	// respMessage := message.Message{
-	// 	Type:         message.ScheduleResult,
-	// 	Content:      scheduledNode,
-	// 	ResourceURI:  parsedMsg.ResourceURI,
-	// 	ResourceName: parsedMsg.ResourceName,
-	// }
-
-	// JSOn序列化
-	// result, err := json.Marshal(respMessage)
-	// if err != nil {
-	// 	k8log.ErrorLog("Scheduler", "序列化消息失败")
-	// }
-
 	podStore := &apiObject.PodStore{}
 	err = json.Unmarshal([]byte(parsedMsg.Content), &podStore)
 	if err != nil {
@@ -188,6 +185,21 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 
 	// 为pod添加node信息
 	podStore.Spec.NodeName = scheduledNode
+
+	// 更新Apiserver中的Pod信息
+	URL := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAMESPACE_PART, podStore.GetPodNamespace())
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, podStore.GetPodName())
+	URL = config.API_Server_URL_Prefix + URL
+
+	code, _, err := netrequest.PutRequestByTarget(URL, podStore)
+	if err != nil {
+		k8log.ErrorLog("Scheduler", "更新Pod信息失败"+err.Error())
+		return
+	}
+	if code != http.StatusOK {
+		k8log.ErrorLog("Scheduler", "更新Pod信息失败,code: "+ strconv.Itoa(code))
+		return
+	}
 
 	// TODO: 将podUpdate发送给对应的Node
 	podUpdate := &entity.PodUpdate{

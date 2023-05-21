@@ -32,7 +32,7 @@ func WeaveFindIpByContainerID(containerID string) (string, error) {
 		return "", err
 	}
 
-	k8log.DebugLog("Weave_util", "weave ps out: "+string(out))
+	// k8log.DebugLog("Weave_util", "weave ps out: "+string(out))
 
 	// 将字节数组转换为字符串
 	output := string(out)

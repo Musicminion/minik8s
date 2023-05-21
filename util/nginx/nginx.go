@@ -34,6 +34,24 @@ func WriteConf(dns apiObject.Dns, conf string) error {
     // 将配置文件写入到nginx的配置文件中
     confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
     confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
+	// 判断文件的目录是否存在
+	_, err := os.Stat(config.NginxConfigPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// 目录不存在
+			// 创建目录
+			err = os.MkdirAll(config.NginxConfigPath, os.ModePerm)
+			if err != nil {
+				k8log.ErrorLog("nginx", "WriteConf: mkdir failed "+err.Error())
+				return err
+			}
+		} else {
+			// 其他错误
+			k8log.ErrorLog("nginx", "WriteConf: stat dir failed "+err.Error())
+			return err
+		}
+	}
+
     file, err := os.Create(confFilePath) // 使用 os.Create() 函数打开文件以进行写入
     if err != nil {
         k8log.ErrorLog("nginx", "WriteConf: create file failed "+err.Error())

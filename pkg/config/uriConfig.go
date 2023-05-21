@@ -57,6 +57,13 @@ const (
 	JobFileURL = "/apis/v1/namespaces/:namespace/jobfiles"
 	// 某个特定Job的文件的URL
 	JobFileSpecURL = "/apis/v1/namespaces/:namespace/jobfiles/:name"
+	
+	// ReplicaSet相关操作的URL
+	ReplicaSetsURL = "/apis/v1/namespaces/:namespace/replicasets"
+	// 某个特定ReplicaSet的URL
+	ReplicaSetSpecURL = "/apis/v1/namespaces/:namespace/replicasets/:name"
+	// 获取ReplicaSet的某个状态的URL
+	ReplicaSetSpecStatusURL = "/apis/v1/namespaces/:namespace/replicasets/:name/status"
 )
 
 const (

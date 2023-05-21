@@ -90,7 +90,7 @@ func applyHandler(cmd *cobra.Command, args []string) {
 	case string(Apply_Kind_Job):
 		applyJobHandler(fileContent)
 	case string(Apply_kind_Dns):
-		fmt.Println("not support yet")
+		applyDnsHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
@@ -328,7 +328,6 @@ func applyJobHandler(fileContent []byte) {
 // =========================================================
 
 func applyDnsHandler(fileContent []byte) {
-	// fmt.Println("Kind: Service")
 	var dns apiObject.Dns
 	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &dns)
 
@@ -337,35 +336,35 @@ func applyDnsHandler(fileContent []byte) {
 		return
 	}
 
-	// // 检查Service的名字是否为空
-	// if dns.Metadata.Name == "" {
-	// 	printApplyResult(Apply_kind_Service, ApplyResult_Failed, "empty name", "service name is empty")
-	// 	return
-	// }
+	// 检查Dns的名字是否为空
+	if dns.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Service, ApplyResult_Failed, "empty name", "dns name is empty")
+		return
+	}
 
-	// // 检查Service的Namespace是否为空
-	// if dns.Metadata.Namespace == "" {
-	// 	dns.Metadata.Namespace = config.DefaultNamespace
-	// }
+	// 检查Dns的Namespace是否为空
+	if dns.Metadata.Namespace == "" {
+		dns.Metadata.Namespace = config.DefaultNamespace
+	}
 
-	// // 发请求
-	// URL := config.API_Server_URL_Prefix + config.ServiceURL
-	// URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, dns.Metadata.Namespace)
+	// 发请求
+	URL := config.API_Server_URL_Prefix + config.DnsURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, dns.Metadata.Namespace)
 
-	// code, err, msg := kubectlutil.PostAPIObjectToServer(URL, dns)
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, dns)
 
-	// if err != nil {
-	// 	printApplyResult(Apply_kind_Service, ApplyResult_Failed, "post obj failed", err.Error())
-	// 	return
-	// }
+	if err != nil {
+		printApplyResult(Apply_kind_Dns, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
 
-	// if code == http.StatusCreated {
-	// 	printApplyResult(Apply_kind_Service, ApplyResult_Success, "created", msg)
-	// 	fmt.Println()
-	// 	printApplyObjectInfo(Apply_kind_Service, dns.Metadata.Name, dns.Metadata.Namespace)
-	// } else {
-	// 	printApplyResult(Apply_kind_Service, ApplyResult_Failed, "failed", msg)
-	// }
+	if code == http.StatusCreated {
+		printApplyResult(Apply_kind_Dns, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_kind_Dns, dns.Metadata.Name, dns.Metadata.Namespace)
+	} else {
+		printApplyResult(Apply_kind_Dns, ApplyResult_Failed, "failed", msg)
+	}
 }
 
 // ==============================================

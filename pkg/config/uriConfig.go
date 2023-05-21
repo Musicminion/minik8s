@@ -57,6 +57,12 @@ const (
 	JobFileURL = "/apis/v1/namespaces/:namespace/jobfiles"
 	// 某个特定Job的文件的URL
 	JobFileSpecURL = "/apis/v1/namespaces/:namespace/jobfiles/:name"
+
+	// Dns相关的URL
+	// 所有Dns的URL
+	DnsURL = "/apis/v1/namespaces/:namespace/dns"
+	// 某个特定Dns的URL
+	DnsSpecURL = "/apis/v1/namespaces/:namespace/dns/:name"
 )
 
 const (

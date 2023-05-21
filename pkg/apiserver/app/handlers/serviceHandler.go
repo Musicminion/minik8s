@@ -125,7 +125,6 @@ func AddService(c *gin.Context) {
 			} else {
 				// 添加Endpoints到service
 				serviceStore.Status.Endpoints = append(serviceStore.Status.Endpoints, endpoints...)
-				// serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoints...)
 			}
 
 			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
@@ -167,7 +166,6 @@ func GetService(c *gin.Context) {
 	// 尝试解析请求里面的name
 	name := c.Param("name")
 	namespace := c.Param("namespace")
-	// log
 	logStr := "GetSerive: name = " + name
 	k8log.InfoLog("APIServer", logStr)
 

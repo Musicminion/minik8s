@@ -26,3 +26,6 @@ build/kubelet/kubelet
 
 **/test-save-iptables
 pkg/kubectl/kubectlutil/testFile/job-with-pwd.yaml
+
+.VSCodeCounter/
+

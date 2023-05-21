@@ -77,10 +77,11 @@ func GetJobs(c *gin.Context) {
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 
 	if namespace == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace is empty",
-		})
-		return
+		// c.JSON(http.StatusBadRequest, gin.H{
+		// 	"error": "namespace is empty",
+		// })
+		// return
+		namespace = config.DefaultNamespace
 	}
 
 	// 完整路径：/registry/jobs/<namespace>
@@ -376,7 +377,7 @@ func UpdateJobStatus(c *gin.Context) {
 	// 获取status
 	jobStatus := &apiObject.JobStatus{}
 
-	err = c.ShouldBind(&jobStatus)
+	err = c.ShouldBind(jobStatus)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{

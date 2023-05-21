@@ -218,6 +218,7 @@ func getSpecificService(namespace, name string) {
 
 	services := []apiObject.ServiceStore{*service}
 	printServicesResult(services)
+
 }
 
 func getNamespaceServices(namespace string) {
@@ -299,6 +300,30 @@ func getSpecificJob(namespace, name string) {
 
 	jobs := []apiObject.JobStore{*job}
 	printJobsResult(jobs)
+
+	if job.Status.State == apiObject.JobState_COMPLETED {
+		fileURL := stringutil.Replace(config.JobFileSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+		fileURL = stringutil.Replace(fileURL, config.URL_PARAM_NAME_PART, name)
+		fileURL = config.API_Server_URL_Prefix + fileURL
+
+		jobFile := &apiObject.JobFile{}
+		code, err := netrequest.GetRequestByTarget(fileURL, jobFile, "data")
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		if code != http.StatusOK {
+			fmt.Println("getSpecificJob: code:", code)
+			return
+		}
+
+		jobfiles := []apiObject.JobFile{*jobFile}
+
+		printJobOutPutResults(jobfiles)
+	}
+
 }
 
 func getNamespaceJobs(namespace string) {
@@ -483,6 +508,35 @@ func printJobResult(job *apiObject.JobStore, t table.Writer) {
 			color.HiCyanString(job.GetJobName()),
 			color.HiCyanString(job.GetJobNamespace()),
 			coloredJobStatus,
+		},
+	})
+}
+
+func printJobOutPutResults(jobfiles []apiObject.JobFile) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"OutType", "Namespace/Name", "Content"})
+
+	// 遍历所有的Pod
+	for _, job := range jobfiles {
+		printJobOutPutResult(&job, t)
+	}
+
+	t.Render()
+}
+
+func printJobOutPutResult(jobfile *apiObject.JobFile, t table.Writer) {
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.GreenString("output"),
+			color.HiCyanString(jobfile.GetJobNamespace() + "/" + jobfile.GetJobName()),
+			color.GreenString(string(jobfile.OutputFile)),
+		},
+		{
+			color.RedString("error"),
+			color.HiCyanString(jobfile.GetJobNamespace() + "/" + jobfile.GetJobName()),
+			color.GreenString(string(jobfile.ErrorFile)),
 		},
 	})
 }

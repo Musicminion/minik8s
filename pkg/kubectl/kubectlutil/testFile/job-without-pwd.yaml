@@ -1,0 +1,28 @@
+# go run ./main/  get job test-job-namespace/job-example1
+# go run ./main/ apply ./kubectlutil/testFile/job-with-pwd.yaml
+apiVersion: v1
+kind: Job
+metadata:
+  name: job-example1
+  namespace: test-job-namespace
+spec:
+  partition: dgx2
+  nTasks: 1
+  nTasksPerNode: 6
+  submitDirectory: "change-me"
+  compileCommands: [
+    "echo 123",
+    "echo 456",
+  ]
+  runCommands: [
+    "module load cuda/9.2.88-gcc-4.8.5",
+    "nvcc matrix_add.cu -o matrix_add",
+    "nvcc matrix_multiply.cu -o matrix_multiply",
+    "./matrix_add",
+    "./matrix_multiply",
+  ]
+  outputFile: "job-example1.out"
+  errorFile: "job-example1.err"
+  username: "change-me"
+  password: "change-me"
+  gpuNums: 1

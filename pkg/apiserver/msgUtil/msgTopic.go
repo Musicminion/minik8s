@@ -11,6 +11,8 @@ const (
 	ServiceUpdate = "serviceUpdate"
 
 	JobUpdate = "jobUpdate"
+
+	DnsUpdate = "dnsUpdate"
 )
 
 func PodUpdateWithNode(node string) string {

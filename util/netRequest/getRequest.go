@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"miniK8s/pkg/k8log"
 
 	"net/http"
 )
@@ -15,20 +14,20 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	code, res, err := GetRequest(uri)
 
 	if err != nil {
-		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
-		return 0, err
+		// k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
+		return code, err
 	}
 
 	if code != http.StatusOK {
-		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
-		return 0, err
+		// k8log.ErrorLog("netrequest", "GetRequestByTarget failed, code: "+fmt.Sprint(code))
+		return code, err
 	}
 
 	// 尝试在res中获取key对应的值
 	data, ok := res[key]
 	if !ok {
-		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
-		return 0, err
+		// k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get key failed, key: "+key)
+		return code, err
 	}
 
 	// 如果data为nil，直接返回
@@ -39,13 +38,13 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 	// 将data转化为字符串
 	dataStr := fmt.Sprint(data)
 
-	k8log.DebugLog("netrequest", "GetRequestByTarget dataStr: "+dataStr)
+	// k8log.DebugLog("netrequest", "GetRequestByTarget dataStr: "+dataStr)
 
 	// 将dataStr反序列化到target指向的对象中
 	err = json.Unmarshal([]byte(dataStr), target)
 
 	if err != nil {
-		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error()+dataStr)
+		// k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for decode failed, err: "+err.Error()+dataStr)
 		return 0, err
 	}
 
@@ -84,7 +83,7 @@ func GetRequestByTarget(uri string, target interface{}, key string) (int, error)
 func GetRequest(uri string) (int, map[string]interface{}, error) {
 	response, err := http.Get(uri)
 	if err != nil {
-		k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
+		// k8log.ErrorLog("netrequest", "GetRequestByTarget failed, for get failed, err: "+err.Error())
 		return 0, nil, err
 	}
 	defer response.Body.Close()
@@ -93,7 +92,7 @@ func GetRequest(uri string) (int, map[string]interface{}, error) {
 	decoder := json.NewDecoder(response.Body)
 	err = decoder.Decode(&result)
 	if err != nil {
-		k8log.ErrorLog("netrequest", "GetRequest failed, for decode failed, err: "+err.Error())
+		// k8log.ErrorLog("netrequest", "GetRequest failed, for decode failed, err: "+err.Error())
 		return 0, nil, err
 	}
 

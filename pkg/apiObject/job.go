@@ -100,3 +100,38 @@ func (jf *JobFile) GetJobNamespace() string {
 func (jf *JobFile) GetJobFileUUID() string {
 	return jf.Metadata.UUID
 }
+
+// 任务状态
+
+const (
+	// BF BOOT_FAIL       Job terminated due to launch failure, typically due to a hardware failure (e.g. unable to boot the node or block and the job can not be requeued).
+	JobState_BOOT_FAIL = "BOOT_FAIL" // 任务启动失败
+	//  CA CANCELLED       Job was explicitly cancelled by the user or system administrator. The job may or may not have been initiated.
+	JobState_CANCELLED = "CANCELLED" // 任务被取消
+	// CL COMPLETED       Job has terminated all processes on all nodes with an exit code of zero.
+	JobState_COMPLETED = "COMPLETED" // 任务完成
+	// DL  DEADLINE        Job terminated on deadline.
+	JobState_DEADLINE = "DEADLINE" // 任务超时
+	// F  FAILED          Job terminated with non-zero exit code or other failure condition.
+	JobState_FAILED = "FAILED" // 任务失败
+	// NF NODE_FAIL       Job terminated due to failure of one or more allocated nodes.
+	JobState_NODE_FAIL = "NODE_FAIL" // 节点失败
+	// OOM OUT_OF_MEMORY  Job experienced out of memory error.
+	JobState_OUT_OF_MEMORY = "OUT_OF_MEMORY" // 内存不足
+	// PD PENDING         Job is awaiting resource allocation.
+	JobState_PENDING = "PENDING" // 任务等待资源分配
+	// PR PREEMPTED       Job terminated due to preemption.
+	JobState_PREEMPTED = "PREEMPTED" // 任务被抢占
+	// R  RUNNING         Job currently has an allocation.
+	JobState_RUNNING = "RUNNING" // 任务正在运行
+	// S  SUSPENDED       Job has an allocation, but execution has been suspended.
+	JobState_SUSPENDED = "SUSPENDED" // 任务被挂起
+	// TO TIMEOUT         Job terminated upon reaching its time limit.
+	JobState_TIMEOUT = "TIMEOUT" // 任务超时
+	// CG COMPLETING      Job is in the process of completing. Some processes on some nodes may still be active.
+	JobState_COMPLETING = "COMPLETING" // 任务正在完成
+	// CD COMPLETED       Job has terminated all processes on all nodes.
+	//  RV  REVOKED         Sibling was removed from cluster due to other cluster starting the job.
+	JobState_REVOKED = "REVOKED" // 任务被撤销
+
+)

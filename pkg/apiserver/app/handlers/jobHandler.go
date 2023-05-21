@@ -89,7 +89,7 @@ func GetJobs(c *gin.Context) {
 	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdJobPath+"%s", namespace)
-	res, err := etcdclient.EtcdStore.Get(key)
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

@@ -33,7 +33,7 @@ var testService = apiObject.ServiceStore{
 }
 
 func TestSaveIPTables(t *testing.T) {
-	im := New()
+	im := NewIptableManager()
 	path := "test-save-iptables"
 
 	// Ensure file does not exist
@@ -57,7 +57,7 @@ func TestSaveIPTables(t *testing.T) {
 }
 
 func TestDeleteService(t *testing.T) {
-	im := New()
+	im := NewIptableManager()
 	serviceUpdate := &entity.ServiceUpdate{
 		Action:        message.DELETE,
 		ServiceTarget: testService,

@@ -2,9 +2,9 @@ package nginx
 
 import (
 	"fmt"
-	"io"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
+	"miniK8s/util/file"
 	"os"
 	"testing"
 	// "github.com/stretchr/testify/assert"
@@ -50,23 +50,40 @@ func TestWriteConf(t *testing.T) {
 	conf := FormatConf(dns)
 
 	// 调用 WriteConf 函数
-	WriteConf(dns, conf)
+	err := WriteConf(dns, conf)
+	if err != nil {
+		t.Errorf("write conf failed: %s", err.Error())
+	}
 
 	// 读取文件内容
 	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
 	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
-	file, err := os.Open(confFilePath)
+	actual, err := file.ReadFile(confFilePath)
 	if err != nil {
 		t.Errorf("open file failed: %s", err.Error())
 	}
 	// 验证文件内容与写的一致
-	actual, err := io.ReadAll(file)	
-	if err != nil {
-		t.Errorf("read file failed: %s", err.Error())
-	}
-
 	if conf != string(actual) {
 		t.Errorf("expected: %s, actual: %s", conf, string(actual))
 	}
 
+}
+
+func TestDeleteConf(t *testing.T) {
+	// 创建一个Dns对象，用于测试
+	conf := FormatConf(dns)
+
+	// 调用 WriteConf 函数
+	WriteConf(dns, conf)
+
+	// 调用 RemoveConf 函数
+	DeleteConf(dns)
+
+	// 验证文件是否被删除
+	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
+	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
+	_, err := os.Stat(confFilePath)
+	if err == nil {
+		t.Errorf("file should be removed")
+	}
 }

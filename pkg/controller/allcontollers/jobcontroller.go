@@ -101,7 +101,6 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 	}
 
 	podURI := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, job.Metadata.Namespace)
-	podURI = stringutil.Replace(podURI, config.URL_PARAM_NAME_PART, pod.Metadata.Name)
 	podURI = config.API_Server_URL_Prefix + podURI
 
 	code, _, err = netrequest.PostRequestByTarget(podURI, pod)

@@ -7,6 +7,7 @@ import (
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
@@ -24,7 +25,7 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	proxy := NewKubeProxy(listwatcher.DefaultListwatcherConfig())
 	go proxy.Run()
 	// 等待proxy成功启动
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 
 	// read from yaml
 	filepath := "../testFile/Service.yaml"
@@ -42,6 +43,9 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
 	service := &apiObject.Service{}
 	err = yaml.Unmarshal(content, service)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// 给Service设置UUID, 所以哪怕用户故意设置UUID也会被覆盖
 	service.Metadata.UUID = uuid.NewUUID()
@@ -90,4 +94,31 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 
 	// assert.Equal(t, "syncLoopIteration: create Service action", k8log.LastLog())
 	// assert.True(t, proxy.iptableManager.(*MockIptableManager).CreateServiceCalled)
+}
+
+func TestHandleDnsUpdate(t *testing.T) {
+	// 执行测试函数
+	proxy := NewKubeProxy(listwatcher.DefaultListwatcherConfig())
+	go proxy.Run()
+	// 等待proxy成功启动
+	time.Sleep(3 * time.Second)
+
+	hostList := []string{"192.168.0.1 example.com"}
+	msgutil.PubelishUpdateHost(hostList)
+
+	time.Sleep(1 * time.Second)
+	// 检查 hosts 文件是否正确生成
+	expectedOutput := "127.0.0.1 localhost\n192.168.0.1 example.com\n"
+	fileContent, err := os.ReadFile(config.HostsConfigFilePath)
+	if err != nil {
+		t.Fatalf("Failed to read file: %v", err)
+	}
+	if len(fileContent) == 0 {
+		t.Fatalf("File is empty")
+	}
+	if len(fileContent) != len(expectedOutput) {
+		t.Log(len(fileContent))
+		t.Log(len(expectedOutput))
+		t.Fatalf("File content length is not correct")
+	}
 }

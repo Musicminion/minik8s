@@ -29,6 +29,12 @@ const (
 
 	// 完整路径：/registry/jobfile/<namespace>/<job-name>
 	EtcdJobFilePath = "/registry/jobfile/"
+
+	// 完整路径：/registry/replicasets/<namespace>/<replicaset-name>
+	EtcdReplicaSetPath = "/registry/replicasets/"
+
+	// 完整路径：/registry/dns/<namespace>/<dns-name>
+	EtcdDnsPath = "/registry/dns/"
 )
 
 type EtcdConfig struct {

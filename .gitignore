@@ -4,6 +4,7 @@ bin-release/
 [Oo]bj/
 [Bb]in/
 .idea/
+.VSCodeCounter/
 
 # Other files and folders
 .settings/
@@ -26,3 +27,6 @@ build/kubelet/kubelet
 
 **/test-save-iptables
 pkg/kubectl/kubectlutil/testFile/job-with-pwd.yaml
+
+.VSCodeCounter/
+

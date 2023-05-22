@@ -119,6 +119,41 @@ func GetPods(c *gin.Context) {
 	})
 }
 
+// 获取系统中所有的Pod的信息
+func GetGlobalPods(c *gin.Context) {
+	// 从etcd中获取
+	// ETCD里面的路径是 /registry/pods/
+	logStr := "GetGlobalPods"
+	k8log.InfoLog("APIServer", logStr)
+
+	key := serverconfig.EtcdPodPath
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "get pods failed " + err.Error(),
+		})
+		return
+	}
+
+	// 这个如果没有数据，返回空数组，不会返回404
+	// if len(res) == 0 {
+	// 	c.JSON(http.StatusNotFound, gin.H{
+	// 		"error": "get pods err, not find pods",
+	// 	})
+	// 	return
+	// }
+
+	// 遍历res，返回对应的Node信息
+	targetPods := make([]string, 0)
+	for _, pod := range res {
+		targetPods = append(targetPods, pod.Value)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": stringutil.StringSliceToJsonArray(targetPods),
+	})
+}
+
 // POST "/api/v1/namespaces/:namespace/pods"
 func AddPod(c *gin.Context) {
 	// log
@@ -230,11 +265,14 @@ func DeletePod(c *gin.Context) {
 	name := c.Param(config.URL_PARAM_NAME)
 
 	// 检查参数
-	if namespace == "" || name == "" {
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace or name is empty",
+			"error": "name is empty",
 		})
-		k8log.ErrorLog("APIServer", "DeletePod: namespace or name is empty")
+		k8log.ErrorLog("APIServer", "DeletePod: name is empty")
 		return
 	}
 

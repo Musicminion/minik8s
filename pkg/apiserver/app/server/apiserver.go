@@ -84,11 +84,12 @@ func (s *apiServer) bind() {
 	s.router.GET(config.NodeAllPodsURL, handlers.GetNodePods)
 
 	// Pod相关的api
-	s.router.GET(config.PodsURL, handlers.GetPods)         // 所有pod
-	s.router.GET(config.PodSpecURL, handlers.GetPod)       // 单个pod
-	s.router.POST(config.PodsURL, handlers.AddPod)         // 创建pod
-	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)    // 更新Pod
-	s.router.DELETE(config.PodSpecURL, handlers.DeletePod) // 删除Pod
+	s.router.GET(config.GlobalPodsURL, handlers.GetGlobalPods) // 所有pod
+	s.router.GET(config.PodsURL, handlers.GetPods)             // 所有pod
+	s.router.GET(config.PodSpecURL, handlers.GetPod)           // 单个pod
+	s.router.POST(config.PodsURL, handlers.AddPod)             // 创建pod
+	s.router.PUT(config.PodSpecURL, handlers.UpdatePod)        // 更新Pod
+	s.router.DELETE(config.PodSpecURL, handlers.DeletePod)     // 删除Pod
 
 	// PodStatus相关的api
 	s.router.GET(config.PodSpecStatusURL, handlers.GetPodStatus)     // 获取PodStatus
@@ -116,5 +117,22 @@ func (s *apiServer) bind() {
 	s.router.POST(config.JobFileURL, handlers.AddJobFile)    // 创建jobFile
 
 	s.router.PUT(config.JobFileSpecURL, handlers.UpdateJobFile) // 更新jobFile
+
+	// replicaSet相关的api
+	s.router.GET(config.GlobalReplicaSetsURL, handlers.GetReplicaSets)   // 获取所有replicaSet
+	s.router.GET(config.ReplicaSetsURL, handlers.GetReplicaSets)         // 获取名字空间下面的所有replicaSet
+	s.router.GET(config.ReplicaSetSpecURL, handlers.GetReplicaSet)       // 获取单个replicaSet
+	s.router.POST(config.ReplicaSetsURL, handlers.AddReplicaSet)         // 创建replicaSet
+	s.router.DELETE(config.ReplicaSetSpecURL, handlers.DeleteReplicaSet) // 删除replicaSet
+
+	//
+	s.router.GET(config.ReplicaSetSpecStatusURL, handlers.GetReplicaSetStatus)    // 获取replicaSetStatus
+	s.router.PUT(config.ReplicaSetSpecStatusURL, handlers.UpdateReplicaSetStatus) // 更新replicaSetStatus
+
+	// Dns相关的api
+	s.router.GET(config.DnsURL, handlers.GetDns)         // 获取所有dns
+	s.router.GET(config.DnsSpecURL, handlers.GetDns)     // 获取单个dns
+	s.router.POST(config.DnsURL, handlers.AddDns)        // 创建dns
+	s.router.DELETE(config.DnsSpecURL, handlers.DeleteDns) // 删除dns
 
 }

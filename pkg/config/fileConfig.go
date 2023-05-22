@@ -1,5 +1,8 @@
 package config
 
 const (
-	NginxConfigPath = "/etc/nginx/"
+	NginxConfigPath = "/etc/dns/nginx/conf/"
+	HostsConfigFilePath = "/etc/hosts"
+
+
 )

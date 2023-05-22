@@ -1,5 +1,7 @@
 package config
 
+import "miniK8s/pkg/apiObject"
+
 // 考虑到APIServer用URL，而Kuble用URI，那URI的规定就该放在全局配置里面
 
 const (
@@ -68,6 +70,12 @@ const (
 	ReplicaSetSpecURL = "/apis/v1/namespaces/:namespace/replicasets/:name"
 	// 获取ReplicaSet的某个状态的URL
 	ReplicaSetSpecStatusURL = "/apis/v1/namespaces/:namespace/replicasets/:name/status"
+
+	// Dns相关的URL
+	// 所有Dns的URL
+	DnsURL = "/apis/v1/namespaces/:namespace/dns"
+	// 某个特定Dns的URL
+	DnsSpecURL = "/apis/v1/namespaces/:namespace/dns/:name"
 )
 
 const (
@@ -79,3 +87,21 @@ const (
 	URL_PARAM_NAME_PART      = ":name"
 	URL_PARAM_NAMESPACE_PART = ":namespace"
 )
+
+// kind->返回所有资源的URL(给定namespace)
+var ApiResourceMap = map[string]string{
+	apiObject.PodKind:     PodsURL,
+	apiObject.ServiceKind: ServiceURL,
+	apiObject.DnsKind:     DnsURL,
+	apiObject.NodeKind:    NodesURL,
+	apiObject.JobKind:     JobsURL,
+}
+
+// kind->返回特定资源的URL(给定namespace)
+var ApiSpecResourceMap = map[string]string{
+	apiObject.PodKind:     PodSpecURL,
+	apiObject.ServiceKind: ServiceSpecURL,
+	apiObject.DnsKind:     DnsSpecURL,
+	apiObject.NodeKind:    NodeSpecURL,
+	apiObject.JobKind:     JobSpecURL,
+}

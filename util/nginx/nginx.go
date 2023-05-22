@@ -74,3 +74,30 @@ func WriteConf(dns apiObject.Dns, conf string) error {
 
     return nil
 }
+
+
+func DeleteConf(dns apiObject.Dns) error {
+	// 将配置文件写入到nginx的配置文件中
+	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
+	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
+	// 判断文件的目录是否存在
+	_, err := os.Stat(confFilePath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			// 文件不存在
+			return nil
+		} else {
+			// 其他错误
+			k8log.ErrorLog("nginx", "DeleteConf: stat file failed "+err.Error())
+			return err
+		}
+	}
+
+	err = os.Remove(confFilePath)
+	if err != nil {
+		k8log.ErrorLog("nginx", "DeleteConf: remove file failed "+err.Error())
+		return err
+	}
+
+	return nil
+}

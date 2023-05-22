@@ -200,3 +200,8 @@ SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 # 删除除了weave之外的所有容器
 . "$SCRIPTS_ROOT/container_clear.sh" /
+
+# 设置项目的环境变量
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export MINIK8S_PATH="$PROJECT_ROOT"
+echo "设置环境变量: MINIK8S_PATH=$MINIK8S_PATH"

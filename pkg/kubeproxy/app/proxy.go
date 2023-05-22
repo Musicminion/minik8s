@@ -3,10 +3,12 @@ package proxy
 import (
 	"encoding/json"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
+	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -16,11 +18,13 @@ var (
 )
 
 type KubeProxy struct {
-	lw              *listwatcher.Listwatcher
-	stopChannel     <-chan struct{}
-	serviceUpdates  chan *entity.ServiceUpdate
-	endpointUpdates chan *entity.EndpointUpdate
-	iptableManager  *IptableManager
+	lw             *listwatcher.Listwatcher
+	stopChannel    <-chan struct{}
+	serviceUpdates chan *entity.ServiceUpdate
+	dnsUpdates     chan *entity.DnsUpdate
+	iptableManager IptableManager
+	dnsManager     DnsManager
+	hostList       []string
 }
 
 func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
@@ -29,13 +33,16 @@ func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
 		k8log.ErrorLog("Kubeproxy", "NewKubeProxy: new watcher failed")
 	}
 	// TODO: health check server
-	iptableManager := New()
+	iptableManager := NewIptableManager()
+	dnsManager := NewDnsManager()
 	proxy := &KubeProxy{
-		lw:              lw,
-		iptableManager:  iptableManager,
-		stopChannel:     make(<-chan struct{}),
-		serviceUpdates:  make(chan *entity.ServiceUpdate, 10),
-		endpointUpdates: make(chan *entity.EndpointUpdate, 10),
+		lw:             lw,
+		iptableManager: iptableManager,
+		dnsManager:     dnsManager,
+		stopChannel:    make(<-chan struct{}),
+		serviceUpdates: make(chan *entity.ServiceUpdate, 10),
+		dnsUpdates:     make(chan *entity.DnsUpdate, 10),
+		hostList:       make([]string, 0),
 	}
 	return proxy
 }
@@ -46,70 +53,83 @@ func (proxy *KubeProxy) HandleServiceUpdate(msg amqp.Delivery) {
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "消息格式错误,无法转换为Message")
 	}
-	if parsedMsg.Type == message.CREATE {
-		serviceUpdate := &entity.ServiceUpdate{}
-		err := json.Unmarshal([]byte(parsedMsg.Content), serviceUpdate)
-		if err != nil {
-			k8log.ErrorLog("Kubeproxy", "HandleServiceUpdate: failed to unmarshal")
-			return
-		}
-		proxy.serviceUpdates <- serviceUpdate
+
+	serviceUpdate := &entity.ServiceUpdate{}
+	err = json.Unmarshal([]byte(parsedMsg.Content), serviceUpdate)
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "HandleServiceUpdate: failed to unmarshal")
+		return
 	}
+	proxy.serviceUpdates <- serviceUpdate
+
 }
 
-// 监听到endpointUpdate消息后，解析并写入管道
-func (proxy *KubeProxy) HandleEndpointUpdate(msg amqp.Delivery) {
+// 监听到HostUpdate消息后, 并修改本机的host文件
+func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery)  {
+	k8log.DebugLog("Kubeproxy", "HandleHostUpdate: receive host update message")
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "消息格式错误,无法转换为Message")
+		return 
 	}
-	if parsedMsg.Type == message.CREATE {
-		endpointUpdate := &entity.EndpointUpdate{}
-		err := json.Unmarshal([]byte(parsedMsg.Content), endpointUpdate)
+
+	err = json.Unmarshal([]byte(parsedMsg.Content), &proxy.hostList)
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "HandleDnsUpdate: failed to unmarshal")
+		return 
+	}
+
+	// Open hosts file with append mode, clear first
+	f, err := os.OpenFile(config.HostsConfigFilePath, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, os.ModeAppend)
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to open hosts file")
+		return 
+	}
+	defer f.Close()
+
+	// Write 127.0.0.1 localhost to hosts file
+	_, err = f.WriteString("127.0.0.1 localhost\n")
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write to hosts file")
+		return 
+	}
+
+	// Write each host to hosts file
+	for _, host := range proxy.hostList {
+		_, err = f.WriteString(host + "\n")
 		if err != nil {
-			k8log.ErrorLog("Kubeproxy", "HandleServiceUpdate: failed to unmarshal")
-			return
+			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write to hosts file")
+			return 
 		}
-		proxy.endpointUpdates <- endpointUpdate
 	}
 }
 
 // 当管道发生变化时的处理函数
-func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceUpdate, endpointUpdates <-chan *entity.EndpointUpdate) bool {
+func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceUpdate, dnsUpdates <-chan *entity.DnsUpdate) bool {
 	k8log.InfoLog("Kubeproxy", "syncLoopIteration: Sync loop Iteration")
 
-	// select {
+	select {
+	case serviceUpdate := <-serviceUpdates:
+		switch serviceUpdate.Action {
+		case message.CREATE:
+			k8log.InfoLog("Kubeproxy", "syncLoopIteration: create Service action")
+			proxy.iptableManager.CreateService(serviceUpdate)
 
-	serviceUpdate, ok := <-serviceUpdates
-	if !ok {
-		k8log.InfoLog("Kubeproxy", "syncLoopIteration: serviceUpdates channel closed")
+		case message.UPDATE:
+			k8log.InfoLog("Kubeproxy", "syncLoopIteration: update Service action")
+			proxy.iptableManager.UpdateService(serviceUpdate)
+
+		case message.DELETE:
+			k8log.InfoLog("Kubeproxy", "syncLoopIteration: delete Service action")
+			proxy.iptableManager.DeleteService(serviceUpdate)
+		}
+	case dnsUpdate := <-dnsUpdates:
+		switch dnsUpdate.Action {
+		case message.CREATE:
+		case message.UPDATE:
+		case message.DELETE:
+		}
 	}
-	switch serviceUpdate.Action {
-	case message.CREATE:
-		k8log.InfoLog("Kubeproxy", "syncLoopIteration: create Service action")
-		proxy.iptableManager.CreateService(serviceUpdate)
-
-	case message.UPDATE:
-		k8log.InfoLog("Kubeproxy", "syncLoopIteration: update Service action")
-		proxy.iptableManager.UpdateService(serviceUpdate)
-
-	case message.DELETE:
-		k8log.InfoLog("Kubeproxy", "syncLoopIteration: delete Service action")
-		proxy.iptableManager.DeleteService(serviceUpdate)
-	}
-	// case endpointUpdate := <-endpointUpdates:
-	// 	switch endpointUpdate.Action {
-	// 	case message.CREATE:
-	// 		k8log.InfoLog("Kubeproxy", "syncLoopIteration: create Endpoint action")
-	// 		proxy.iptableManager.CreateEndpoint(endpointUpdate)
-	// 	case message.UPDATE:
-	// 		k8log.InfoLog("Kubeproxy", "syncLoopIteration: update Endpoint action")
-	// 		proxy.iptableManager.UpdateEndpoint(endpointUpdate)
-	// 	case message.DELETE:
-	// 		k8log.InfoLog("Kubeproxy", "syncLoopIteration: delete Endpoint action")
-	// 		proxy.iptableManager.DeleteEndpoint(endpointUpdate)
-	// 	}
-	// }
 	return true
 }
 
@@ -118,9 +138,9 @@ func (proxy *KubeProxy) Run() {
 	go proxy.lw.WatchQueue_Block(msgutil.ServiceUpdate, proxy.HandleServiceUpdate, make(chan struct{}))
 
 	// endpointUpdate
-	go proxy.lw.WatchQueue_Block(msgutil.EndpointUpdate, proxy.HandleEndpointUpdate, make(chan struct{}))
-	// 持续监听serviceUpdates和endpointUpdates的channel
-	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.endpointUpdates) {
+	go proxy.lw.WatchQueue_Block(msgutil.HostUpdate, proxy.HandleHostUpdate, make(chan struct{}))
+	// 持续监听serviceUpdates和dnsUpdates的channel
+	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.dnsUpdates) {
 	}
 
 }

@@ -4,6 +4,7 @@ bin-release/
 [Oo]bj/
 [Bb]in/
 .idea/
+.VSCodeCounter/
 
 # Other files and folders
 .settings/

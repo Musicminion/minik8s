@@ -31,20 +31,20 @@ func init() {
 type GetObject string
 
 const (
-	Get_Kind_Pod     GetObject = "pod"
-	Get_Kind_Service GetObject = "service"
-	Get_Kind_Job     GetObject = "job"
-	Get_Kind_Deploy  GetObject = "deployment"
+	Get_Kind_Pod        GetObject = "pod"
+	Get_Kind_Service    GetObject = "service"
+	Get_Kind_Job        GetObject = "job"
+	Get_Kind_Replicaset GetObject = "replicaset"
 
-	Get_Kind_Pods     GetObject = "pods"
-	Get_Kind_Services GetObject = "services"
-	Get_Kind_Jobs     GetObject = "jobs"
-	Get_Kind_Deploys  GetObject = "deployments"
+	Get_Kind_Pods        GetObject = "pods"
+	Get_Kind_Services    GetObject = "services"
+	Get_Kind_Jobs        GetObject = "jobs"
+	Get_Kind_Replicasets GetObject = "replicasets"
 )
 
 func getHandler(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
-		fmt.Println("getHandler: no args, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
+		fmt.Println("getHandler: no args, please specify [pod|service|job|replicaset]/[pods|services|jobs|deploys]")
 		cmd.Usage()
 		return
 	}
@@ -58,7 +58,7 @@ func getHandler(cmd *cobra.Command, args []string) {
 		getServiceHandler(cmd, args)
 	case string(Get_Kind_Job), string(Get_Kind_Jobs):
 		getJobHandler(cmd, args)
-	case string(Get_Kind_Deploy), string(Get_Kind_Deploys):
+	case string(Get_Kind_Replicaset), string(Get_Kind_Replicasets):
 		// fmt.Println("Kind: Deployment")
 	default:
 		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")

@@ -9,6 +9,7 @@ import (
 	netrequest "miniK8s/util/netRequest"
 	"miniK8s/util/stringutil"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -122,6 +123,8 @@ func (rc *replicaController) AddPodsNums(pod *apiObject.PodTemplate, num int) er
 
 	errStr := ""
 	for i := 0; i < num; i++ {
+		url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, pod.Metadata.Namespace)
+		url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, pod.Metadata.Name+"-"+strconv.Itoa(i)+"-"+stringutil.GenerateRandomStr(5))
 		code, _, err := netrequest.PostRequestByTarget(url, &newPod)
 
 		if err != nil {

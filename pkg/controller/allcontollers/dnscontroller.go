@@ -5,6 +5,7 @@ import (
 	"miniK8s/pkg/apiObject"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
@@ -21,6 +22,7 @@ import (
 
 var NginxPodYamlPath = os.Getenv("MINIK8S_PATH") + "util/nginx/yaml/dns-nginx-pod.yaml"
 var NginxServiceYamlPath = os.Getenv("MINIK8S_PATH") + "util/nginx/yaml/dns-nginx-service.yaml"
+var NginxDnsYamlPath = os.Getenv("MINIK8S_PATH") + "util/nginx/yaml/dns-nginx-dns.yaml"
 
 type DnsController interface {
 	Run()
@@ -54,20 +56,32 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 		return
 	}
 
-	// 为nginx创建conf文件
-	err = dc.CreateNginxConf(dns)
-	if err != nil {
-		k8log.ErrorLog("Dns-Controller", "HandleServiceUpdate: failed to create nginx conf")
+	if dns.Spec.Host == "" {
+		k8log.ErrorLog("Dns-Controller", "HandleServiceUpdate: host is empty")
 		return
 	}
 
-	// 修改/etc/hosts
+	if dns.Metadata.Namespace == "" {
+		dns.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 为nginx创建conf文件
+	nginxConfig := nginx.FormatConf(*dns)
+
+	// 添加/etc/hosts
 	newHostEntry := dc.nginxSvcIp + " " + dns.Spec.Host
 	dc.hostList = append(dc.hostList, newHostEntry)
 
-	// TODO: 通知所有的节点进行hosts文件的修改
-	msgutil.PubelishUpdateHost(dc.hostList)
+	// 创建hostUpdate消息
+	hostUpdate := &entity.HostUpdate{
+		Action:    message.CREATE,
+		DnsTarget: *dns,
+		DnsConfig: nginxConfig,
+		HostList:  dc.hostList,
+	}
 
+	// TODO: 通知所有的节点进行hosts文件的修改
+	msgutil.PubelishUpdateHost(hostUpdate)
 }
 
 func (dc *dnsController) DnsUpdateHandler(parsedMsg *message.Message) {
@@ -97,14 +111,15 @@ func (dc *dnsController) MsgHandler(msg amqp.Delivery) {
 	}
 }
 
-func (dc *dnsController) CreateNginxConf(dns *apiObject.Dns) error {
-	conf := nginx.FormatConf(*dns)
-	err := nginx.WriteConf(*dns, conf)
-	if err != nil {
-		k8log.ErrorLog("Dns-Controller", "CreateNginxConf: failed to write conf"+err.Error())
-		return err
-	}
-	return nil
+func (dc *dnsController) CreateNginxConf(dns *apiObject.Dns) string {
+	// conf := nginx.FormatConf(*dns)
+	// // err := nginx.WriteConf(*dns, conf)
+	// if err != nil {
+	// 	k8log.ErrorLog("Dns-Controller", "CreateNginxConf: failed to write conf"+err.Error())
+	// 	return ""
+	// }
+	// return nil
+	return ""
 }
 
 func (dc *dnsController) DeleteNginxConf(dns *apiObject.Dns) error {
@@ -191,6 +206,10 @@ func (dc *dnsController) CreateNginxService() {
 	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx service")
 }
 
+func (dc *dnsController) CreateNginxDns() {
+
+}
+
 func (dc *dnsController) Run() {
 	// 在每个node上创建一个nginx pod
 	// 1. 创建nginx pod
@@ -199,5 +218,5 @@ func (dc *dnsController) Run() {
 	dc.CreateNginxPod()
 	dc.CreateNginxService()
 
-	dc.lw.WatchQueue_Block(msgutil.DnsUpdate, dc.MsgHandler, make(chan struct{}))
+	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
 }

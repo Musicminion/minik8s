@@ -14,7 +14,7 @@ spec:
   selector:
     # Loadbalance traffic across Pods matching
     # this label selector
-    app: test
+    app: dns-nginx
   # Create an HA proxy in the cloud provider
   # with an External IP address - *Only supported
   # by some cloud providers*

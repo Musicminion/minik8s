@@ -109,9 +109,6 @@ func GetPods(c *gin.Context) {
 	targetPods := make([]string, 0)
 	for _, pod := range res {
 		targetPods = append(targetPods, pod.Value)
-		// if i < len(res)-1 {
-		// 	targetPods = append(targetPods, ",")
-		// }
 	}
 
 	c.JSON(http.StatusOK, gin.H{

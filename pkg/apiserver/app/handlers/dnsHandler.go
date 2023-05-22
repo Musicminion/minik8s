@@ -10,6 +10,7 @@ import (
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/message"
+	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"net/http"
 	"path"
@@ -133,7 +134,7 @@ func DeleteDns(c *gin.Context) {
 
 	k8log.InfoLog("APIServer", "delete dns success")
 	dnsUpdate := entity.DnsUpdate{
-		Action:    message.DELETE,
+		Action: message.DELETE,
 		DnsTarget: apiObject.Dns{
 			Basic: apiObject.Basic{
 				Metadata: apiObject.Metadata{
@@ -226,23 +227,15 @@ func GetDnsList(c *gin.Context) {
 		return
 	}
 
-	dnsList := make([]apiObject.Dns, 0)
-	for _, v := range res {
-		dns := apiObject.Dns{}
-		err = json.Unmarshal([]byte(v.Value), &dns)
-		if err != nil {
-			k8log.ErrorLog("APIServer", "GetDnsList, err is "+err.Error())
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": err.Error(),
-			})
-			return
-		}
-		dnsList = append(dnsList, dns)
+	// 遍历res，返回对应的Dns信息
+	targetDnsString := make([]string, 0)
+	for _, dns := range res {
+		targetDnsString = append(targetDnsString, dns.Value)
 	}
 
 	// 返回
 	c.JSON(http.StatusOK, gin.H{
-		"data": dnsList,
+		"data": stringutil.StringSliceToJsonArray(targetDnsString),
 	})
 
 	k8log.InfoLog("APIServer", "get dns list success")

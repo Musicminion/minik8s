@@ -197,7 +197,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		return
 	}
 	if code != http.StatusOK {
-		k8log.ErrorLog("Scheduler", "更新Pod信息失败,code: "+ strconv.Itoa(code))
+		k8log.ErrorLog("Scheduler", "更新Pod信息失败,code: "+strconv.Itoa(code))
 		return
 	}
 
@@ -235,6 +235,6 @@ func (sch *Scheduler) Run() {
 	// 监听队列
 	for {
 		// 监听队列
-		sch.lw.WatchQueue_Block(msgutil.NodeSchedule, sch.MsgHandler, make(chan struct{}))
+		sch.lw.WatchQueue_Block(msgutil.NodeScheduleTopic, sch.MsgHandler, make(chan struct{}))
 	}
 }

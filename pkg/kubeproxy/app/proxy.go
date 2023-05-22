@@ -8,6 +8,7 @@ import (
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
+	"miniK8s/util/nginx"
 	"os"
 
 	"github.com/streadway/amqp"
@@ -65,25 +66,28 @@ func (proxy *KubeProxy) HandleServiceUpdate(msg amqp.Delivery) {
 }
 
 // 监听到HostUpdate消息后, 并修改本机的host文件
-func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery)  {
+func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 	k8log.DebugLog("Kubeproxy", "HandleHostUpdate: receive host update message")
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "消息格式错误,无法转换为Message")
-		return 
+		return
 	}
 
-	err = json.Unmarshal([]byte(parsedMsg.Content), &proxy.hostList)
+	hostUpdate := &entity.HostUpdate{}
+
+	err = json.Unmarshal([]byte(parsedMsg.Content), &hostUpdate)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "HandleDnsUpdate: failed to unmarshal")
-		return 
+		return
 	}
 
+	// 一下内容更新本机的host文件
 	// Open hosts file with append mode, clear first
 	f, err := os.OpenFile(config.HostsConfigFilePath, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, os.ModeAppend)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to open hosts file")
-		return 
+		return
 	}
 	defer f.Close()
 
@@ -91,7 +95,7 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery)  {
 	_, err = f.WriteString("127.0.0.1 localhost\n")
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write to hosts file")
-		return 
+		return
 	}
 
 	// Write each host to hosts file
@@ -99,9 +103,12 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery)  {
 		_, err = f.WriteString(host + "\n")
 		if err != nil {
 			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write to hosts file")
-			return 
+			return
 		}
 	}
+
+	// 以下内容更新nginx的配置文件
+	nginx.WriteConf(hostUpdate.DnsTarget, hostUpdate.DnsConfig)
 }
 
 // 当管道发生变化时的处理函数
@@ -135,10 +142,10 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 
 func (proxy *KubeProxy) Run() {
 	// serviceUpdate
-	go proxy.lw.WatchQueue_Block(msgutil.ServiceUpdate, proxy.HandleServiceUpdate, make(chan struct{}))
+	go proxy.lw.WatchQueue_Block(msgutil.ServiceUpdateTopic, proxy.HandleServiceUpdate, make(chan struct{}))
 
 	// endpointUpdate
-	go proxy.lw.WatchQueue_Block(msgutil.HostUpdate, proxy.HandleHostUpdate, make(chan struct{}))
+	go proxy.lw.WatchQueue_Block(msgutil.HostUpdateTopic, proxy.HandleHostUpdate, make(chan struct{}))
 	// 持续监听serviceUpdates和dnsUpdates的channel
 	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.dnsUpdates) {
 	}

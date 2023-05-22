@@ -216,3 +216,30 @@ func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
 
 	return PublishMsg(DnsUpdate, jsonMsg)
 }
+
+func PubelishUpdateHost(hostUpdate []string) error {
+	jsonBytes, err := json.Marshal(hostUpdate)
+
+	if err != nil {
+		k8log.ErrorLog("msgutil", "json marshal host failed")
+		return err
+	}
+
+	// 创建一个空字符串
+
+	message := message.Message{
+		Type:         message.UPDATE,
+		Content:      string(jsonBytes),
+		ResourceURI:  "",
+		ResourceName: "Host",
+	}
+
+	jsonMsg, err := json.Marshal(message)
+
+	if err != nil {
+		k8log.ErrorLog("msgutil", "json marshal host failed")
+		return err
+	}
+
+	return PublishMsg(HostUpdate, jsonMsg)
+}

@@ -3,10 +3,12 @@ package proxy
 import (
 	"encoding/json"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
+	"os"
 
 	"github.com/streadway/amqp"
 )
@@ -22,6 +24,7 @@ type KubeProxy struct {
 	dnsUpdates     chan *entity.DnsUpdate
 	iptableManager IptableManager
 	dnsManager     DnsManager
+	hostList       []string
 }
 
 func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
@@ -39,6 +42,7 @@ func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
 		stopChannel:    make(<-chan struct{}),
 		serviceUpdates: make(chan *entity.ServiceUpdate, 10),
 		dnsUpdates:     make(chan *entity.DnsUpdate, 10),
+		hostList:       make([]string, 0),
 	}
 	return proxy
 }
@@ -60,20 +64,44 @@ func (proxy *KubeProxy) HandleServiceUpdate(msg amqp.Delivery) {
 
 }
 
-// 监听到DnsUpdate消息后，解析并写入管道
-func (proxy *KubeProxy) HandleDnsUpdate(msg amqp.Delivery) {
+// 监听到HostUpdate消息后, 并修改本机的host文件
+func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery)  {
+	k8log.DebugLog("Kubeproxy", "HandleHostUpdate: receive host update message")
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "消息格式错误,无法转换为Message")
+		return 
 	}
-	dnsUpdate := &entity.DnsUpdate{}
-	err = json.Unmarshal([]byte(parsedMsg.Content), dnsUpdate)
+
+	err = json.Unmarshal([]byte(parsedMsg.Content), &proxy.hostList)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "HandleDnsUpdate: failed to unmarshal")
-		return
+		return 
 	}
-	proxy.dnsUpdates <- dnsUpdate
 
+	// Open hosts file with append mode
+	f, err := os.OpenFile(config.HostsConfigFilePath, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, os.ModeAppend)
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to open hosts file")
+		return 
+	}
+	defer f.Close()
+
+	// Write 127.0.0.1 localhost to hosts file
+	_, err = f.WriteString("127.0.0.1 localhost\n")
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write to hosts file")
+		return 
+	}
+
+	// Write each host to hosts file
+	for _, host := range proxy.hostList {
+		_, err = f.WriteString(host + "\n")
+		if err != nil {
+			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write to hosts file")
+			return 
+		}
+	}
 }
 
 // 当管道发生变化时的处理函数
@@ -110,7 +138,7 @@ func (proxy *KubeProxy) Run() {
 	go proxy.lw.WatchQueue_Block(msgutil.ServiceUpdate, proxy.HandleServiceUpdate, make(chan struct{}))
 
 	// endpointUpdate
-	go proxy.lw.WatchQueue_Block(msgutil.EndpointUpdate, proxy.HandleDnsUpdate, make(chan struct{}))
+	go proxy.lw.WatchQueue_Block(msgutil.HostUpdate, proxy.HandleHostUpdate, make(chan struct{}))
 	// 持续监听serviceUpdates和dnsUpdates的channel
 	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.dnsUpdates) {
 	}

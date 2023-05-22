@@ -26,8 +26,8 @@ type DnsController interface {
 }
 
 type dnsController struct {
-	lw *listwatcher.Listwatcher
-	hostList []string
+	lw         *listwatcher.Listwatcher
+	hostList   []string
 	nginxSvcIp string
 }
 
@@ -40,7 +40,7 @@ func NewDnsController() (DnsController, error) {
 	}
 
 	return &dnsController{
-		lw: newlw,
+		lw:       newlw,
 		hostList: make([]string, 0),
 	}, nil
 }
@@ -66,6 +66,7 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 	dc.hostList = append(dc.hostList, newHostEntry)
 
 	// TODO: 通知所有的节点进行hosts文件的修改
+	msgutil.PubelishUpdateHost(dc.hostList)
 
 }
 
@@ -106,8 +107,14 @@ func (dc *dnsController) CreateNginxConf(dns *apiObject.Dns) error {
 	return nil
 }
 
-func (dc *dnsController) DeleteNginxConf() error{
-	
+func (dc *dnsController) DeleteNginxConf(dns *apiObject.Dns) error {
+	// 删除nginx conf文件
+	err := nginx.DeleteConf(*dns)
+	if err != nil {
+		k8log.ErrorLog("Job-Controller", "DeleteNginxConf: failed to delete conf"+err.Error())
+		return err
+	}
+	return nil
 }
 
 func (dc *dnsController) CreateNginxPod() {

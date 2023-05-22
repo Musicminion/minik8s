@@ -82,6 +82,9 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 		return
 	}
 
+	// 查看hostUpdate内容
+	k8log.DebugLog("Kubeproxy", "HandleHostUpdate: hostUpdate: "+ parsedMsg.Content)
+
 	// 一下内容更新本机的host文件
 	// Open hosts file with append mode, clear first
 	f, err := os.OpenFile(config.HostsConfigFilePath, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, os.ModeAppend)
@@ -99,6 +102,7 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 	}
 
 	// Write each host to hosts file
+	proxy.hostList = hostUpdate.HostList
 	for _, host := range proxy.hostList {
 		_, err = f.WriteString(host + "\n")
 		if err != nil {
@@ -108,7 +112,7 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 	}
 
 	// 以下内容更新nginx的配置文件
-	nginx.WriteConf(hostUpdate.DnsTarget, hostUpdate.DnsConfig)
+	nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
 }
 
 // 当管道发生变化时的处理函数

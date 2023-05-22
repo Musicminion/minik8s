@@ -29,12 +29,10 @@ const (
 )
 
 type IptableManager interface {
-	Run()
 	CreateService(serviceUpdate *entity.ServiceUpdate) error
 	DeleteService(serviceUpdate *entity.ServiceUpdate) error
 	UpdateService(serviceUpdate *entity.ServiceUpdate)
 	SaveIPTables(path string) error
-
 }
 
 type iptableManager struct {
@@ -56,6 +54,8 @@ func NewIptableManager() IptableManager {
 		service2chain: make(map[string][]string),
 		chain2rule:    make(map[string][]string),
 	}
+
+	iptableManager.Init_iptables()
 	
 	return iptableManager
 }
@@ -68,10 +68,6 @@ func (im *iptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) err
 	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
 		pod_ip_list = append(pod_ip_list, endpoint.IP)
 	}
-
-	// if clusterIp == "" {
-	// 	clusterIp, _ = im.allocClusterIP()
-	// }
 
 	for _, eachports := range ports {
 		k8log.DebugLog("KUBEPROXY", "port: "+strconv.Itoa(eachports.Port))
@@ -287,10 +283,6 @@ func (im *iptableManager) RestoreIPTables(path string) error {
 	return nil
 }
 
-func (im *iptableManager) Run() {
-	// im.init_iptables()
-	im.Init_iptables()
-}
 
 func (im *iptableManager) DeletePrefix(table, chain, prefix string) error {
 	output, err := im.ipt.List(table, chain)

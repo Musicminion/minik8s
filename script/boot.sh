@@ -5,7 +5,7 @@ export MINIK8S_PATH="$PROJECT_ROOT"
 
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-cd $SCRIPTS_ROOT/../
+# cd $SCRIPTS_ROOT/../
 
 # 定义启动的程序列表，每个元素对应一个 main.go 文件和日志文件路径
 programs=(
@@ -18,18 +18,7 @@ programs=(
 
 # 初始化测试环境
 # 删除 etcd 中所有内容
-. "$SCRIPTS_ROOT/etcd_clear.sh" /
-
-# 清空Reids
-. "$SCRIPTS_ROOT/redis_clear.sh"
-
-
-# 删除除了weave之外的所有容器
-. "$SCRIPTS_ROOT/container_clear.sh" /
-
-# 清空iptables
-echo "清空iptables"
-. "$SCRIPTS_ROOT/iptables_clear.sh" 
+. "$SCRIPTS_ROOT/remake.sh" /
 
 
 # # 重启weave
@@ -42,6 +31,15 @@ echo "清空iptables"
 # echo "重启docker"
 # systemctl restart docker
 
+cd $PROJECT_ROOT
+
+programs=(
+    "./pkg/apiserver/main/main.go:./log/apiserver.log"
+    "./pkg/kubelet/main/main.go:./log/kubelet.log"
+    "./pkg/scheduler/main/main.go:./log/scheduler.log"
+    "./pkg/kubeproxy/main/main.go:./log/kubeproxy.log"
+    "./pkg/controller/main/main.go:./log/controller.log"
+)
 
 # 循环启动程序
 for program in "${programs[@]}"; do
@@ -58,7 +56,7 @@ for program in "${programs[@]}"; do
     sudo go run "$program_file" &> "$log_file" &
     # 如果是apiserver或者kubelet，需要sleep一段时间确保启动成功
     if [[ "$program_file" == *"apiserver"* ]] || [[ "$program_file" == *"kubelet"* ]]; then
-        sleep 2
+        sleep 5
     fi
 done
 

@@ -1,5 +1,7 @@
 package apiObject
 
+import "time"
+
 // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#replicaset-v1-apps
 
 type ReplicaSetSpec struct {
@@ -43,11 +45,11 @@ type ReplicaSetStatus struct {
 }
 
 type ReplicaSetCondition struct {
-	Type           string `json:"type" yaml:"type"`                     // 代表条件类型
-	Status         string `json:"status" yaml:"status"`                 // 代表条件状态
-	LastUpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"` // 代表最后一次更新时间
-	Reason         string `json:"reason" yaml:"reason"`                 // 代表原因
-	Message        string `json:"message" yaml:"message"`               // 代表消息
+	Type           string    `json:"type" yaml:"type"`                     // 代表条件类型
+	Status         string    `json:"status" yaml:"status"`                 // 代表条件状态
+	LastUpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"` // 代表最后一次更新时间
+	Reason         string    `json:"reason" yaml:"reason"`                 // 代表原因
+	Message        string    `json:"message" yaml:"message"`               // 代表消息
 }
 
 // 定义ReplicaSet转化为ReplicaSetStore的函数

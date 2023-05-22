@@ -117,6 +117,30 @@ func GetReplicaSets(c *gin.Context) {
 
 }
 
+// "/apis/v1/replicasets"
+// GET
+func GetGlobalReplicaSets(c *gin.Context) {
+	key := fmt.Sprintf(serverconfig.EtcdReplicaSetPath)
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	targetReplicaseta := make([]string, 0)
+
+	for _, v := range res {
+		targetReplicaseta = append(targetReplicaseta, v.Value)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": stringutil.StringSliceToJsonArray(targetReplicaseta),
+	})
+}
+
 // "/apis/v1/namespaces/:namespace/replicasets"
 // POST
 func AddReplicaSet(c *gin.Context) {

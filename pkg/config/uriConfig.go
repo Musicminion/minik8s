@@ -26,6 +26,8 @@ const (
 
 	// 请把所有和名字空间【有关系】的放在下面
 	// Pod相关操作的URL
+	// 获取全局的Pod的URL
+	GlobalPodsURL = "/api/v1/pods"
 	// 所有Pod的状态的URL
 	PodsURL = "/api/v1/namespaces/:namespace/pods"
 	// 某个特定Pod的URL
@@ -58,6 +60,8 @@ const (
 	// 某个特定Job的文件的URL
 	JobFileSpecURL = "/apis/v1/namespaces/:namespace/jobfiles/:name"
 
+	//获取所有的 ReplicaSet，仅供controller使用，他会抓取所有的ReplicaSet，然后进行比对
+	GlobalReplicaSetsURL = "/apis/v1/replicasets"
 	// ReplicaSet相关操作的URL
 	ReplicaSetsURL = "/apis/v1/namespaces/:namespace/replicasets"
 	// 某个特定ReplicaSet的URL

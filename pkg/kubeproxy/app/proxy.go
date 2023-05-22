@@ -79,7 +79,7 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery)  {
 		return 
 	}
 
-	// Open hosts file with append mode
+	// Open hosts file with append mode, clear first
 	f, err := os.OpenFile(config.HostsConfigFilePath, os.O_APPEND|os.O_WRONLY|os.O_TRUNC, os.ModeAppend)
 	if err != nil {
 		k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to open hosts file")

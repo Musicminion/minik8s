@@ -323,7 +323,7 @@ func applyJobHandler(fileContent []byte) {
 // =========================================================
 //
 // 处理Dns的Apply
-// 测试用例  go run ./main/ apply ./kubectlutil/testFile/xxx.yaml  //TODO:
+// 测试用例  go run ./main/ apply ./kubectlutil/testFile/dns.yaml  
 //
 // =========================================================
 

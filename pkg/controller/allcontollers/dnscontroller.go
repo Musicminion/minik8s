@@ -27,8 +27,8 @@ type DnsController interface {
 
 type dnsController struct {
 	lw         *listwatcher.Listwatcher
-	hostList   []string
-	nginxSvcIp string
+	hostList   []string // 通过dns创建的host列表，这些host将被解析为nginx的service ip
+	nginxSvcIp string   // nginx service的ip
 }
 
 func NewDnsController() (DnsController, error) {
@@ -46,7 +46,6 @@ func NewDnsController() (DnsController, error) {
 }
 
 func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
-	// TODO
 	dns := &apiObject.Dns{}
 	err := json.Unmarshal([]byte(parsedMsg.Content), dns)
 	if err != nil {

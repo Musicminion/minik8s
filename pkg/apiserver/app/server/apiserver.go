@@ -117,13 +117,13 @@ func (s *apiServer) bind() {
 
 	s.router.PUT(config.JobFileSpecURL, handlers.UpdateJobFile) // 更新jobFile
 
-		// replicaSet相关的api
-		s.router.GET(config.ReplicaSetsURL, handlers.GetReplicaSets)         // 获取所有replicaSet
-		s.router.GET(config.ReplicaSetSpecURL, handlers.GetReplicaSet)       // 获取单个replicaSet
-		s.router.POST(config.ReplicaSetsURL, handlers.AddReplicaSet)         // 创建replicaSet
-		s.router.DELETE(config.ReplicaSetSpecURL, handlers.DeleteReplicaSet) // 删除replicaSet
-	
-		//
-		s.router.GET(config.ReplicaSetSpecStatusURL, handlers.GetReplicaSetStatus)    // 获取replicaSetStatus
-		s.router.PUT(config.ReplicaSetSpecStatusURL, handlers.UpdateReplicaSetStatus) // 更新replicaSetStatus
+	// replicaSet相关的api
+	s.router.GET(config.ReplicaSetsURL, handlers.GetReplicaSets)         // 获取所有replicaSet
+	s.router.GET(config.ReplicaSetSpecURL, handlers.GetReplicaSet)       // 获取单个replicaSet
+	s.router.POST(config.ReplicaSetsURL, handlers.AddReplicaSet)         // 创建replicaSet
+	s.router.DELETE(config.ReplicaSetSpecURL, handlers.DeleteReplicaSet) // 删除replicaSet
+
+	//
+	s.router.GET(config.ReplicaSetSpecStatusURL, handlers.GetReplicaSetStatus)    // 获取replicaSetStatus
+	s.router.PUT(config.ReplicaSetSpecStatusURL, handlers.UpdateReplicaSetStatus) // 更新replicaSetStatus
 }

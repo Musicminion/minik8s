@@ -1,0 +1,14 @@
+apiVersion:extensions/vlbetal
+kind:ReplicaSet
+metadata:
+  name:petclinic
+spec:
+  replicas:3
+  tempalte:
+    metadata:
+      labels:
+        app:petclinic
+    spec:
+      containers:
+        - name:petclinic
+          image:spring2go/spring-petclinic:1.0.0.RELEASE

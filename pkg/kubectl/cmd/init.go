@@ -23,6 +23,7 @@ func init() {
 	commands.AddCommand(applyCmd)
 	commands.AddCommand(deleteCmd)
 	commands.AddCommand(getCmd)
+	commands.AddCommand(describeCmd)
 }
 
 func runRoot(cmd *cobra.Command, args []string) {

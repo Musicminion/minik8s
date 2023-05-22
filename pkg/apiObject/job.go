@@ -82,6 +82,21 @@ func (js *JobStore) ToJob() *Job {
 	}
 }
 
+// 以下函数用来实现apiObject.Object接口
+func (j *Job) GetObjectKind() string {
+	return j.Kind
+}
+
+func (j *Job) GetObjectName() string {
+	return j.Metadata.Name
+}
+
+func (j *Job) GetObjectNamespace() string {
+	return j.Metadata.Namespace
+}
+
+///////////////////////// 以下是JobFile相关的内容 /////////////////////////
+
 type JobFile struct {
 	Basic          `yaml:",inline" json:",inline"`
 	UserUploadFile []byte `yaml:"userUploadFile" json:"userUploadFile"` // 用户上传的文件 zip文件

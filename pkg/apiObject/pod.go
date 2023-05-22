@@ -260,3 +260,16 @@ func (p *PodStore) GetPodNamespace() string {
 func (p *PodStore) GetPodUUID() string {
 	return p.Metadata.UUID
 }
+
+// 以下函数用来实现apiObject.Object接口
+func (p *Pod) GetObjectKind() string {
+	return p.Kind
+}
+
+func (p *Pod) GetObjectName() string {
+	return p.Metadata.Name
+}
+
+func (p *Pod) GetObjectNamespace() string {
+	return p.Metadata.Namespace
+}

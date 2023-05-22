@@ -157,6 +157,21 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPodToCache failed, for "+err.Error())
 		}
 	case message.UPDATE:
+		err := k.workManager.DelPodByPodID(podUpdate.PodTarget.Metadata.UUID)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: DelPodByPodID failed, for "+err.Error())
+			break
+		}
+		err = k.workManager.AddPod(&podUpdate.PodTarget)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPod failed, for "+err.Error())
+			break
+		}
+		err = k.statusManager.UpdatePodToCache(&podUpdate.PodTarget)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPodToCache failed, for "+err.Error())
+			break
+		}
 	case message.DELETE:
 		err := k.workManager.DelPodByPodID(podUpdate.PodTarget.Metadata.UUID)
 		if err != nil {

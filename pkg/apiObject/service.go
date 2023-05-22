@@ -118,6 +118,19 @@ func (s *ServiceStore) GetNamespace() string {
 	return s.Basic.Metadata.Namespace
 }
 
+// 以下函数用来是实现apiObject.Object接口
+func (s *Service) GetObjectKind() string {
+	return s.Kind
+}
+
+func (s *Service) GetObjectName() string {
+	return s.Metadata.Name
+}
+
+func (s *Service) GetObjectNamespace() string {
+	return s.Metadata.Namespace
+}
+
 
 // 从Condition到ServiceStatus基本都是和负载均衡相关的内容，目前暂不考虑实现
 

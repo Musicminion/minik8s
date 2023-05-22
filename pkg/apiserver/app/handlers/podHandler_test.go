@@ -89,7 +89,6 @@ func TestAddPod(t *testing.T) {
 			t.Errorf("expected status %v but got %v", http.StatusOK, resp.StatusCode)
 		}
 	}
-
 }
 
 func TestGetPods(t *testing.T) {

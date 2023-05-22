@@ -1,5 +1,8 @@
 #!/bin/bash
 
+PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+export MINIK8S_PATH="$PROJECT_ROOT"
+
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 cd $SCRIPTS_ROOT/../
@@ -10,6 +13,7 @@ programs=(
     "./pkg/kubelet/main/main.go:./log/kubelet.log"
     "./pkg/scheduler/main/main.go:./log/scheduler.log"
     "./pkg/kubeproxy/main/main.go:./log/kubeproxy.log"
+    "./pkg/controller/main/main.go:./log/controller.log"
 )
 
 # 初始化测试环境

@@ -117,4 +117,10 @@ func (s *apiServer) bind() {
 
 	s.router.PUT(config.JobFileSpecURL, handlers.UpdateJobFile) // 更新jobFile
 
+	// Dns相关的api
+	s.router.GET(config.DnsURL, handlers.GetDns)         // 获取所有dns
+	s.router.GET(config.DnsSpecURL, handlers.GetDns)     // 获取单个dns
+	s.router.POST(config.DnsURL, handlers.AddDns)        // 创建dns
+	s.router.DELETE(config.DnsSpecURL, handlers.DeleteDns) // 删除dns
+
 }

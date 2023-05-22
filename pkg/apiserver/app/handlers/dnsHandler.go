@@ -146,7 +146,8 @@ func DeleteDns(c *gin.Context) {
 	msgutil.PublishUpdateDns(&dnsUpdate)
 }
 
-// 获取Dns
+// 获取单个Dns
+// "/apis/v1/namespaces/:namespace/dns/:name"
 func GetDns(c *gin.Context) {
 	k8log.InfoLog("APIServer", "GetDns")
 	// 从url中获取dns的名称和命名空间
@@ -154,11 +155,15 @@ func GetDns(c *gin.Context) {
 	namespace := c.Params.ByName("namespace")
 
 	// 检查参数是否为空
-	if namespace == "" || name == "" {
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace or name is empty",
+			"error": "name is empty",
 		})
 		return
+	}
+
+	if namespace == "" {
+		namespace = config.DefaultNamespace
 	}
 
 	// 获取dns
@@ -196,4 +201,49 @@ func GetDns(c *gin.Context) {
 	k8log.DebugLog("APIServer", "dns : "+res[0].Value)
 
 	k8log.InfoLog("APIServer", "get dns success")
+}
+
+// 获取所有Dns
+// "/apis/v1/namespaces/:namespace/dns"
+func GetDnsList(c *gin.Context) {
+	k8log.InfoLog("APIServer", "GetDnsList")
+	// 从url中获取dns的名称和命名空间
+	namespace := c.Params.ByName("namespace")
+
+	// 检查参数是否为空
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+
+	// 获取dns
+	key := path.Join(serverconfig.EtcdDnsPath, namespace)
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
+	if err != nil {
+		k8log.ErrorLog("APIServer", "GetDnsList, err is "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	dnsList := make([]apiObject.Dns, 0)
+	for _, v := range res {
+		dns := apiObject.Dns{}
+		err = json.Unmarshal([]byte(v.Value), &dns)
+		if err != nil {
+			k8log.ErrorLog("APIServer", "GetDnsList, err is "+err.Error())
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": err.Error(),
+			})
+			return
+		}
+		dnsList = append(dnsList, dns)
+	}
+
+	// 返回
+	c.JSON(http.StatusOK, gin.H{
+		"data": dnsList,
+	})
+
+	k8log.InfoLog("APIServer", "get dns list success")
 }

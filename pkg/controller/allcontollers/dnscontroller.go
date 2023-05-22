@@ -13,13 +13,14 @@ import (
 	"miniK8s/util/nginx"
 	"miniK8s/util/stringutil"
 	"net/http"
+	"os"
 
 	"github.com/streadway/amqp"
 	"gopkg.in/yaml.v2"
 )
 
-const NginxPodYamlPath = "../../../util/nginx/yaml/dns-nginx-pod.yaml"
-const NginxServiceYamlPath = "../../../util/nginx/yaml/dns-nginx-service.yaml"
+var NginxPodYamlPath = os.Getenv("MINIK8S_PATH") + "util/nginx/yaml/dns-nginx-pod.yaml"
+var NginxServiceYamlPath = os.Getenv("MINIK8S_PATH") + "util/nginx/yaml/dns-nginx-service.yaml"
 
 type DnsController interface {
 	Run()
@@ -49,14 +50,14 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 	dns := &apiObject.Dns{}
 	err := json.Unmarshal([]byte(parsedMsg.Content), dns)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "HandleServiceUpdate: failed to unmarshal")
+		k8log.ErrorLog("Dns-Controller", "HandleServiceUpdate: failed to unmarshal")
 		return
 	}
 
 	// 为nginx创建conf文件
 	err = dc.CreateNginxConf(dns)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "HandleServiceUpdate: failed to create nginx conf")
+		k8log.ErrorLog("Dns-Controller", "HandleServiceUpdate: failed to create nginx conf")
 		return
 	}
 
@@ -78,11 +79,11 @@ func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
 }
 
 func (dc *dnsController) MsgHandler(msg amqp.Delivery) {
-	k8log.WarnLog("Job-Controller", "收到消息"+string(msg.Body))
+	k8log.WarnLog("Dns-Controller", "收到消息"+string(msg.Body))
 
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "消息格式错误,无法转换为Message")
+		k8log.ErrorLog("Dns-Controller", "消息格式错误,无法转换为Message")
 	}
 
 	switch parsedMsg.Type {
@@ -100,7 +101,7 @@ func (dc *dnsController) CreateNginxConf(dns *apiObject.Dns) error {
 	conf := nginx.FormatConf(*dns)
 	err := nginx.WriteConf(*dns, conf)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "CreateNginxConf: failed to write conf"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "CreateNginxConf: failed to write conf"+err.Error())
 		return err
 	}
 	return nil
@@ -110,17 +111,18 @@ func (dc *dnsController) DeleteNginxConf(dns *apiObject.Dns) error {
 	// 删除nginx conf文件
 	err := nginx.DeleteConf(*dns)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "DeleteNginxConf: failed to delete conf"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "DeleteNginxConf: failed to delete conf"+err.Error())
 		return err
 	}
 	return nil
 }
 
 func (dc *dnsController) CreateNginxPod() {
+	k8log.DebugLog("Dns-Controller", "Run: start to create nginx pod")
 	path := NginxPodYamlPath
 	fileContent, err := file.ReadFile(path)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "Run: failed to read file"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "Run: failed to read file"+err.Error())
 		return
 	}
 
@@ -129,31 +131,36 @@ func (dc *dnsController) CreateNginxPod() {
 	nginxPod := &apiObject.Pod{}
 	err = yaml.Unmarshal(fileContent, nginxPod)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "Run: failed to unmarshal"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "Run: failed to unmarshal"+err.Error())
 		return
+	}
+
+	// 判断namespace是否为空
+	if nginxPod.GetPodNamespace() == "" {
+		nginxPod.Metadata.Namespace = config.DefaultNamespace
 	}
 
 	URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetPodNamespace())
 	URL = config.API_Server_URL_Prefix + URL
-	k8log.DebugLog("Job-Controller", "Run: URL is "+URL)
+	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxPod)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "Run: failed to post request"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
 		return
 	}
 	if code != http.StatusCreated {
-		k8log.ErrorLog("Job-Controller", "Run: failed to create pod")
+		k8log.ErrorLog("Dns-Controller", "Run: failed to create pod")
 		return
 	}
 
-	k8log.InfoLog("Job-Controller", "HandleServiceUpdate: success to create nginx pod")
+	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx pod")
 }
 
 func (dc *dnsController) CreateNginxService() {
 	path := NginxServiceYamlPath
 	fileContent, err := file.ReadFile(path)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "Run: failed to read file"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "Run: failed to read file"+err.Error())
 		return
 	}
 
@@ -162,26 +169,26 @@ func (dc *dnsController) CreateNginxService() {
 	nginxService := &apiObject.Service{}
 	err = yaml.Unmarshal(fileContent, nginxService)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "Run: failed to unmarshal"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "Run: failed to unmarshal"+err.Error())
 		return
 	}
 
 	URL := stringutil.Replace(config.ServiceURL, config.URL_PARAM_NAMESPACE_PART, nginxService.GetNamespace())
 	URL = config.API_Server_URL_Prefix + URL
-	k8log.DebugLog("Job-Controller", "Run: URL is "+URL)
+	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxService)
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "Run: failed to post request"+err.Error())
+		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
 		return
 	}
 	if code != http.StatusCreated {
-		k8log.ErrorLog("Job-Controller", "Run: failed to create service")
+		k8log.ErrorLog("Dns-Controller", "Run: failed to create service")
 		return
 	}
 
 	dc.nginxSvcIp = nginxService.Spec.ClusterIP
 
-	k8log.InfoLog("Job-Controller", "HandleServiceUpdate: success to create nginx service")
+	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx service")
 }
 
 func (dc *dnsController) Run() {

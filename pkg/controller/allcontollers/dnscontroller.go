@@ -116,17 +116,6 @@ func (dc *dnsController) MsgHandler(msg amqp.Delivery) {
 	}
 }
 
-func (dc *dnsController) CreateNginxConf(dns *apiObject.Dns) string {
-	// conf := nginx.FormatConf(*dns)
-	// // err := nginx.WriteConf(*dns, conf)
-	// if err != nil {
-	// 	k8log.ErrorLog("Dns-Controller", "CreateNginxConf: failed to write conf"+err.Error())
-	// 	return ""
-	// }
-	// return nil
-	return ""
-}
-
 func (dc *dnsController) DeleteNginxConf(dns *apiObject.Dns) error {
 	// 删除nginx conf文件
 	err := nginx.DeleteConf(*dns)
@@ -147,7 +136,6 @@ func (dc *dnsController) CreateNginxPod() {
 	}
 
 	// 将文件内容转换为Pod对象
-	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
 	nginxPod := &apiObject.Pod{}
 	err = yaml.Unmarshal(fileContent, nginxPod)
 	if err != nil {
@@ -184,8 +172,7 @@ func (dc *dnsController) CreateNginxService() {
 		return
 	}
 
-	// 将文件内容转换为Pod对象
-	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddPod方法。
+	// 将文件内容转换为Service对象
 	nginxService := &apiObject.Service{}
 	err = yaml.Unmarshal(fileContent, nginxService)
 	if err != nil {
@@ -235,16 +222,49 @@ func (dc *dnsController) UpdateNginxSvcIP() {
 	dc.nginxSvcIp = nginxSvc.Spec.ClusterIP
 }
 
+func (dc *dnsController) CreateNginxDns(){
+	path := NginxDnsYamlPath
+	fileContent, err := file.ReadFile(path)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to read file"+err.Error())
+		return
+	}
+
+	// 将文件内容转换为Dns对象
+	nginxDns := &apiObject.Dns{}
+	err = yaml.Unmarshal(fileContent, nginxDns)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to unmarshal"+err.Error())
+		return
+	}
+
+	URL := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, nginxDns.GetDnsNamespace())
+	URL = config.API_Server_URL_Prefix + URL
+	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
+	code, _, err := netrequest.PostRequestByTarget(URL, nginxDns)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
+		return
+	}
+	if code != http.StatusCreated {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to create service")
+		return
+	}
+
+	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx dns")
+}
+
 
 func (dc *dnsController) Run() {
 	// 在每个node上创建一个nginx pod
 	// 1. 创建nginx pod
 	// 2. 创建nginx service
 	// 3. 创建nginx dns
-	dc.CreateNginxPod()
-	dc.CreateNginxService()
-	// 更新nginxService的ip
-	dc.UpdateNginxSvcIP()
+	// dc.CreateNginxPod()
+	// dc.CreateNginxService()
+	// // 更新nginxService的ip
+	// dc.UpdateNginxSvcIP()
+	// dc.CreateNginxDns()
 
-	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
+	// dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
 }

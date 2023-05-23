@@ -266,5 +266,5 @@ func (dc *dnsController) Run() {
 	dc.UpdateNginxSvcIP()
 	dc.CreateNginxDns()
 
-	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
+	// dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
 }

@@ -179,11 +179,6 @@ func AddPod(c *gin.Context) {
 
 	// 判断PodNamespace是否为空
 	if pod.GetPodNamespace() == "" {
-		// c.JSON(http.StatusBadRequest, gin.H{
-		// 	"error": "pod namespace is empty",
-		// })
-		// k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
-		// return
 		pod.Basic.Metadata.Namespace = config.DefaultNamespace
 	}
 

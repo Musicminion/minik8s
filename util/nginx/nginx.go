@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	nginxListenPort = 80
+	NginxListenPort = 80
+	NginxSvcName   = "dns-nginx-service"
 )
 
 func FormatConf(dns apiObject.Dns) string {
 	commentStr := fmt.Sprintf("# %s.conf\n", dns.Spec.Host)
-	formatStr := fmt.Sprintf("server {\n\tlisten %d;\n\tserver_name %s;\n", nginxListenPort, dns.Spec.Host)
+	formatStr := fmt.Sprintf("server {\n\tlisten %d;\n\tserver_name %s;\n", NginxListenPort, dns.Spec.Host)
 	formatStr = commentStr + formatStr
 	locationStr := "\tlocation %s {\n\t\tproxy_pass http://%s:%s/;\n\t}\n"
 	for _, p := range dns.Spec.Paths {
@@ -101,3 +102,5 @@ func DeleteConf(dns apiObject.Dns) error {
 
 	return nil
 }
+
+

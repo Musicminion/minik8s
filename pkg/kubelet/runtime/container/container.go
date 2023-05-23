@@ -1,13 +1,16 @@
 package container
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"miniK8s/pkg/k8log"
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -21,7 +24,7 @@ type ContainerManager struct {
 // 创建容器的方法,返回容器的ID和错误
 func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.ContainerConfig) (string, error) {
 	// 获取docker的client
-	k8log.DebugLog("Container Manager", "container create: "+ name)
+	k8log.DebugLog("Container Manager", "container create: "+name)
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
 	if err != nil {
@@ -48,13 +51,13 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 	result, err := client.ContainerCreate(
 		ctx,
 		&container.Config{
-			Image:      option.Image,
-			Cmd:        option.Cmd,
-			Env:        option.Env,
-			Tty:        option.Tty,
-			Labels:     option.Labels,
-			Entrypoint: option.Entrypoint,
-			Volumes:    option.Volumes,
+			Image:        option.Image,
+			Cmd:          option.Cmd,
+			Env:          option.Env,
+			Tty:          option.Tty,
+			Labels:       option.Labels,
+			Entrypoint:   option.Entrypoint,
+			Volumes:      option.Volumes,
 			ExposedPorts: exposedPortSet,
 		},
 		&container.HostConfig{
@@ -258,6 +261,37 @@ func (c *ContainerManager) RestartContainer(containerID string) (string, error) 
 	}
 
 	return containerID, nil
+}
+
+func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (string, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	execID, err := client.ContainerExecCreate(ctx, containerID, types.ExecConfig{
+		Cmd: cmd,
+	})
+	if err != nil {
+		return "", err
+	}
+
+	resp, err := client.ContainerExecAttach(ctx, execID.ID, types.ExecStartCheck{})
+	if err != nil {
+		return "", err
+	}
+	defer resp.Close()
+
+	var outputBuf bytes.Buffer
+	_, err = io.Copy(&outputBuf, resp.Reader)
+	if err != nil {
+		return "", err
+	}
+
+	output := strings.TrimSpace(outputBuf.String())
+	return output, nil
 }
 
 // import (

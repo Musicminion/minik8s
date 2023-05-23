@@ -18,6 +18,7 @@ type PodWorkerManager interface {
 	RestartPod(pod *apiObject.PodStore) error
 	DelPodByPodID(podUUID string) error
 	RecreatePodContainer(pod *apiObject.PodStore) error
+	ExecPodContainer(pod *apiObject.PodStore, cmd []string) (string, error)
 }
 
 type podWorkerManager struct {
@@ -32,6 +33,7 @@ type podWorkerManager struct {
 	RestartPodHandler           func(pod *apiObject.PodStore) error
 	DelPodByIDHandler           func(podUUID string) error
 	RecreatePodContainerHandler func(pod *apiObject.PodStore) error
+	ExecPodHandler			  func(pod *apiObject.PodStore, cmd []string) (string, error)
 }
 
 func NewPodWorkerManager() PodWorkerManager {
@@ -44,6 +46,7 @@ func NewPodWorkerManager() PodWorkerManager {
 		RestartPodHandler:           runtimeManager.RestartPod,
 		DelPodByIDHandler:           runtimeManager.DelPodByPodID,
 		RecreatePodContainerHandler: runtimeManager.RecreatePodContainer,
+		ExecPodHandler:              runtimeManager.ExecPodContainer,
 	}
 }
 
@@ -241,6 +244,32 @@ func (p *podWorkerManager) RecreatePodContainer(pod *apiObject.PodStore) error {
 	}
 
 	return nil
+}
+
+func (p *podWorkerManager) ExecPodContainer(pod *apiObject.PodStore, cmd []string) (string, error) {
+	podUUID := pod.GetPodUUID()
+	// 遍历PodWorkersMap，如果不存在podUUID对应的PodWorker，则直接返回
+	if _, ok := p.PodWorkersMap[podUUID]; !ok {
+		return "", errors.New("pod not exists")
+	}
+
+	// 创建任务
+	task := WorkTask{
+		TaskType: Task_ExecPod,
+		TaskArgs: Task_ExecPodArgs{
+			Pod: pod,
+			Cmd: cmd,
+		},
+	}
+
+	// 把任务添加到PodWorker的任务队列中
+	err := p.PodWorkersMap[podUUID].AddTask(task)
+	time.Sleep(1 * time.Second)
+	if err != nil {
+		return "", err
+	}
+
+	return "", nil
 }
 
 // ************************************************************

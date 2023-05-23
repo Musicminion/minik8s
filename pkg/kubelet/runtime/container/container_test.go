@@ -1,6 +1,7 @@
 package container
 
 import (
+	"miniK8s/pkg/k8log"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"strconv"
 	"testing"
@@ -146,6 +147,26 @@ func TestStartContainer(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+	}
+}
+
+func TestExecContainer(t *testing.T) {
+	// 定义测试用的容器 ID 和命令
+	cmd := []string{"sh", "-c", "echo '127.0.0.1 localhost' > /etc/hosts"}
+	// cmd := []string{"touch", "new"}
+	// 创建一个 ContainerManager 实例
+	cm := &ContainerManager{}
+	containers, err := cm.ListContainersWithOpt(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, container := range containers {
+		out, err := cm.ExecContainer(container.ID, cmd)
+		if err != nil {
+			t.Error(err)
+		}
+		k8log.DebugLog("Container Manager", "out is " + string(out))
 	}
 }
 

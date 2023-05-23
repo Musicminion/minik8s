@@ -183,6 +183,12 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: DelPodFromCache failed, for "+err.Error())
 			break
 		}
+	case message.EXEC:
+		_, err := k.workManager.ExecPodContainer(&podUpdate.PodTarget, podUpdate.Cmd)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: ExecPodContainer failed, for "+err.Error())
+			break
+		}
 	}
 	return true
 }

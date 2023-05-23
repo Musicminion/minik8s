@@ -67,7 +67,7 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 	}
 
 	message := message.Message{
-		Type:         message.CREATE,
+		Type:         message.UPDATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: serviceUpdate.ServiceTarget.GetName(),
@@ -243,3 +243,4 @@ func PubelishUpdateHost(hostUpdate *entity.HostUpdate) error {
 
 	return PublishMsg(HostUpdateTopic, jsonMsg)
 }
+

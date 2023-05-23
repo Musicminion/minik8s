@@ -29,10 +29,10 @@ type DnsController interface {
 }
 
 type dnsController struct {
-	lw         *listwatcher.Listwatcher
-	hostList   []string // 通过dns创建的host列表，这些host将被解析为nginx的service ip
+	lw           *listwatcher.Listwatcher
+	hostList     []string // 通过dns创建的host列表，这些host将被解析为nginx的service ip
 	nginxSvcName string   // nginx service的名称
-	nginxSvcIp  string   // nginx service的ip
+	nginxSvcIp   string   // nginx service的ip
 }
 
 func NewDnsController() (DnsController, error) {
@@ -222,7 +222,7 @@ func (dc *dnsController) UpdateNginxSvcIP() {
 	dc.nginxSvcIp = nginxSvc.Spec.ClusterIP
 }
 
-func (dc *dnsController) CreateNginxDns(){
+func (dc *dnsController) CreateNginxDns() {
 	path := NginxDnsYamlPath
 	fileContent, err := file.ReadFile(path)
 	if err != nil {
@@ -254,7 +254,6 @@ func (dc *dnsController) CreateNginxDns(){
 	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx dns")
 }
 
-
 func (dc *dnsController) Run() {
 	// 在每个node上创建一个nginx pod
 	// 1. 创建nginx pod
@@ -264,7 +263,8 @@ func (dc *dnsController) Run() {
 	dc.CreateNginxService()
 	// 更新nginxService的ip
 	dc.UpdateNginxSvcIP()
+
 	dc.CreateNginxDns()
 
-	// dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
+	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
 }

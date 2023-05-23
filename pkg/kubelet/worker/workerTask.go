@@ -38,6 +38,13 @@ type Task_RecreatePodContainerArgs struct {
 }
 
 
+type Task_ExecPodArgs struct {
+	// PodStore
+	Pod *apiObject.PodStore
+	Cmd []string
+}
+
+
 // 对于一个PodWorker来说，它包含了任务
 type WorkTask struct {
 	// 任务类型
@@ -59,4 +66,5 @@ const (
 	Task_Restart       TypeOfTask = "restartPod"
 	Task_DelPodByPodID TypeOfTask = "delPodByPodID"
 	Task_RecreatePodContainer TypeOfTask = "recreatePodContainer"
+	Task_ExecPod TypeOfTask = "execPod"
 )

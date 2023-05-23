@@ -19,8 +19,6 @@ import (
 // 	CreateService(serviceUpdate *entity.ServiceUpdate)
 // }
 
-
-
 // var ipt *iptables.IPTables
 
 const (
@@ -33,6 +31,7 @@ type IptableManager interface {
 	DeleteService(serviceUpdate *entity.ServiceUpdate) error
 	UpdateService(serviceUpdate *entity.ServiceUpdate)
 	SaveIPTables(path string) error
+	GetPodsBySvcName(svcName string) []string
 }
 
 type iptableManager struct {
@@ -41,7 +40,7 @@ type iptableManager struct {
 	stragegy string
 	// serviceName to clusterIP
 	// serviceIPMap map[string]string
-	serviceDict map[string]map[string]string
+	service2podUUID map[string][]string
 	// 一个service下有一条KUBE-SVC链（规则数量取决于service数量），一条KUBE-SEP链（规则数量取决于endpoint数）
 	service2chain map[string][]string
 	chain2rule    map[string][]string
@@ -49,14 +48,14 @@ type iptableManager struct {
 
 func NewIptableManager() IptableManager {
 	iptableManager := &iptableManager{
-		stragegy:      RANDOM,
-		serviceDict:   make(map[string]map[string]string),
-		service2chain: make(map[string][]string),
-		chain2rule:    make(map[string][]string),
+		stragegy:        RANDOM,
+		service2podUUID: make(map[string][]string),
+		service2chain:   make(map[string][]string),
+		chain2rule:      make(map[string][]string),
 	}
 
 	iptableManager.Init_iptables()
-	
+
 	return iptableManager
 }
 
@@ -80,6 +79,12 @@ func (im *iptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) err
 			return err
 		}
 	}
+
+
+	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
+		k8log.DebugLog("KUBEPROXY", "service2podUUID: "+ seviceName + " " + endpoint.PodUUID)
+		im.service2podUUID[seviceName] = append(im.service2podUUID[seviceName], endpoint.PodUUID)
+	}
 	return nil
 }
 
@@ -95,6 +100,7 @@ func (im *iptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) err
 		im.ipt.DeleteChain("nat", chain)
 	}
 	im.service2chain[serviceName] = nil
+	im.service2podUUID[serviceName] = nil
 	return nil
 }
 
@@ -283,7 +289,6 @@ func (im *iptableManager) RestoreIPTables(path string) error {
 	return nil
 }
 
-
 func (im *iptableManager) DeletePrefix(table, chain, prefix string) error {
 	output, err := im.ipt.List(table, chain)
 	if err != nil {
@@ -311,4 +316,9 @@ func (im *iptableManager) ClearIPTables() {
 	im.ipt.DeleteAll()
 
 	log.Printf("iptables rules have been cleared")
+}
+
+
+func (im *iptableManager) GetPodsBySvcName(svcName string) []string {
+	return im.service2podUUID[svcName]
 }

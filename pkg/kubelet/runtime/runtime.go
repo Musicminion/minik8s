@@ -19,6 +19,7 @@ type RuntimeManager interface {
 	RestartPod(pod *apiObject.PodStore) error
 	DelPodByPodID(podUUID string) error
 	RecreatePodContainer(pod *apiObject.PodStore) error
+	ExecPodContainer(pod *apiObject.PodStore, cmd []string) (string, error)
 
 	// GetRuntimeNodeStatus 获取运行时Node的状态信息
 	GetRuntimeNodeStatus() (*apiObject.NodeStatus, error)
@@ -209,7 +210,7 @@ func (r *runtimeManager) RecreatePodContainer(pod *apiObject.PodStore) error {
 	filter := make(map[string][]string)
 	filter[minik8sTypes.ContainerLabel_PodUID] = []string{pod.GetPodUUID()}
 
-	// 根据容器的名字过滤器，过滤出来所有的容器
+	// 根据pod的UUID过滤容器
 	runContainers, err := r.containerManager.ListContainersWithOpt(filter)
 	// 从容器中筛选出pauseContainer
 
@@ -233,4 +234,26 @@ func (r *runtimeManager) RecreatePodContainer(pod *apiObject.PodStore) error {
 	}
 
 	return nil
+}
+
+// 根据pod的UUID筛选container， 在容器中执行命令
+func (r *runtimeManager) ExecPodContainer(pod *apiObject.PodStore, cmd []string) (string, error) {
+	// 根据pod的名字找出所有匹配的pod
+	filter := make(map[string][]string)
+	filter[minik8sTypes.ContainerLabel_PodUID] = []string{pod.GetPodUUID()}
+	// 根据pod的UUID过滤容器
+	runContainers, err := r.containerManager.ListContainersWithOpt(filter)
+	if err != nil {
+		k8log.ErrorLog("Runtime Manager", err.Error())
+		return "", err
+	}
+
+	for _, container := range runContainers {
+		_, err = r.containerManager.ExecContainer(container.ID, cmd)
+		if err != nil {
+			k8log.ErrorLog("Runtime Manager", err.Error())
+			return "", err
+		}
+	}
+	return "", nil
 }

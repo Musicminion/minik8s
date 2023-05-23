@@ -84,7 +84,7 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 		HostList:  dc.hostList,
 	}
 
-	// TODO: 通知所有的节点进行hosts文件的修改
+	// TODO: 通知所有的节点进行hosts的修改
 	k8log.DebugLog("Dns-Controller", "DnsCreateHandler: publish hostUpdate")
 	msgutil.PubelishUpdateHost(hostUpdate)
 }
@@ -94,7 +94,51 @@ func (dc *dnsController) DnsUpdateHandler(parsedMsg *message.Message) {
 }
 
 func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
+	dnsUpdate := &entity.DnsUpdate{}
+	err := json.Unmarshal([]byte(parsedMsg.Content), dnsUpdate)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "failed to unmarshal")
+		return
+	}
 
+	dnsStore := dnsUpdate.DnsTarget
+
+	if dnsStore.Spec.Host == "" {
+		k8log.ErrorLog("Dns-Controller", "host is empty")
+		return
+	}
+
+	if dnsStore.Metadata.Namespace == "" {
+		dnsStore.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 删除nginx conf文件
+	err = dc.DeleteNginxConf(dnsStore.ToDns())
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "DnsDeleteHandler: failed to delete nginx conf")
+		return
+	}
+
+	// 删除/etc/hosts
+	k8log.DebugLog("Dns-Controller", "DnsDeleteHandler: newhostEntry is "+dc.nginxSvcIp+" "+dnsStore.Spec.Host)
+	deleteHostEntry := dc.nginxSvcIp + " " + dnsStore.Spec.Host
+	// 删除hostList中的host
+	for i, hostEntry := range dc.hostList {
+		if hostEntry == deleteHostEntry {
+			dc.hostList = append(dc.hostList[:i], dc.hostList[i+1:]...)
+			break
+		}
+	}
+	// 创建hostUpdate消息
+	hostUpdate := &entity.HostUpdate{
+		Action:    message.DELETE,
+		DnsTarget: dnsStore,
+		HostList:  dc.hostList,
+	}
+	
+	// TODO: 通知所有的节点进行hosts的修改
+	k8log.DebugLog("Dns-Controller", "DnsCreateHandler: publish hostUpdate")
+	msgutil.PubelishUpdateHost(hostUpdate)
 }
 
 func (dc *dnsController) MsgHandler(msg amqp.Delivery) {

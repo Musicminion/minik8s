@@ -78,7 +78,7 @@ func WriteConf(dns apiObject.Dns, conf string) error {
 }
 
 func DeleteConf(dns apiObject.Dns) error {
-	// 将配置文件写入到nginx的配置文件中
+	// 删除配置文件
 	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
 	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
 	// 判断文件的目录是否存在

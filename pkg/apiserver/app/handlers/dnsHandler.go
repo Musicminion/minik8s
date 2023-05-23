@@ -164,9 +164,26 @@ func DeleteDns(c *gin.Context) {
 		return
 	}
 
-	// 删除dns
+	// 从etcd获取dns，之后发送dnsUpdate需要
 	key := path.Join(serverconfig.EtcdDnsPath, namespace, name)
-	err := etcdclient.EtcdStore.Del(key)
+	dnsLRs, err := etcdclient.EtcdStore.Get(key)
+	if err != nil {
+		k8log.ErrorLog("APIServer", "DeleteDns, err is "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	if len(dnsLRs) != 1 {
+		k8log.ErrorLog("APIServer", "dns not exists")
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "dns not exists",
+		})
+		return
+	}
+
+	dns := &apiObject.DnsStore{}
+	err = json.Unmarshal([]byte(dnsLRs[0].Value), dns)
 	if err != nil {
 		k8log.ErrorLog("APIServer", "DeleteDns, err is "+err.Error())
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -175,15 +192,23 @@ func DeleteDns(c *gin.Context) {
 		return
 	}
 
-	// 返回
-	c.JSON(http.StatusNoContent, gin.H{
-		"message": "delete job success",
-	})
+	// 删除dns
+	err = etcdclient.EtcdStore.Del(key)
+	if err != nil {
+		k8log.ErrorLog("APIServer", "DeleteDns, err is "+err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
 
-	k8log.InfoLog("APIServer", "delete dns success")
+	// 发送dnsUpdate
 	dnsUpdate := entity.DnsUpdate{
 		Action: message.DELETE,
 		DnsTarget: apiObject.DnsStore{
+			Spec: apiObject.DnsSpec{
+				Host: dns.Spec.Host,
+			},
 			Basic: apiObject.Basic{
 				Metadata: apiObject.Metadata{
 					Name:      name,
@@ -193,6 +218,12 @@ func DeleteDns(c *gin.Context) {
 		},
 	}
 	msgutil.PublishUpdateDns(&dnsUpdate)
+	
+	k8log.InfoLog("APIServer", "delete dns success")
+	// 返回
+	c.JSON(http.StatusNoContent, gin.H{
+		"message": "delete job success",
+	})
 }
 
 // 获取单个Dns

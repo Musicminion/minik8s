@@ -126,7 +126,17 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 	}
 
 	// 以下内容更新nginx的配置文件
-	nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+	switch hostUpdate.Action {
+		case message.CREATE:
+			k8log.InfoLog("Kubeproxy", "HandleHostUpdate: create Host action")
+			nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+		case message.UPDATE:
+			nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+			nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+		case message.DELETE:
+			k8log.DebugLog("Kubeproxy", "HandleHostUpdate: delete Host action")
+			nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+	}
 
 	// 更新nginx的配置文件后，reload nginx
 	proxy.updateNginxConfig()

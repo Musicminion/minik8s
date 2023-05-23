@@ -14,6 +14,7 @@ var TestContainerURLs = []string{
 
 // 遍历启动所有的容器
 var opt = map[string][]string{
+	"test": {"test"},
 }
 
 // 测试之前执行的方法
@@ -165,7 +166,7 @@ func TestExecContainer(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
-		k8log.DebugLog("Container Manager", "out is " + string(out))
+		k8log.DebugLog("Container Manager", "out is "+string(out))
 	}
 }
 

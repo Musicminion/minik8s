@@ -7,4 +7,4 @@ spec:
   paths:
   - subPath: /api/v1
     svcName: dns-nginx-service
-    svcPort: 88
+    svcPort: 80

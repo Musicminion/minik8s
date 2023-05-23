@@ -14,7 +14,6 @@ var TestContainerURLs = []string{
 
 // 遍历启动所有的容器
 var opt = map[string][]string{
-	"test": {"test"},
 }
 
 // 测试之前执行的方法
@@ -152,7 +151,7 @@ func TestStartContainer(t *testing.T) {
 
 func TestExecContainer(t *testing.T) {
 	// 定义测试用的容器 ID 和命令
-	cmd := []string{"sh", "-c", "echo '127.0.0.1 localhost' > /etc/hosts"}
+	cmd := []string{"sh", "-c", "touch /testfile"}
 	// cmd := []string{"touch", "new"}
 	// 创建一个 ContainerManager 实例
 	cm := &ContainerManager{}

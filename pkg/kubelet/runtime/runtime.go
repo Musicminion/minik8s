@@ -238,6 +238,7 @@ func (r *runtimeManager) RecreatePodContainer(pod *apiObject.PodStore) error {
 
 // 根据pod的UUID筛选container， 在容器中执行命令
 func (r *runtimeManager) ExecPodContainer(pod *apiObject.PodStore, cmd []string) (string, error) {
+	k8log.DebugLog("Runtime Manager", "exec pod container, pod name is "+pod.GetPodName())
 	// 根据pod的名字找出所有匹配的pod
 	filter := make(map[string][]string)
 	filter[minik8sTypes.ContainerLabel_PodUID] = []string{pod.GetPodUUID()}

@@ -264,6 +264,7 @@ func (c *ContainerManager) RestartContainer(containerID string) (string, error) 
 }
 
 func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (string, error) {
+	k8log.DebugLog("Container Manager", "container " + containerID + "exec: " +strings.Join(cmd, " "))
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
 	if err != nil {

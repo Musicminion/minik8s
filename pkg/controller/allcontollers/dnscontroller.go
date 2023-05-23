@@ -264,7 +264,7 @@ func (dc *dnsController) Run() {
 	// 更新nginxService的ip
 	dc.UpdateNginxSvcIP()
 
-	dc.CreateNginxDns()
+	// dc.CreateNginxDns()
 
 	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
 }

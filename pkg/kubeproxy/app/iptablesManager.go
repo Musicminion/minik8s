@@ -80,7 +80,6 @@ func (im *iptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) err
 		}
 	}
 
-
 	for _, endpoint := range serviceUpdate.ServiceTarget.Status.Endpoints {
 		k8log.DebugLog("KUBEPROXY", "service2podUUID: "+ seviceName + " " + endpoint.PodUUID)
 		im.service2podUUID[seviceName] = append(im.service2podUUID[seviceName], endpoint.PodUUID)

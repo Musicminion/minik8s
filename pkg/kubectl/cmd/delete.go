@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
-	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubectl/kubectlutil"
 	"miniK8s/util/file"
 	"miniK8s/util/stringutil"
+	"net/http"
 	"os"
 	"reflect"
 
@@ -33,7 +33,6 @@ const (
 	DeleteResult_Unknow  DeleteResult = "Unknow"
 )
 
-
 func DeleteAPIObjectByKind(kind string, yamlContent []byte) error {
 	// 根据 Kind 类型从映射中查找相应的结构体类型
 	structType, ok := apiObject.KindToStructType[kind]
@@ -51,14 +50,26 @@ func DeleteAPIObjectByKind(kind string, yamlContent []byte) error {
 	}
 
 	// 构造删除 API 对象的 URL
-	url := config.API_Server_URL_Prefix + config.ApiSpecResourceMap[obj.GetObjectKind()]
-	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, obj.GetObjectNamespace())
-	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, obj.GetObjectName())
+	namespace := obj.GetObjectNamespace()
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+	name := obj.GetObjectName()
+	if name == "" {
+		return errors.Errorf("Failed to get %s name", kind)
+	}
+
+	url := config.API_Server_URL_Prefix + config.ApiSpecResourceMap[kind]
+	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 
 	// 向服务器发送删除请求
-	_, err = kubectlutil.DeleteAPIObjectToServer(url)
+	code, err := kubectlutil.DeleteAPIObjectToServer(url)
 	if err != nil {
 		return errors.Wrapf(err, "Failed to delete %s %s", kind, obj.GetObjectName())
+	}
+	if code != http.StatusNoContent {
+		return errors.Errorf("Failed to delete %s %s, code: %d", kind, obj.GetObjectName(), code)
 	}
 
 	return nil
@@ -103,7 +114,6 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 	// 根据API对象的种类，删除API对象
 	err = DeleteAPIObjectByKind(Kind, fileContent)
 	if err != nil {
-		k8log.ErrorLog("Kubectl", "DeleteAPIObjectByKind: failed to delete "+err.Error())
 		printDeleteResult(DeleteObject(Kind), DeleteResult_Failed, "post obj failed", err.Error())
 		return
 	}

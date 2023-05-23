@@ -21,7 +21,7 @@ programs=(
 . "$SCRIPTS_ROOT/remake.sh" /
 
 
-# # 重启weave
+# 重启weave
 # echo "重启weave"
 # weave stop
 # weave launch

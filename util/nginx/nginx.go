@@ -31,6 +31,7 @@ func FormatConf(dns apiObject.Dns) string {
 }
 
 func WriteConf(dns apiObject.Dns, conf string) error {
+	k8log.DebugLog("nginx", "WriteConf: conf is "+conf)
 	// 将配置文件写入到nginx的配置文件中
 	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
 	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)

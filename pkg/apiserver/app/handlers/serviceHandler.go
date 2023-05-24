@@ -125,7 +125,6 @@ func AddService(c *gin.Context) {
 			} else {
 				// 添加Endpoints到service
 				serviceStore.Status.Endpoints = append(serviceStore.Status.Endpoints, endpoints...)
-				// serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoints...)
 			}
 
 			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
@@ -167,7 +166,6 @@ func GetService(c *gin.Context) {
 	// 尝试解析请求里面的name
 	name := c.Param("name")
 	namespace := c.Param("namespace")
-	// log
 	logStr := "GetSerive: name = " + name
 	k8log.InfoLog("APIServer", logStr)
 
@@ -318,9 +316,13 @@ func UpdateService(c *gin.Context) {
 	serviceName := c.Param(config.URL_PARAM_NAME)
 	serviceNamespace := c.Param(config.URL_PARAM_NAMESPACE)
 
-	if serviceName == "" || serviceNamespace == "" {
+	if serviceNamespace == "" {
+		serviceNamespace = config.DefaultNamespace
+	}
+
+	if serviceName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace or name is empty",
+			"error": "name is empty",
 		})
 		return
 	}
@@ -331,7 +333,7 @@ func UpdateService(c *gin.Context) {
 	logStr := fmt.Sprintf("GetPod: namespace = %s, name = %s", serviceNamespace, serviceName)
 	k8log.InfoLog("APIServer", logStr)
 
-	key := fmt.Sprintf(serverconfig.EtcdServicePath+"%s/%s", serviceNamespace, serviceName)
+	key := path.Join(serverconfig.EtcdServicePath, serviceNamespace, serviceName)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

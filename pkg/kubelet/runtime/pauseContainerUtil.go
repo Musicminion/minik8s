@@ -127,7 +127,7 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 	pauseLabels[minik8sTypes.ContainerLabel_PodNamespace] = pod.Metadata.Namespace
 
 	// 遍历PodAllPortsSet
-	for key, _ := range PodAllPortsSet {
+	for key := range PodAllPortsSet {
 		k8log.DebugLog("Pause Container", "getPauseContainerConfig "+key)
 	}
 

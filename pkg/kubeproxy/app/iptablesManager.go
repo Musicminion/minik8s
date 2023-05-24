@@ -19,7 +19,25 @@ import (
 // 	CreateService(serviceUpdate *entity.ServiceUpdate)
 // }
 
-type IptableManager struct {
+
+
+// var ipt *iptables.IPTables
+
+const (
+	RANDOM   = "random"
+	ROUNDDOB = "roundrobin"
+)
+
+type IptableManager interface {
+	Run()
+	CreateService(serviceUpdate *entity.ServiceUpdate) error
+	DeleteService(serviceUpdate *entity.ServiceUpdate) error
+	UpdateService(serviceUpdate *entity.ServiceUpdate)
+	SaveIPTables(path string) error
+
+}
+
+type iptableManager struct {
 	// SvcChain     map[string]map[string]
 	ipt      *iptables.IPTables
 	stragegy string
@@ -31,25 +49,18 @@ type IptableManager struct {
 	chain2rule    map[string][]string
 }
 
-// var ipt *iptables.IPTables
-
-const (
-	RANDOM   = "random"
-	ROUNDDOB = "roundrobin"
-)
-
-func New() *IptableManager {
-	iptableManager := &IptableManager{
+func NewIptableManager() IptableManager {
+	iptableManager := &iptableManager{
 		stragegy:      RANDOM,
 		serviceDict:   make(map[string]map[string]string),
 		service2chain: make(map[string][]string),
 		chain2rule:    make(map[string][]string),
 	}
-	iptableManager.init_iptables()
+	
 	return iptableManager
 }
 
-func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) error {
+func (im *iptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) error {
 	var clusterIp = serviceUpdate.ServiceTarget.Spec.ClusterIP
 	seviceName := serviceUpdate.ServiceTarget.Metadata.Name
 	ports := serviceUpdate.ServiceTarget.Spec.Ports
@@ -76,7 +87,7 @@ func (im *IptableManager) CreateService(serviceUpdate *entity.ServiceUpdate) err
 	return nil
 }
 
-func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) error {
+func (im *iptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) error {
 
 	// 根据serviceName查找对应的chain
 	serviceName := serviceUpdate.ServiceTarget.Metadata.Name
@@ -91,7 +102,7 @@ func (im *IptableManager) DeleteService(serviceUpdate *entity.ServiceUpdate) err
 	return nil
 }
 
-func (im *IptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
+func (im *iptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
 	err := im.DeleteService(serviceUpdate)
 	if err != nil {
 		k8log.ErrorLog("KUBEPROXY", "UpdateService: delete service failed")
@@ -102,17 +113,7 @@ func (im *IptableManager) UpdateService(serviceUpdate *entity.ServiceUpdate) {
 	}
 }
 
-func (im *IptableManager) CreateEndpoint(endpointUpdate *entity.EndpointUpdate) {
-
-}
-
-func (im *IptableManager) DeleteEndpoint(endpointUpdate *entity.EndpointUpdate) {
-}
-
-func (im *IptableManager) UpdateEndpoint(endpointUpdate *entity.EndpointUpdate) {
-}
-
-func (im *IptableManager) init_iptables() {
+func (im *iptableManager) Init_iptables() {
 	// 创建 iptables 的实例
 	im.ipt, _ = iptables.New()
 
@@ -142,40 +143,6 @@ func (im *IptableManager) init_iptables() {
 	k8log.InfoLog("KUBEPROXY", "init iptables success")
 }
 
-// TODO: 应该在apiserver完成
-// func (im *IptableManager) allocClusterIP() (string, error) {
-
-	// maxTryTime := 1000 // 最大尝试次数
-	// ipAllocated := make(map[string]bool)
-	// ip := ""
-	// for _, service := range im.serviceDict {
-	// 	if service["clusterIP"] != "" {
-	// 		ipAllocated[service["clusterIP"]] = true
-	// 	}
-	// }
-	// source := rand.NewSource(time.Now().UnixNano()) // 以当前时间作为随机数种子
-	// rng := rand.New(source)
-	// for maxTryTime > 0 {
-	// 	maxTryTime--
-	// 	// 前三位ip是指定好的
-	// 	num0 := strconv.Itoa(config.SERVICE_IP_PREFIX[0])
-	// 	num1 := strconv.Itoa(config.SERVICE_IP_PREFIX[1])
-	// 	num2 := strconv.Itoa(config.SERVICE_IP_PREFIX[2])
-	// 	// num2 := strconv.Itoa(rng.Intn(256))
-	// 	num3 := strconv.Itoa(rng.Intn(256))
-	// 	ip = strings.Join([]string{num0, num1, num2, num3}, ".")
-	// 	if _, ok := ipAllocated[ip]; !ok {
-	// 		break
-	// 	}
-	// }
-	// if maxTryTime <= 0 {
-	// 	log.Fatal("No available service cluster IP address")
-	// 	return ip, fmt.Errorf("No available service cluster IP address")
-	// }
-	// k8log.DebugLog("KUBEPROXY", "allocClusterIP succeeded, ip is "+ip)
-	// return ip, nil
-// }
-
 /**
  * @Description: 为每个服务创建 iptables 规则
  * @Param: serviceName 服务名称
@@ -185,7 +152,7 @@ func (im *IptableManager) init_iptables() {
  * @Param: targetPort 服务的目标端口
  * @Param: podIPList 服务的 Pod IP 列表
  */
-func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP string, port int, protocol string, targetPort int, podIPList []string) error {
+func (im *iptableManager) setIPTablesClusterIp(serviceName string, clusterIP string, port int, protocol string, targetPort int, podIPList []string) error {
 	k8log.DebugLog("KUBEPROXY", "setIPTablesClusterIp: "+serviceName+" "+clusterIP+" "+strconv.Itoa(port)+" "+protocol+" "+strconv.Itoa(targetPort))
 
 	if im.ipt == nil {
@@ -276,13 +243,12 @@ func (im *IptableManager) setIPTablesClusterIp(serviceName string, clusterIP str
 
 	}
 	k8log.DebugLog("KUBEPROXY", "iptables rules have been set for service: "+serviceName)
-	// TODO: Only for test
-	im.SaveIPTables("test-save-iptables")
+
 	return nil
 }
 
 // SaveIPTables将iptables规则保存到一个文件中。
-func (im *IptableManager) SaveIPTables(path string) error {
+func (im *iptableManager) SaveIPTables(path string) error {
 	cmd := exec.Command("iptables-save")
 	stdout, err := cmd.StdoutPipe()
 	println(stdout)
@@ -311,7 +277,7 @@ func (im *IptableManager) SaveIPTables(path string) error {
 }
 
 // RestoreIPTables从一个文件中恢复iptables规则
-func (im *IptableManager) RestoreIPTables(path string) error {
+func (im *iptableManager) RestoreIPTables(path string) error {
 	cmd := exec.Command("iptables-restore", "-c", path)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		log.Printf("failed to restore iptables: %v, output: %s", err, out)
@@ -321,12 +287,12 @@ func (im *IptableManager) RestoreIPTables(path string) error {
 	return nil
 }
 
-func (im *IptableManager) Run() {
+func (im *iptableManager) Run() {
 	// im.init_iptables()
-	im.setIPTablesClusterIp("test", "10.32.10.3", 80, "tcp", 80, []string{"10.1.32.1", "10.1.32.3"})
+	im.Init_iptables()
 }
 
-func (im *IptableManager) DeletePrefix(table, chain, prefix string) error {
+func (im *iptableManager) DeletePrefix(table, chain, prefix string) error {
 	output, err := im.ipt.List(table, chain)
 	if err != nil {
 		return err
@@ -348,7 +314,7 @@ func (im *IptableManager) DeletePrefix(table, chain, prefix string) error {
 }
 
 // ClearIPTables 清除所有的 iptables 规则
-func (im *IptableManager) ClearIPTables() {
+func (im *iptableManager) ClearIPTables() {
 	im.ipt.ClearAll()
 	im.ipt.DeleteAll()
 

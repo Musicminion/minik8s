@@ -13,8 +13,12 @@ const (
 	JobUpdate = "jobUpdate"
 
 	DnsUpdate = "dnsUpdate"
+
+	HostUpdate = "hostUpdate"
 )
 
 func PodUpdateWithNode(node string) string {
 	return PodUpdate + "-" + node
 }
+
+

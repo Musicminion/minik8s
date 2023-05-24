@@ -65,6 +65,20 @@ func (n *Node) GetAnnotations() map[string]string {
 	return n.NodeBasic.NodeMetadata.Annotations
 }
 
+// 以下函数用来实现apiObject.Object接口
+func (n *Node) GetObjectKind() string {
+	return n.Kind
+}
+
+func (n *Node) GetObjectName() string {
+	return n.GetName()
+}
+
+func (n *Node) GetObjectNamespace() string {
+	// Node没有Namespace
+	return ""
+}
+
 // 定义Node转化为NodeStore的函数
 func (n *Node) ToNodeStore() *NodeStore {
 	// 创建一个Status是空的NodeStore

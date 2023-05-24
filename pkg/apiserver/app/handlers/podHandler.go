@@ -79,10 +79,7 @@ func GetPods(c *gin.Context) {
 
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	if namespace == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace is empty",
-		})
-		return
+		namespace = config.DefaultNamespace
 	}
 	// 从etcd中获取
 	// ETCD里面的路径是 /registry/pods/<namespace>/

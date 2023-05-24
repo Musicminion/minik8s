@@ -3,11 +3,12 @@ package apiObject
 import "reflect"
 
 const (
-	PodKind     = "Pod"
-	ServiceKind = "Service"
-	DnsKind     = "Dns"
-	NodeKind    = "Node"
-	JobKind     = "Job"
+	PodKind        = "Pod"
+	ServiceKind    = "Service"
+	DnsKind        = "Dns"
+	NodeKind       = "Node"
+	JobKind        = "Job"
+	ReplicaSetKind = "ReplicaSet"
 )
 
 type APIObject interface {

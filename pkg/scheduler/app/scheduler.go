@@ -243,6 +243,6 @@ func (sch *Scheduler) Run() {
 	// 监听队列
 	for {
 		// 监听队列
-		sch.lw.WatchQueue_Block(msgutil.NodeSchedule, sch.MsgHandler, make(chan struct{}))
+		sch.lw.WatchQueue_Block(msgutil.NodeScheduleTopic, sch.MsgHandler, make(chan struct{}))
 	}
 }

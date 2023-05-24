@@ -2,23 +2,21 @@ package msgutil
 
 const (
 	// RequestSchedule 请求调度
-	NodeSchedule = "nodeSchedule"
+	NodeScheduleTopic = "nodeSchedule"
 
-	EndpointUpdate = "endpointUpdate"
+	EndpointUpdateTopic = "endpointUpdate"
 
-	PodUpdate = "podUpdate"
+	PodUpdateTopic = "podUpdate"
 
-	ServiceUpdate = "serviceUpdate"
+	ServiceUpdateTopic = "serviceUpdate"
 
-	JobUpdate = "jobUpdate"
+	JobUpdateTopic = "jobUpdate"
 
-	DnsUpdate = "dnsUpdate"
+	DnsUpdateTopic = "dnsUpdate"
 
-	HostUpdate = "hostUpdate"
+	HostUpdateTopic = "hostUpdate"
 )
 
 func PodUpdateWithNode(node string) string {
-	return PodUpdate + "-" + node
+	return PodUpdateTopic + "-" + node
 }
-
-

@@ -157,6 +157,7 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 				ServiceTarget: serviceStore,
 			}
 			// 加入到消息队列中以便kubeproxy更新service
+			k8log.DebugLog("APIServer", "PublishUpdateService")
 			err = msgutil.PublishUpdateService(serviceUpdate)
 			if err != nil {
 				k8log.ErrorLog("APIServer", "publish endpoint update message failed"+err.Error())

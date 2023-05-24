@@ -20,7 +20,7 @@ import (
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Kubectl get can get apiObject in a declarative way",
-	Long:  "Kubectl get can get apiObject in a declarative way, usage kubectl get [pod|service|job|deploy]/[pods|services|jobs|deploys]",
+	Long:  "Kubectl get can get apiObject in a declarative way, usage kubectl get [pod|service|job|deploy|dns]/[pods|services|jobs|deploys]",
 	Run:   getHandler,
 }
 
@@ -35,6 +35,7 @@ const (
 	Get_Kind_Service    GetObject = "service"
 	Get_Kind_Job        GetObject = "job"
 	Get_Kind_Replicaset GetObject = "replicaset"
+	Get_Kind_Dns        GetObject = "dns"
 
 	Get_Kind_Pods        GetObject = "pods"
 	Get_Kind_Services    GetObject = "services"
@@ -60,6 +61,8 @@ func getHandler(cmd *cobra.Command, args []string) {
 		getJobHandler(cmd, args)
 	case string(Get_Kind_Replicaset), string(Get_Kind_Replicasets):
 		// fmt.Println("Kind: Deployment")
+	case string(Get_Kind_Dns):
+		getDnsHandler(cmd, args)
 	default:
 		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
 		fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
@@ -350,6 +353,92 @@ func getNamespaceJobs(namespace string) {
 }
 
 // ==============================================
+//
+// get dns handler
+//
+// kubeclt get dns [DnsNamespace]/[DnsName]
+// 测试命令
+// ==============================================
+func getDnsHandler(cmd *cobra.Command, args []string) {
+	if len(args) == 1 {
+		// 尝试获取用户是否指定了namespace
+		namespace, _ := cmd.Flags().GetString("namespace")
+
+		// 如果没有指定namespace，则使用默认的namespace
+		if namespace == "" {
+			namespace = config.DefaultNamespace
+		}
+
+		// 获取default namespace下的所有Dns
+		getNamespaceDns(namespace)
+
+	} else if len(args) == 2 {
+		// 获取namespace和podName
+		namespace, name, err := parseNameAndNamespace(args[1])
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		if namespace == "" && name == "" {
+			fmt.Println("name of namespace or dnsName is empty")
+			fmt.Println("Use like: kubectl get dns [dnsNamespace]/[dnsName]")
+			return
+		}
+
+		// 获取指定的Dns
+		getSpecificDns(namespace, name)
+
+	} else {
+		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
+		fmt.Println("Use like: kubectl get dns [podNamespace]/[podName]")
+	}
+}
+
+func getSpecificDns(namespace, name string) {
+	url := stringutil.Replace(config.DnsSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
+	url = config.API_Server_URL_Prefix + url
+
+	dns := &apiObject.DnsStore{}
+	code, err := netrequest.GetRequestByTarget(url, dns, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getSpecificDns: code:", code)
+		return
+	}
+	dnsStores := []apiObject.DnsStore{*dns}
+	printDnssResult(dnsStores)
+}
+
+func getNamespaceDns(namespace string) {
+
+	url := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = config.API_Server_URL_Prefix + url
+	dnsStores := []apiObject.DnsStore{}
+
+	code, err := netrequest.GetRequestByTarget(url, &dnsStores, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getNamespaceDnss: code:", code)
+		return
+	}
+
+	printDnssResult(dnsStores)
+}
+
+// ==============================================
 
 // 打印get的结果和报错信息，尽可能对用户友好
 // ==============================================
@@ -537,6 +626,48 @@ func printJobOutPutResult(jobfile *apiObject.JobFile, t table.Writer) {
 			color.RedString("error"),
 			color.HiCyanString(jobfile.GetJobNamespace() + "/" + jobfile.GetJobName()),
 			color.GreenString(string(jobfile.ErrorFile)),
+		},
+	})
+}
+
+func printDnssResult(dnss []apiObject.DnsStore) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status"})
+
+	// 遍历所有的DnsStore
+	for _, dnsStore := range dnss {
+		printDnsResult(&dnsStore, t)
+	}
+
+	t.Render()
+}
+
+func printDnsResult(dns *apiObject.DnsStore, t table.Writer) {
+	var coloredDnsStatus string
+
+	switch dns.Status.Phase {
+	case apiObject.PodPending:
+		coloredDnsStatus = color.YellowString("Pending")
+	case apiObject.PodRunning:
+		coloredDnsStatus = color.GreenString("Running")
+	case apiObject.PodSucceeded:
+		coloredDnsStatus = color.BlueString("Succeeded")
+	case apiObject.PodFailed:
+		coloredDnsStatus = color.RedString("Failed")
+	case apiObject.PodUnknown:
+		coloredDnsStatus = color.YellowString("Unknown")
+	default:
+		coloredDnsStatus = color.YellowString("Unknown")
+	}
+
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.BlueString(string(Get_Kind_Dns)),
+			color.HiCyanString(dns.ToDns().GetObjectName()),
+			color.HiCyanString(dns.ToDns().GetObjectNamespace()),
+			coloredDnsStatus,
 		},
 	})
 }

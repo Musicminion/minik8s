@@ -42,6 +42,7 @@ func init() {
 	}
 
 	// 声明相关的队列
+	// TODO: 声明其他的队列
 	// 1. scheduler队列
 	_, err = ch.QueueDeclare("scheduler", true, false, false, false, nil)
 	if err != nil {

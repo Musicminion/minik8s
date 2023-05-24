@@ -17,6 +17,7 @@ const (
 	CREATE string = "CREATE"
 	DELETE string = "DELETE"
 	UPDATE string = "UPDATE"
+	EXEC   string = "EXEC"
 )
 
 type Message struct {

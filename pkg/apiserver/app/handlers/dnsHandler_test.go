@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -31,17 +32,36 @@ var testDns = apiObject.Dns{
 				SubPath: "/api/v1",
 				SvcName: "example-service1",
 				SvcPort: "80",
-				SvcIp:   "192.168.1.1",
-			},
-			{
-				SubPath: "/api/v2",
-				SvcName: "example-service2",
-				SvcPort: "8080",
-				SvcIp:   "192.168.1.2",
+				SvcIp:   "",
 			},
 		},
 	},
 }
+
+var testService = apiObject.ServiceStore{
+	Basic: apiObject.Basic{
+		APIVersion: "v1",
+		Kind:       "Service",
+		Metadata: apiObject.Metadata{
+			Name:      "example-service1",
+			Namespace: "default",
+			UUID:      "1f3a54a3-c1b9-4e47-b063-2a6d84fde222",
+		},
+	},
+	Spec: apiObject.ServiceSpec{
+		Selector: map[string]string{
+			"app": "test",
+		},
+		Ports: []apiObject.ServicePort{
+			{
+				Port:       80,
+				TargetPort: 80,
+				Name:       "testPort",
+			},
+		},
+	},
+}
+
 
 func TestAddDns(t *testing.T) {
 	// 清空etcd
@@ -56,21 +76,19 @@ func TestAddDns(t *testing.T) {
 	gin.SetMode(gin.ReleaseMode)
 	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddService方法。
 	r.POST(config.DnsURL, AddDns)
+	r.POST(config.ServiceURL, AddService)
 
 	// 通过调用gin引擎的ServeHTTP方法，可以模拟一个http请求，从而测试AddDns方法。
-
-	// 读取的内容转化为json
-	jsonBytes, err := json.Marshal(testDns)
+	
+	// 创建svc
+	svcJsonBytes, err := json.Marshal(testService)
 	if err != nil {
 		t.Fatal(err)
 	}
-	dnsReader := bytes.NewReader(jsonBytes)
-
-	URL := config.DnsURL
-	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, testDns.Metadata.Namespace)
-
-	req, err := http.NewRequest(http.MethodPost, URL, dnsReader)
-
+	svcReader := bytes.NewReader(svcJsonBytes)
+	svcURL := config.ServiceURL
+	svcURL = stringutil.Replace(svcURL, config.URL_PARAM_NAMESPACE_PART, testService.Metadata.Namespace)
+	req, err := http.NewRequest(http.MethodPost, svcURL, svcReader)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -81,6 +99,34 @@ func TestAddDns(t *testing.T) {
 	r.ServeHTTP(w, req)
 
 	resp := w.Result()
+
+	if resp.StatusCode != http.StatusCreated {
+		t.Fatalf("Status code error: %d", resp.StatusCode)
+	}
+	time.Sleep(1 * time.Second)
+
+	// 读取的内容转化为json
+	dnsJsonBytes, err := json.Marshal(testDns)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dnsReader := bytes.NewReader(dnsJsonBytes)
+
+	URL := config.DnsURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, testDns.Metadata.Namespace)
+
+	req, err = http.NewRequest(http.MethodPost, URL, dnsReader)
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	// 创建响应写入器
+	w = httptest.NewRecorder()
+
+	r.ServeHTTP(w, req)
+
+	resp = w.Result()
 
 	if resp.StatusCode != http.StatusCreated {
 		t.Fatalf("Status code error: %d", resp.StatusCode)

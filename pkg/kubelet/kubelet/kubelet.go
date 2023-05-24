@@ -125,16 +125,14 @@ func (k *Kubelet) HandlePodUpdate(msg amqp.Delivery) {
 	if err != nil {
 		k8log.ErrorLog("Kubelet", "消息格式错误,无法转换为Message")
 	}
-	if parsedMsg.Type == message.CREATE {
-		k8log.DebugLog("Kubelet", "HandlePodUpdate: PUT")
-		podUpdate := &entity.PodUpdate{}
-		err := json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
-		if err != nil {
-			k8log.ErrorLog("Kubelet", "HandlePodUpdate: failed to unmarshal")
-			return
-		}
-		k.podUpdates <- podUpdate
+	podUpdate := &entity.PodUpdate{}
+	err = json.Unmarshal([]byte(parsedMsg.Content), podUpdate)
+	if err != nil {
+		k8log.ErrorLog("Kubelet", "HandlePodUpdate: failed to unmarshal")
+		return
 	}
+	k.podUpdates <- podUpdate
+
 }
 
 func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
@@ -185,6 +183,12 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 		err = k.statusManager.DelPodFromCache(podUpdate.PodTarget.Metadata.UUID)
 		if err != nil {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: DelPodFromCache failed, for "+err.Error())
+			break
+		}
+	case message.EXEC:
+		_, err := k.workManager.ExecPodContainer(&podUpdate.PodTarget, podUpdate.Cmd)
+		if err != nil {
+			k8log.ErrorLog("Kubelet", "syncLoopIteration: ExecPodContainer failed, for "+err.Error())
 			break
 		}
 	}

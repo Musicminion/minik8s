@@ -1,7 +1,7 @@
 package container
 
 import (
-	"fmt"
+	"miniK8s/pkg/k8log"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"strconv"
 	"testing"
@@ -92,7 +92,7 @@ func TestGetContainerStats(t *testing.T) {
 			t.Error(err)
 		}
 		t.Logf("Container %s: MemoryStats: %d", container.ID, status.MemoryStats.Usage)
-		fmt.Printf("Container %s: MemoryStats: %d\n", container.ID, status.MemoryStats.Usage)
+
 		t.Logf("Container %s: CPUStats: %d", container.ID, status.CPUStats.CPUUsage.TotalUsage)
 	}
 }
@@ -149,6 +149,26 @@ func TestStartContainer(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+	}
+}
+
+func TestExecContainer(t *testing.T) {
+	// 定义测试用的容器 ID 和命令
+	cmd := []string{"sh", "-c", "touch /testfile"}
+	// cmd := []string{"touch", "new"}
+	// 创建一个 ContainerManager 实例
+	cm := &ContainerManager{}
+	containers, err := cm.ListContainersWithOpt(opt)
+	if err != nil {
+		t.Error(err)
+	}
+
+	for _, container := range containers {
+		out, err := cm.ExecContainer(container.ID, cmd)
+		if err != nil {
+			t.Error(err)
+		}
+		k8log.DebugLog("Container Manager", "out is "+string(out))
 	}
 }
 

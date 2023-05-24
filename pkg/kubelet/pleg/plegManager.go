@@ -90,9 +90,9 @@ func (p *plegManager) checkAllPod() error {
 		return err
 	}
 
-	for _, podStatus := range cachePods {
-		k8log.DebugLog("plegManager", fmt.Sprintf("cachePods is: : %v", podStatus))
-	}
+	// for _, podStatus := range cachePods {
+	// 	k8log.WarnLog("plegManager", fmt.Sprintf("cachePods is: : %v", podStatus))
+	// }
 
 	// 比较所有的缓存的Pod和运行时的Pod的状态，然后生成事件
 	p.plegGenerator(runtimePodStatuses, cachePods)

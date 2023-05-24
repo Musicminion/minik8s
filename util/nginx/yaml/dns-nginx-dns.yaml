@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Dns
+metadata:
+  name: example-dns
+spec:
+  host: example.com
+  paths:
+  - subPath: /api/v1
+    svcName: dns-nginx-service
+    svcPort: 80

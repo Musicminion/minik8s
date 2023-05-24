@@ -2,7 +2,9 @@ package entity
 
 import "miniK8s/pkg/apiObject"
 
-type DnsUpdate struct {
+type HostUpdate struct {
 	Action    string
 	DnsTarget apiObject.DnsStore
+	DnsConfig string
+	HostList  []string
 }

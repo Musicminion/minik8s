@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	nginxListenPort = 80
+	NginxListenPort = 80
+	NginxSvcName   = "dns-nginx-service"
 )
 
 func FormatConf(dns apiObject.Dns) string {
 	commentStr := fmt.Sprintf("# %s.conf\n", dns.Spec.Host)
-	formatStr := fmt.Sprintf("server {\n\tlisten %d;\n\tserver_name %s;\n", nginxListenPort, dns.Spec.Host)
+	formatStr := fmt.Sprintf("server {\n\tlisten %d;\n\tserver_name %s;\n", NginxListenPort, dns.Spec.Host)
 	formatStr = commentStr + formatStr
 	locationStr := "\tlocation %s {\n\t\tproxy_pass http://%s:%s/;\n\t}\n"
 	for _, p := range dns.Spec.Paths {
@@ -31,9 +32,10 @@ func FormatConf(dns apiObject.Dns) string {
 }
 
 func WriteConf(dns apiObject.Dns, conf string) error {
-    // 将配置文件写入到nginx的配置文件中
-    confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
-    confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
+	k8log.DebugLog("nginx", "WriteConf: conf is "+conf)
+	// 将配置文件写入到nginx的配置文件中
+	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
+	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
 	// 判断文件的目录是否存在
 	_, err := os.Stat(config.NginxConfigPath)
 	if err != nil {
@@ -52,32 +54,31 @@ func WriteConf(dns apiObject.Dns, conf string) error {
 		}
 	}
 
-    file, err := os.Create(confFilePath) // 使用 os.Create() 函数打开文件以进行写入
-    if err != nil {
-        k8log.ErrorLog("nginx", "WriteConf: create file failed "+err.Error())
-        return err
-    }
-	
-    // 将文件截断为空或创建一个新文件
-    err = file.Truncate(0)
-    if err != nil {
+	file, err := os.Create(confFilePath) // 使用 os.Create() 函数打开文件以进行写入
+	if err != nil {
+		k8log.ErrorLog("nginx", "WriteConf: create file failed "+err.Error())
+		return err
+	}
+
+	// 将文件截断为空或创建一个新文件
+	err = file.Truncate(0)
+	if err != nil {
 		k8log.ErrorLog("nginx", "WriteConf: truncate file failed "+err.Error())
-        return err
-    }
-	
-    _, err = file.Write([]byte(conf)) // 将字符串写入文件
-    if err != nil {
+		return err
+	}
+
+	_, err = file.Write([]byte(conf)) // 将字符串写入文件
+	if err != nil {
 		k8log.ErrorLog("nginx", "WriteConf: write file failed "+err.Error())
-        return err
-    }
+		return err
+	}
 	defer file.Close()
 
-    return nil
+	return nil
 }
 
-
 func DeleteConf(dns apiObject.Dns) error {
-	// 将配置文件写入到nginx的配置文件中
+	// 删除配置文件
 	confFileName := fmt.Sprintf("%s.conf", dns.Spec.Host)
 	confFilePath := fmt.Sprintf(config.NginxConfigPath + confFileName)
 	// 判断文件的目录是否存在
@@ -101,3 +102,5 @@ func DeleteConf(dns apiObject.Dns) error {
 
 	return nil
 }
+
+

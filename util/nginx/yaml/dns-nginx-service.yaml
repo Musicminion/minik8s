@@ -8,13 +8,13 @@ spec:
   ports:
     # Accept traffic sent to port 80
     - name: http
-      port: 88
+      port: 80
       targetPort: 80
       protocol: tcp
   selector:
     # Loadbalance traffic across Pods matching
     # this label selector
-    app: test
+    app: dns-nginx
   # Create an HA proxy in the cloud provider
   # with an External IP address - *Only supported
   # by some cloud providers*

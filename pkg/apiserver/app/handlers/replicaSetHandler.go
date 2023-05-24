@@ -391,7 +391,7 @@ func UpdateReplicaSetStatus(c *gin.Context) {
 	selectiveUpdateReplicaStatus(oldReplicaSet, replicaStatus)
 
 	// replicaStatus转化为json
-	replicaStatusJson, err := json.Marshal(replicaStatus)
+	replicaStatusJson, err := json.Marshal(oldReplicaSet)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -400,7 +400,7 @@ func UpdateReplicaSetStatus(c *gin.Context) {
 		return
 	}
 
-	key = fmt.Sprintf(serverconfig.EtcdReplicaSetPath+"%s/%s/status", replicaNamespace, replicaName)
+	key = fmt.Sprintf(serverconfig.EtcdReplicaSetPath+"%s/%s", replicaNamespace, replicaName)
 
 	err = etcdclient.EtcdStore.Put(key, replicaStatusJson)
 

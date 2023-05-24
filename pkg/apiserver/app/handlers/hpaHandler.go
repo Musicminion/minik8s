@@ -2,24 +2,32 @@ package handlers
 
 import (
 	"fmt"
+	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/util/stringutil"
+	"miniK8s/util/uuid"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/goccy/go-json"
 )
 
 // "/apis/v1/namespaces/:namespace/hpa/:name"
 func GetHPA(c *gin.Context) {
 	namespace := c.Param(config.URL_PARAM_NAMESPACE)
 	name := c.Param(config.URL_PARAM_NAME)
-	if namespace == "" || name == "" {
+	// 检查参数
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+	if name == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"error": "namespace or name is empty",
+			"error": "name is empty",
 		})
+		k8log.ErrorLog("APIServer", "GetHPA: name is empty")
 		return
 	}
 
@@ -101,7 +109,86 @@ func GetHPAs(c *gin.Context) {
 // POST 创建一个HPA
 // "/apis/v1/namespaces/:namespace/hpa"
 func AddHPA(c *gin.Context) {
+	// log
+	k8log.InfoLog("APIServer", "AddHPA")
 
+	// 从请求中获取HPA
+	var hpa apiObject.HPA
+	if err := c.ShouldBindJSON(&hpa); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "AddHPA: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	newHPAName := hpa.Metadata.Name
+	if newHPAName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "AddHPA: name is empty",
+		})
+		return
+	}
+
+	if hpa.Metadata.Namespace == "" {
+		hpa.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 检查是否已经存在
+	key := fmt.Sprintf(serverconfig.EtcdHpaPath+"%s/%s", hpa.Metadata.Namespace, newHPAName)
+
+	res, err := etcdclient.EtcdStore.Get(key)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "AddHPA: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	if len(res) != 0 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "AddHPA: " + "already exists",
+		})
+		return
+	}
+
+	hpa.Metadata.UUID = uuid.NewUUID()
+
+	// 把hpa转化为hpastore
+	hpaStore := hpa.ToHPAStore()
+
+	// 把hpaStore存入etcd
+	hpaStoreJson, err := json.Marshal(hpaStore)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "AddHPA: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	key = fmt.Sprintf(serverconfig.EtcdHpaPath+"%s/%s", hpa.Metadata.Namespace, newHPAName)
+
+	err = etcdclient.EtcdStore.Put(key, hpaStoreJson)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "AddHPA: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "AddHPA: success",
+	})
+
+	/*
+		后面如果要做什么再加
+	*/
 }
 
 // PUT 更新一个HPA
@@ -113,11 +200,75 @@ func UpdateHPA(c *gin.Context) {
 // DELETE 删除一个HPA
 // "/apis/v1/namespaces/:namespace/hpa/:name"
 func DeleteHPA(c *gin.Context) {
+	// log
+	k8log.InfoLog("APIServer", "DeleteHPA")
+
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	name := c.Param(config.URL_PARAM_NAME)
+
+	// 检查参数
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "name is empty",
+		})
+		k8log.ErrorLog("APIServer", "DeletePod: name is empty")
+		return
+	}
+
+	key := fmt.Sprintf(serverconfig.EtcdHpaPath+"%s/%s", namespace, name)
+
+	k8log.InfoLog("APIServer", "DeleteHPA: key="+key)
+
+	err := etcdclient.EtcdStore.Del(key)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "DeleteHPA: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "DeleteHPA: success",
+	})
 
 }
 
 // GET 获取全局的HPA
 // "/apis/v1/hpa"
 func GetGlobalHPAs(c *gin.Context) {
+	logStr := fmt.Sprintf("GetGlobalHPAs")
+	k8log.InfoLog("APIServer", logStr)
 
+	key := fmt.Sprintf(serverconfig.EtcdHpaPath)
+
+	res, err := etcdclient.EtcdStore.PrefixGet(key)
+
+	if err != nil {
+		k8log.ErrorLog("APIServer", err.Error())
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "GetGlobalHPAs: " + err.Error(),
+		})
+		return
+	}
+
+	// if len(res) == 0 {
+	// 	c.JSON(http.StatusNotFound, gin.H{
+	// 		"error": "GetGlobalHPAs: not found",
+	// 	})
+	// 	return
+	// }
+
+	targetHPAs := make([]string, 0)
+	for _, hpa := range res {
+		targetHPAs = append(targetHPAs, string(hpa.Value))
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": stringutil.StringSliceToJsonArray(targetHPAs),
+	})
 }

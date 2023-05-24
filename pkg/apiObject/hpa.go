@@ -28,3 +28,19 @@ type HPAStore struct {
 type HPAStatus struct {
 	CurrentReplicas int `yaml:"currentReplicas" json:"currentReplicas"`
 }
+
+// 定义hpa到hpaStore的转换函数
+func (hpa *HPA) ToHPAStore() *HPAStore {
+	return &HPAStore{
+		Basic: hpa.Basic,
+		Spec:  hpa.Spec,
+	}
+}
+
+// 定义hpaStore到hpa的转换函数
+func (hpaStore *HPAStore) ToHPA() *HPA {
+	return &HPA{
+		Basic: hpaStore.Basic,
+		Spec:  hpaStore.Spec,
+	}
+}

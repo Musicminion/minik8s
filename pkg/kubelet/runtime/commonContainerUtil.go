@@ -368,7 +368,9 @@ func (r *runtimeManager) getPodContainerConfig(pod *apiObject.PodStore, containe
 		Volumes:     nil,
 		Binds:       contianerBinds,
 		VolumesFrom: []string{pauseName},
+		// 资源限制
+		CPUResourceLimit: container.Resources.Limits.CPU,
+		MemoryLimit:      container.Resources.Limits.Memory,
 	}
-
 	return &config, nil
 }

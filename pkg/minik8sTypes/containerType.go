@@ -37,6 +37,10 @@ type ContainerConfig struct {
 	IpcMode      string      // [IPC Mode ]IPC namespace to use for the container(设置这三个可以让容器共享主机的网络、PID、IPC、NetworkMode)
 	Binds        []string    // List of volume bindings for this container
 	PortBindings nat.PortMap // List of port bindings for this container
+
+	CPUResourceLimit int64 // CPU资源限制 单位是10的负9次方核
+	MemoryLimit      int64 // 内存资源限制 单位是字节
+
 	// ************************************************ //
 
 	// 下面的是Docker官方的API中的字段，用作开发参考

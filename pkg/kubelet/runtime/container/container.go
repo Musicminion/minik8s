@@ -43,7 +43,7 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 	// 由于我们这些都是k8s的容器，所以我们需要给这些容器添加一些标签
 	option.Labels[minik8sTypes.ContainerLabel_IfK8S] = minik8sTypes.ContainerLabel_IfK8S_True
 	exposedPortSet := nat.PortSet{}
-	for key, _ := range option.ExposedPorts {
+	for key := range option.ExposedPorts {
 		exposedPortSet[nat.Port(key)] = struct{}{}
 	}
 
@@ -68,6 +68,10 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 			PidMode:      container.PidMode(option.PidMode),
 			VolumesFrom:  option.VolumesFrom,
 			Links:        option.Links,
+			Resources: container.Resources{
+				Memory:   option.MemoryLimit,
+				NanoCPUs: option.CPUResourceLimit,
+			},
 		},
 		nil,
 		nil,
@@ -264,7 +268,7 @@ func (c *ContainerManager) RestartContainer(containerID string) (string, error) 
 }
 
 func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (string, error) {
-	k8log.DebugLog("Container Manager", "container " + containerID + "exec: " +strings.Join(cmd, " "))
+	k8log.DebugLog("Container Manager", "container "+containerID+"exec: "+strings.Join(cmd, " "))
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
 	if err != nil {

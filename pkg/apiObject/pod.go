@@ -65,8 +65,8 @@ type ContainerLifecycle struct {
 // 关于CPU和Memory怎么写，看这里
 // https://kubernetes.io/zh-cn/docs/concepts/configuration/manage-resources-containers/
 type ContainerResourcesTypes struct {
-	CPU    string `yaml:"cpu"`
-	Memory string `yaml:"memory"`
+	CPU    int64 `yaml:"cpu" json:"cpu"`       // 代表CPU的占比，最大是10^9
+	Memory int64 `yaml:"memory" json:"memory"` // 代表内存的占比，单位是byte
 }
 
 // 这个当你为 Pod 中的 Container 指定了资源 请求时， kube-scheduler 就利用该信息决定将 Pod 调度到哪个节点上。
@@ -76,8 +76,8 @@ type ContainerResourcesTypes struct {
 //
 // https://kubernetes.io/zh-cn/docs/concepts/configuration/manage-resources-containers/
 type ContainerResources struct {
-	Limits   ContainerResourcesTypes `yaml:"limits"`
-	Requests ContainerResourcesTypes `yaml:"requests"`
+	Limits   ContainerResourcesTypes `yaml:"limits"`   // 限制的资源(目前主要是CPU和Memory)
+	Requests ContainerResourcesTypes `yaml:"requests"` // 请求的资源
 }
 
 // Conatiner结构体

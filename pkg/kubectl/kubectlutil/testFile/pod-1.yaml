@@ -6,13 +6,21 @@ metadata:
   name: pod-example1
   namespace: default
 spec:
+  nodeName: ubuntu
   containers:
     - image: docker.io/library/redis
       name: testContainer-1
       ports:
         - containerPort: 10180
+      resources:
+        limits:
+          cpu: 1000000000
+          memory: 536870912
     - image: docker.io/library/nginx
       name: testContainer-2
       ports:
         - containerPort: 80
-  nodeName: ubuntu
+      resources:
+        limits:
+          cpu: 1000000000
+          memory: 536870912

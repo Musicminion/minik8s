@@ -9,7 +9,6 @@ import (
 	netrequest "miniK8s/util/netRequest"
 	"miniK8s/util/stringutil"
 	"net/http"
-	"strconv"
 	"time"
 )
 
@@ -116,15 +115,33 @@ func (rc *replicaController) AddPodsNums(pod *apiObject.PodTemplate, num int) er
 	// 创建一个pod的对象
 	newPod := apiObject.Pod{}
 	newPod.Metadata = pod.Metadata
+	newPod.Kind = "Pod"
+	newPod.APIVersion = "v1"
 	newPod.Spec = pod.Spec
+
+	originalPodName := newPod.Metadata.Name
+
+	originalContainerNames := make([]string, 0)
+
+	// 遍历所有的container，修改container的name
+	for _, container := range newPod.Spec.Containers {
+		originalContainerNames = append(originalContainerNames, container.Name)
+	}
 
 	// 通过api server创建pod
 	url := config.API_Server_URL_Prefix + config.PodsURL
 
 	errStr := ""
 	for i := 0; i < num; i++ {
+		newPod.Metadata.Name = originalPodName + "-" + stringutil.GenerateRandomStr(5)
+
+		// 修改container的name
+		for index, _ := range newPod.Spec.Containers {
+			newPod.Spec.Containers[index].Name = originalContainerNames[index] + "-" + stringutil.GenerateRandomStr(5)
+		}
+
 		url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, pod.Metadata.Namespace)
-		url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, pod.Metadata.Name+"-"+strconv.Itoa(i)+"-"+stringutil.GenerateRandomStr(5))
+		// url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, pod.Metadata.Name+"-"+strconv.Itoa(i)+"-"+stringutil.GenerateRandomStr(5))
 		code, _, err := netrequest.PostRequestByTarget(url, &newPod)
 
 		if err != nil {
@@ -133,7 +150,7 @@ func (rc *replicaController) AddPodsNums(pod *apiObject.PodTemplate, num int) er
 		}
 
 		if code != http.StatusCreated {
-			k8log.ErrorLog("replicaController", "AddPodsNums code is not 200")
+			k8log.ErrorLog("replicaController", "AddPodsNums code is not 201")
 			errStr += "code is not 200"
 		}
 	}

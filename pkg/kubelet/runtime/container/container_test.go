@@ -1,6 +1,7 @@
 package container
 
 import (
+	"fmt"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"strconv"
 	"testing"
@@ -91,6 +92,8 @@ func TestGetContainerStats(t *testing.T) {
 			t.Error(err)
 		}
 		t.Logf("Container %s: MemoryStats: %d", container.ID, status.MemoryStats.Usage)
+		fmt.Printf("Container %s: MemoryStats: %d\n", container.ID, status.MemoryStats.Usage)
+		t.Logf("Container %s: CPUStats: %d", container.ID, status.CPUStats.CPUUsage.TotalUsage)
 	}
 }
 

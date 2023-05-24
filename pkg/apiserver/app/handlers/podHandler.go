@@ -249,8 +249,12 @@ func AddPod(c *gin.Context) {
 
 	/*
 		后面需要发送请求给调度器，让调度器进行调度到节点上面
+		注意，只有当nodeName为空的时候，才会进行调度
 	*/
-	msgutil.PublishRequestNodeScheduleMsg(podStore)
+	if pod.Spec.NodeName == "" {
+		msgutil.PublishRequestNodeScheduleMsg(podStore)
+	}
+
 }
 
 // 删除的时候直接删除etcd中的数据即可

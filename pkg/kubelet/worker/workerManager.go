@@ -35,8 +35,24 @@ type podWorkerManager struct {
 }
 
 func NewPodWorkerManager() PodWorkerManager {
+	restorePodWorkersMap := make(map[string]*PodWorker)
+
+	// 从runtimeManager中获取所有的pod
+	podStatus, err := runtimeManager.GetRuntimeAllPodStatus()
+
+	if err != nil {
+		k8log.ErrorLog("Pod Worker Manager", "get all pod status error, error is "+err.Error())
+		panic(err)
+	}
+
+	// 遍历所有的pod，创建PodWorker
+	for podID, _ := range podStatus {
+		restorePodWorkersMap[podID] = NewPodWorker()
+		go restorePodWorkersMap[podID].Run()
+	}
+
 	return &podWorkerManager{
-		PodWorkersMap:               make(map[string]*PodWorker),
+		PodWorkersMap:               restorePodWorkersMap,
 		AddPodHandler:               runtimeManager.CreatePod,
 		DelPodHandler:               runtimeManager.DeletePod,
 		StartPodHandler:             runtimeManager.StartPod,
@@ -85,6 +101,7 @@ func (p *podWorkerManager) AddPod(podStore *apiObject.PodStore) error {
 
 // DeletePod 删除pod
 func (p *podWorkerManager) DeletePod(pod *apiObject.PodStore) error {
+
 	podUUID := pod.GetPodUUID()
 	// 遍历PodWorkersMap，如果不存在podUUID对应的PodWorker，则直接返回``
 	if _, ok := p.PodWorkersMap[podUUID]; !ok {
@@ -107,6 +124,9 @@ func (p *podWorkerManager) DeletePod(pod *apiObject.PodStore) error {
 	if err != nil {
 		return err
 	}
+
+	// 停止PodWorker
+	p.PodWorkersMap[podUUID].Stop()
 	// 删除对应的podWorkersMap
 	delete(p.PodWorkersMap, podUUID)
 
@@ -212,7 +232,11 @@ func (p *podWorkerManager) DelPodByPodID(podUUID string) error {
 	if err != nil {
 		return err
 	}
-	// TODO: 加上hook，删除podWorkerMap
+
+	// 停止podWorker
+	p.PodWorkersMap[podUUID].Stop()
+	// 删除podWorkerMap
+	delete(p.PodWorkersMap, podUUID)
 
 	return nil
 }

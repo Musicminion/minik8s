@@ -3,6 +3,7 @@ package rediscache
 import (
 	"context"
 	"encoding/json"
+	"reflect"
 	"sync"
 
 	"github.com/go-redis/redis/v8"
@@ -147,11 +148,12 @@ func (r *rediscache) GetAllObject(valueType interface{}) (map[string]interface{}
 				return nil, err
 			} else {
 				// 创建一个valueType类型的对象，valueType是一个指针类型
-				err := json.Unmarshal([]byte(jsonStr), valueType)
+				tmpValueType := reflect.New(reflect.TypeOf(valueType).Elem()).Interface()
+				err := json.Unmarshal([]byte(jsonStr), tmpValueType)
 				if err != nil {
 					continue
 				}
-				allObject[key] = valueType
+				allObject[key] = tmpValueType
 			}
 		}
 		return allObject, nil

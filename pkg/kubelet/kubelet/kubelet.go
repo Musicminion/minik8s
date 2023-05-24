@@ -153,6 +153,10 @@ func (k *Kubelet) syncLoopIteration(podUpdates <-chan *entity.PodUpdate) bool {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPod failed, for "+err.Error())
 		}
 		err = k.statusManager.AddPodToCache(&podUpdate.PodTarget)
+
+		// 输出pod的信息
+		k8log.WarnLog("Kubelet", "syncLoopIteration: PodInfo: "+podUpdate.PodTarget.Metadata.UUID+" "+podUpdate.PodTarget.Metadata.Name+" "+podUpdate.PodTarget.Metadata.Namespace)
+
 		if err != nil {
 			k8log.ErrorLog("Kubelet", "syncLoopIteration: AddPodToCache failed, for "+err.Error())
 		}

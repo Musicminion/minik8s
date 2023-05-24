@@ -98,9 +98,9 @@ func schRandom(nodes []apiObject.NodeStore) string {
 	if cnt == 0 {
 		return ""
 	}
-	seconds := time.Now().Unix() //获取当前日期和时间的整数形式
-	rand.Seed(seconds)           //播种随机生成器
-	idx := rand.Intn(cnt)        //生成一个介于0和cnt-1之间的整数
+	// seconds := time.Now().Unix() //获取当前日期和时间的整数形式
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	idx := r.Intn(cnt)
 	return nodes[idx].GetName()
 }
 func schLeastPod(nodes []apiObject.NodeStore) string {
@@ -163,7 +163,15 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	// TODO
 	k8log.DebugLog("Scheduler", "收到调度请求消息"+parsedMsg.Content)
 
-	nodes, err := sch.GetAllNodes()
+	allNodes, err := sch.GetAllNodes()
+
+	// 调度的时候筛选存活的节点
+	nodes := make([]apiObject.NodeStore, 0)
+	for _, node := range allNodes {
+		if node.Status.Condition == apiObject.Ready {
+			nodes = append(nodes, node)
+		}
+	}
 
 	if err != nil {
 		k8log.ErrorLog("Scheduler", "获取所有节点失败"+err.Error())
@@ -197,7 +205,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		return
 	}
 	if code != http.StatusOK {
-		k8log.ErrorLog("Scheduler", "更新Pod信息失败,code: "+ strconv.Itoa(code))
+		k8log.ErrorLog("Scheduler", "更新Pod信息失败,code: "+strconv.Itoa(code))
 		return
 	}
 

@@ -5,7 +5,7 @@ import (
 	"miniK8s/pkg/kubelet/pleg"
 )
 
-func (k *Kubelet)ListenChan() {
+func (k *Kubelet) ListenChan() {
 	// k.plegChan监听到事件之后，会把事件发送给k.workManager
 	// k.workManager会根据事件的类型，调用不同的函数
 
@@ -40,13 +40,13 @@ func (k *Kubelet) PlegPodNeedCreateHandler(event *pleg.PodLifecycleEvent) {
 	k.workManager.AddPod(podData)
 }
 
-func (k *Kubelet)PlegPodNeedUpdateHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodNeedUpdateHandler(event *pleg.PodLifecycleEvent) {
 	// 把data解析为pod对象
 	// podData := event.Data.(*apiObject.PodStore)
 	// TODO
 }
 
-func (k *Kubelet)PlegPodNeedStartHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodNeedStartHandler(event *pleg.PodLifecycleEvent) {
 	// TODO
 	// 把data解析为pod对象
 	podData := event.Data.(*apiObject.PodStore)
@@ -55,7 +55,7 @@ func (k *Kubelet)PlegPodNeedStartHandler(event *pleg.PodLifecycleEvent) {
 	k.workManager.StartPod(podData)
 }
 
-func (k *Kubelet)PlegPodNeedStopHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodNeedStopHandler(event *pleg.PodLifecycleEvent) {
 	// 把data解析为pod对象
 	podData := event.Data.(*apiObject.PodStore)
 
@@ -63,15 +63,14 @@ func (k *Kubelet)PlegPodNeedStopHandler(event *pleg.PodLifecycleEvent) {
 	k.workManager.StopPod(podData)
 }
 
-func (k *Kubelet)PlegPodNeedDeleteHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodNeedDeleteHandler(event *pleg.PodLifecycleEvent) {
 	// TODO
 
 	// 把pod对象添加到workManager的podStore中
 	k.workManager.DelPodByPodID(event.ID)
 }
 
-
-func (k *Kubelet)PlegPodNeedRestartHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodNeedRestartHandler(event *pleg.PodLifecycleEvent) {
 	// TODO
 	// 把data解析为pod对象
 	podData := event.Data.(*apiObject.PodStore)
@@ -80,14 +79,14 @@ func (k *Kubelet)PlegPodNeedRestartHandler(event *pleg.PodLifecycleEvent) {
 	k.workManager.RestartPod(podData)
 }
 
-func (k *Kubelet)PlegPodContainerNeedRecreateHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodContainerNeedRecreateHandler(event *pleg.PodLifecycleEvent) {
 	// TODO
 	// 把data解析为pod对象
 	podData := event.Data.(*apiObject.PodStore)
 	k.workManager.RecreatePodContainer(podData)
 }
 
-func (k *Kubelet)PlegPodSyncHandler(event *pleg.PodLifecycleEvent) {
+func (k *Kubelet) PlegPodSyncHandler(event *pleg.PodLifecycleEvent) {
 	// TODO
 
 }

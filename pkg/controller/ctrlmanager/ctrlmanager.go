@@ -7,7 +7,8 @@ type CtrlManager interface {
 }
 
 type ctrlManager struct {
-	jobController allcontollers.JobController
+	jobController     allcontollers.JobController
+	replicaController allcontollers.ReplicaController
 }
 
 func NewCtrlManager() CtrlManager {
@@ -17,12 +18,20 @@ func NewCtrlManager() CtrlManager {
 		panic(err)
 	}
 
+	newrc, err := allcontollers.NewReplicaController()
+
+	if err != nil {
+		panic(err)
+	}
+
 	return &ctrlManager{
-		jobController: newjc,
+		jobController:     newjc,
+		replicaController: newrc,
 	}
 }
 
 func (cm *ctrlManager) Run() {
 	// TODO
-	cm.jobController.Run()
+	go cm.jobController.Run()
+	cm.replicaController.Run()
 }

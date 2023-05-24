@@ -1,5 +1,16 @@
 package apiObject
 
+import "time"
+
+// Dns的Phase
+const (
+	DnsPending     = "Pending"
+	DnsRunning     = "Running"
+	DnsSucceeded   = "Succeeded"
+	DnsFailed      = "Failed"
+	DnsUnknown     = "Unknown"
+	DnsTerminating = "Terminating"
+)
 
 type Path struct {
 	SubPath string `json:"subPath" yaml:"subPath"`
@@ -9,13 +20,59 @@ type Path struct {
 }
 
 type DnsSpec struct {
-	Host string `json:"host" yaml:"host"`
+	Host  string `json:"host" yaml:"host"`
 	Paths []Path `json:"paths" yaml:"paths"`
 }
-
 
 type Dns struct {
 	Basic `json:",inline" yaml:",inline"`
 	Spec  DnsSpec `json:"spec" yaml:"spec"`
 }
 
+type DnsStatus struct {
+	Phase      string    `json:"phase" yaml:"phase"`
+	UpdateTime time.Time `yaml:"updateTime" json:"updateTime"` 
+}
+
+type DnsStore struct {
+	Basic  `yaml:",inline" json:",inline"`
+	Spec   DnsSpec   `yaml:"spec" json:"spec"`
+	Status DnsStatus `yaml:"status" json:"status"`
+}
+
+
+func (d *Dns) ToDnsStore() *DnsStore {
+	return &DnsStore{
+		Basic: d.Basic,
+		Spec:  d.Spec,
+	}
+}
+
+func (ds *DnsStore) ToDns() *Dns {
+	return &Dns{
+		Basic: ds.Basic,
+		Spec:  ds.Spec,
+	}
+}
+
+func (d *Dns) GetDnsName() string {
+	return d.Metadata.Name
+}
+
+func (d *Dns) GetDnsNamespace() string {
+	return d.Metadata.Namespace
+}
+
+
+// 以下函数用来实现apiObject.Object接口
+func (d *Dns) GetObjectKind() string {
+	return d.Kind
+}
+
+func (d *Dns) GetObjectName() string {
+	return d.Metadata.Name
+}
+
+func (d *Dns) GetObjectNamespace() string {
+	return d.Metadata.Namespace
+}

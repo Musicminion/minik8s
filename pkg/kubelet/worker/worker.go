@@ -18,27 +18,29 @@ type PodWorker struct {
 	TaskQueue chan WorkTask
 
 	// Worker的针对不同事件的处理函数
-	AddPodHandler     func(pod *apiObject.PodStore) error
-	DelPodHandler     func(pod *apiObject.PodStore) error
-	StartPodHandler   func(pod *apiObject.PodStore) error
-	StopPodHandler    func(pod *apiObject.PodStore) error
-	RestartPodHandler func(pod *apiObject.PodStore) error
-	DelPodByIDHandler func(podUUID string) error
+	AddPodHandler               func(pod *apiObject.PodStore) error
+	DelPodHandler               func(pod *apiObject.PodStore) error
+	StartPodHandler             func(pod *apiObject.PodStore) error
+	StopPodHandler              func(pod *apiObject.PodStore) error
+	RestartPodHandler           func(pod *apiObject.PodStore) error
+	DelPodByIDHandler           func(podUUID string) error
 	RecreatePodContainerHandler func(pod *apiObject.PodStore) error
+	ExecPodHandler    func(pod *apiObject.PodStore, cmd []string) (string, error)
 }
 
 // NewPodWorker
 func NewPodWorker() *PodWorker {
 
 	return &PodWorker{
-		TaskQueue:         make(chan WorkTask, WorkerChannelBufferSize),
-		AddPodHandler:     runtimeManager.CreatePod,
-		DelPodHandler:     runtimeManager.DeletePod,
-		StartPodHandler:   runtimeManager.StartPod,
-		StopPodHandler:    runtimeManager.StopPod,
-		RestartPodHandler: runtimeManager.RestartPod,
-		DelPodByIDHandler: runtimeManager.DelPodByPodID,
+		TaskQueue:                   make(chan WorkTask, WorkerChannelBufferSize),
+		AddPodHandler:               runtimeManager.CreatePod,
+		DelPodHandler:               runtimeManager.DeletePod,
+		StartPodHandler:             runtimeManager.StartPod,
+		StopPodHandler:              runtimeManager.StopPod,
+		RestartPodHandler:           runtimeManager.RestartPod,
+		DelPodByIDHandler:           runtimeManager.DelPodByPodID,
 		RecreatePodContainerHandler: runtimeManager.RecreatePodContainer,
+		ExecPodHandler:   runtimeManager.ExecPodContainer,
 	}
 }
 
@@ -49,6 +51,10 @@ func (p *PodWorker) Run() {
 	for task := range p.TaskQueue {
 		p.RunTask(task)
 	}
+}
+
+func (p *PodWorker) Stop() {
+	close(p.TaskQueue)
 }
 
 func (p *PodWorker) RunTask(task WorkTask) {
@@ -68,6 +74,8 @@ func (p *PodWorker) RunTask(task WorkTask) {
 		p.DelPodByIDHandler(task.TaskArgs.(Task_DelPodByPodIDArgs).PodUUID)
 	case Task_RecreatePodContainer:
 		p.RecreatePodContainerHandler(task.TaskArgs.(Task_RecreatePodContainerArgs).Pod)
+	case Task_ExecPod:
+		p.ExecPodHandler(task.TaskArgs.(Task_ExecPodArgs).Pod, task.TaskArgs.(Task_ExecPodArgs).Cmd)
 	default:
 		k8log.ErrorLog("Pod Worker", "unknown task type")
 	}

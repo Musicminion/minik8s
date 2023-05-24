@@ -10,8 +10,9 @@ type CtrlManager interface {
 }
 
 type ctrlManager struct {
-	jobController allcontollers.JobController
-	dnsController allcontollers.DnsController
+	jobController     allcontollers.JobController
+	replicaController allcontollers.ReplicaController
+	dnsController     allcontollers.DnsController
 }
 
 func NewCtrlManager() CtrlManager {
@@ -19,13 +20,22 @@ func NewCtrlManager() CtrlManager {
 	if err != nil {
 		panic(err)
 	}
+
+	newrc, err := allcontollers.NewReplicaController()
+
+	if err != nil {
+		panic(err)
+	}
+
 	newdc, err := allcontollers.NewDnsController()
 	if err != nil {
 		panic(err)
 	}
+
 	return &ctrlManager{
-		jobController: newjc,
-		dnsController: newdc,
+		jobController:     newjc,
+		dnsController:     newdc,
+		replicaController: newrc,
 	}
 }
 
@@ -33,6 +43,7 @@ func (cm *ctrlManager) Run(stopCh <-chan struct{}) {
 	// TODO
 	go cm.jobController.Run()
 	go cm.dnsController.Run()
+	go cm.replicaController.Run()
 
 	// wait for stop signal
 	_, ok := <-stopCh
@@ -40,6 +51,5 @@ func (cm *ctrlManager) Run(stopCh <-chan struct{}) {
 		k8log.ErrorLog("CtrlManager", "stopCh closed")
 	}
 	k8log.InfoLog("CtrlManager", "stop signal received")
-
 
 }

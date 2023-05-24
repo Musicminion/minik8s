@@ -69,6 +69,7 @@ func (p *plegManager) plegGenerator(runtimePodStatus RunTimePodStatusMap, cacheP
 		_, ok := cachePods[podID]
 		if !ok {
 			k8log.InfoLog("plegManager", fmt.Sprintf("podID %s need delete", podID))
+
 			p.AddPodNeedDeleteEvent(podID)
 		}
 	}

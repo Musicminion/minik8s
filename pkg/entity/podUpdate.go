@@ -6,4 +6,5 @@ type PodUpdate struct {
 	Action string
 	PodTarget apiObject.PodStore
 	Node   string
+	Cmd    []string
 }

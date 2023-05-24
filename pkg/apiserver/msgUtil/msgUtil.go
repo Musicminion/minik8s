@@ -54,7 +54,7 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 		return err
 	}
 
-	return PublishMsg(NodeSchedule, jsonMsg)
+	return PublishMsg(NodeScheduleTopic, jsonMsg)
 }
 
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
@@ -67,7 +67,7 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 	}
 
 	message := message.Message{
-		Type:         message.CREATE,
+		Type:         message.UPDATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: serviceUpdate.ServiceTarget.GetName(),
@@ -79,7 +79,7 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 		return err
 	}
 
-	return PublishMsg(ServiceUpdate, jsonMsg)
+	return PublishMsg(ServiceUpdateTopic, jsonMsg)
 }
 
 func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
@@ -104,7 +104,7 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 		return err
 	}
 
-	return PublishMsg(EndpointUpdate, jsonMsg)
+	return PublishMsg(EndpointUpdateTopic, jsonMsg)
 }
 
 func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
@@ -186,7 +186,7 @@ func PublishUpdateJobFile(jobMeta *apiObject.Basic) error {
 		return err
 	}
 
-	return PublishMsg(JobUpdate, jsonMsg)
+	return PublishMsg(JobUpdateTopic, jsonMsg)
 }
 
 func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
@@ -214,10 +214,10 @@ func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
 		return err
 	}
 
-	return PublishMsg(DnsUpdate, jsonMsg)
+	return PublishMsg(DnsUpdateTopic, jsonMsg)
 }
 
-func PubelishUpdateHost(hostUpdate []string) error {
+func PubelishUpdateHost(hostUpdate *entity.HostUpdate) error {
 	jsonBytes, err := json.Marshal(hostUpdate)
 
 	if err != nil {
@@ -228,7 +228,7 @@ func PubelishUpdateHost(hostUpdate []string) error {
 	// 创建一个空字符串
 
 	message := message.Message{
-		Type:         message.UPDATE,
+		Type:         hostUpdate.Action,
 		Content:      string(jsonBytes),
 		ResourceURI:  "",
 		ResourceName: "Host",
@@ -241,5 +241,6 @@ func PubelishUpdateHost(hostUpdate []string) error {
 		return err
 	}
 
-	return PublishMsg(HostUpdate, jsonMsg)
+	return PublishMsg(HostUpdateTopic, jsonMsg)
 }
+

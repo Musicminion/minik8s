@@ -156,6 +156,7 @@ func AddService(c *gin.Context) {
 	})
 
 	// publishServiceUpdate(serviceUpdate)
+	k8log.DebugLog("APIServer", "AddService: serviceUpdate")
 	msgutil.PublishUpdateService(serviceUpdate)
 
 }

@@ -140,7 +140,8 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 	// }
 	// 先把拉取到的Pod的状态信息转化为map
 
-	remotePodsMap := s.PodsArrayToMap(&pods)
+	remotePodsMap := s.PodsArrayToMap(pods)
+
 	// 然后条件性更新本地缓存，更新的规则是：如果本地缓存中没有这个Pod，就添加，如果远端的Pod没有这个Pod，就删除
 	updateResult := s.UpdatePulledPodsToCache(remotePodsMap)
 
@@ -152,11 +153,12 @@ func (s *statusManager) PullNodeAllPods() ([]apiObject.PodStore, error) {
 }
 
 // 把一个Pod的数组转化为map[UUID]->Pod的映射
-func (s *statusManager) PodsArrayToMap(pods *[]apiObject.PodStore) map[string]*apiObject.PodStore {
+func (s *statusManager) PodsArrayToMap(pods []apiObject.PodStore) map[string]*apiObject.PodStore {
 	podMap := make(map[string]*apiObject.PodStore)
 
-	for _, pod := range *pods {
-		podMap[pod.GetPodUUID()] = &pod
+	for _, pod := range pods {
+		newPod := pod
+		podMap[pod.GetPodUUID()] = &newPod
 	}
 
 	return podMap
@@ -185,7 +187,7 @@ func (s *statusManager) UpdatePulledPodsToCache(remotePodsMap map[string]*apiObj
 			remotePod := remotePodsMap[uuid]
 
 			// remotePod.Status.UpdateTime > localPod.Status.UpdateTime
-			if remotePod.Status.UpdateTime.After(localPod.Status.UpdateTime) {
+			if !remotePod.Status.UpdateTime.Before(localPod.Status.UpdateTime) {
 				result := s.UpdatePodToCache(remotePod)
 				if result != nil {
 					errorInfo += result.Error() + "\n"

@@ -109,9 +109,6 @@ func GetPods(c *gin.Context) {
 	targetPods := make([]string, 0)
 	for _, pod := range res {
 		targetPods = append(targetPods, pod.Value)
-		// if i < len(res)-1 {
-		// 	targetPods = append(targetPods, ",")
-		// }
 	}
 
 	c.JSON(http.StatusOK, gin.H{
@@ -182,11 +179,6 @@ func AddPod(c *gin.Context) {
 
 	// 判断PodNamespace是否为空
 	if pod.GetPodNamespace() == "" {
-		// c.JSON(http.StatusBadRequest, gin.H{
-		// 	"error": "pod namespace is empty",
-		// })
-		// k8log.ErrorLog("APIServer", "AddPod: pod namespace is empty")
-		// return
 		pod.Basic.Metadata.Namespace = config.DefaultNamespace
 	}
 
@@ -249,8 +241,12 @@ func AddPod(c *gin.Context) {
 
 	/*
 		后面需要发送请求给调度器，让调度器进行调度到节点上面
+		注意，只有当nodeName为空的时候，才会进行调度
 	*/
-	msgutil.PublishRequestNodeScheduleMsg(podStore)
+	if pod.Spec.NodeName == "" {
+		msgutil.PublishRequestNodeScheduleMsg(podStore)
+	}
+
 }
 
 // 删除的时候直接删除etcd中的数据即可

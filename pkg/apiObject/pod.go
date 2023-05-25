@@ -7,11 +7,11 @@ import (
 )
 
 type ContainerPort struct {
-	Name          string `yaml:"name"`
-	HostPort      string `yaml:"hostPort"`
-	ContainerPort string `yaml:"containerPort"`
-	Protocol      string `yaml:"protocol"`
-	HostIP        string `yaml:"hostIP"`
+	Name          string `yaml:"name" json:"name"`
+	HostPort      string `yaml:"hostPort" json:"hostPort"`
+	ContainerPort string `yaml:"containerPort" json:"containerPort"`
+	Protocol      string `yaml:"protocol" json:"protocol"`
+	HostIP        string `yaml:"hostIP" json:"hostIP"`
 }
 
 // 参考Probe
@@ -19,27 +19,27 @@ type ContainerPort struct {
 type ContainerProbe struct {
 	// HTTPGet specifies the http request to perform.
 	HttpGet struct {
-		Path   string `yaml:"path"`
-		Port   int    `yaml:"port"`
-		Host   string `yaml:"host"`
-		Scheme string `yaml:"scheme"`
-	} `yaml:"httpGet"`
+		Path   string `yaml:"path" json:"path"`
+		Port   int    `yaml:"port" json:"port"`
+		Host   string `yaml:"host" json:"host"`
+		Scheme string `yaml:"scheme" json:"scheme"`
+	} `yaml:"httpGet" json:"httpGet"`
 	// Number of seconds after the container has started before liveness probes are initiated.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-	InitialDelaySeconds int `yaml:"initialDelaySeconds"`
+	InitialDelaySeconds int `yaml:"initialDelaySeconds" json:"initialDelaySeconds"`
 
 	// Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-	TimeoutSeconds int `yaml:"timeoutSeconds"`
+	TimeoutSeconds int `yaml:"timeoutSeconds" json:"timeoutSeconds"`
 
 	// How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-	PeriodSeconds int `yaml:"periodSeconds"`
+	PeriodSeconds int `yaml:"periodSeconds" json:"periodSeconds"`
 }
 
 // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core
 type EnvVar struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name  string `yaml:"name" json:"name"`
+	Value string `yaml:"value" json:"value"`
 }
 
 // 看文档：VolumeMount用在Container中

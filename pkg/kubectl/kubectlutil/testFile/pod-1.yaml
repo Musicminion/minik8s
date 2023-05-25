@@ -12,15 +12,15 @@ spec:
       name: testContainer-1
       ports:
         - containerPort: 10180
-      resources:
-        limits:
-          cpu: 1000000000
-          memory: 536870912
+      # resources:
+      #   limits:
+      #     cpu: 1000000000
+      #     memory: 536870912
     - image: docker.io/library/nginx
       name: testContainer-2
       ports:
         - containerPort: 80
-      resources:
-        limits:
-          cpu: 1000000000
-          memory: 536870912
+      # resources:
+      #   limits:
+      #     cpu: 1000000000
+      #     memory: 536870912

@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/table"
@@ -451,7 +452,7 @@ func getNamespaceDns(namespace string) {
 func printPodsResult(pods []apiObject.PodStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status"})
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status", "IP", "RunTime", "Node"})
 
 	// 遍历所有的Pod
 	for _, pod := range pods {
@@ -479,6 +480,12 @@ func printPodResult(pod *apiObject.PodStore, t table.Writer) {
 		coloredPodStatus = color.YellowString("Unknown")
 	}
 
+	// 把string转换为time.Time类型
+	createdTime, _ := time.Parse(time.RFC3339, pod.Status.ContainerStatuses[0].StartedAt)
+	currentTime := time.Now()
+	// 得到运行时间，格式： 小时:分钟:秒
+	runTime := currentTime.Sub(createdTime).Truncate(time.Second).String()
+
 	// HiCyan
 	t.AppendRows([]table.Row{
 		{
@@ -486,6 +493,9 @@ func printPodResult(pod *apiObject.PodStore, t table.Writer) {
 			color.HiCyanString(pod.GetPodNamespace()),
 			color.HiCyanString(pod.GetPodName()),
 			coloredPodStatus,
+			color.GreenString(pod.Status.PodIP),
+			color.HiCyanString(runTime),
+			color.HiCyanString(pod.Spec.NodeName),
 		},
 	})
 }
@@ -531,10 +541,12 @@ func printServicesPortInfo(service []apiObject.ServiceStore) {
 func printAServicePortInfo(service *apiObject.ServiceStore, t table.Writer) {
 	// HiCyan
 	endpointIPAndPort := ""
-	for _, endpoint := range service.Status.Endpoints{
-			for _, port := range endpoint.Ports{
+	for _, endpoint := range service.Status.Endpoints {
+		for _, port := range endpoint.Ports {
+			if port == strconv.Itoa(service.Spec.Ports[0].TargetPort) {
 				endpointIPAndPort += endpoint.IP + "/" + port + " "
 			}
+		}
 	}
 	t.AppendRows([]table.Row{
 		{

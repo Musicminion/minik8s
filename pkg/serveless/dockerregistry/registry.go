@@ -57,6 +57,7 @@ func CheckRegistry() {
 			},
 		}},
 		ExposedPorts: map[string]struct{}{Registry_Server_Port_Protocol: {}},
+		Env:          []string{"REGISTRY_STORAGE_DELETE_ENABLED=true"},
 	})
 
 	if err != nil {

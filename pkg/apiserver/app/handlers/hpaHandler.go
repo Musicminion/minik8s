@@ -241,8 +241,7 @@ func DeleteHPA(c *gin.Context) {
 // GET 获取全局的HPA
 // "/apis/v1/hpa"
 func GetGlobalHPAs(c *gin.Context) {
-	logStr := fmt.Sprintf("GetGlobalHPAs")
-	k8log.InfoLog("APIServer", logStr)
+	k8log.InfoLog("APIServer", "GetGlobalHPAs")
 
 	key := fmt.Sprintf(serverconfig.EtcdHpaPath)
 

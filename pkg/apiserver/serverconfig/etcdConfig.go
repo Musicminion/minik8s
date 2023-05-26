@@ -38,6 +38,9 @@ const (
 
 	// 完整路径：/registry/hpa/<namespace>/<hpa-name>
 	EtcdHpaPath = "/registry/hpa/"
+
+	// 完整路径：/registry/function/<namespace>/<function-name>
+	EtcdFunctionPath = "/registry/function/"
 )
 
 type EtcdConfig struct {

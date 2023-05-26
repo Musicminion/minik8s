@@ -7,8 +7,10 @@ on:
 
 env:
   DOCKER_REGISTRY: docker.io
-  IMAGE_NAME: musicminion/minik8s-gpu
-  IMAGE_TAG: latest
+  IMAGE1_NAME: musicminion/minik8s-gpu
+  IMAGE1_TAG: latest
+  IMAGE2_NAME: musicminion/func-base
+  IMAGE2_TAG: latest
 
 jobs:
   build-and-push:
@@ -37,5 +39,15 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE1_NAME }}:${{ env.IMAGE1_TAG }}
+          platforms: linux/amd64,linux/arm64/v8
+      
+      - name: Build and push Docker image
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          context: ./pkg/serveless/resources
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE2_NAME }}:${{ env.IMAGE2_TAG }}
           platforms: linux/amd64,linux/arm64/v8

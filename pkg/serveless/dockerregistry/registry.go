@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/docker/distribution"
 	"github.com/docker/distribution/reference"
 	rgclient "github.com/docker/distribution/registry/client"
 	"github.com/docker/docker/api/types"
@@ -19,6 +18,7 @@ import (
 
 var cli *client.Client
 
+// 初始化的时候检查，如果发现没有镜像管理中心的容器，则创建一个
 // 创建一个docker image的镜像管理中心，用来管理用户上传的自定义的各种镜像
 func CheckRegistry() {
 	helper := container.NewHelperContainerManager()
@@ -69,6 +69,7 @@ func CheckRegistry() {
 
 }
 
+// 从镜像管理中心拉取镜像
 func PullImageFromRegistry(imageName string) error {
 	authJson, err := json.Marshal(authInfo)
 
@@ -96,6 +97,7 @@ func PullImageFromRegistry(imageName string) error {
 	return nil
 }
 
+// 把镜像推送到本地的miniK8s的镜像管理中心
 func PushImageToRegistry(imageName string) error {
 	authJson, err := json.Marshal(authInfo)
 
@@ -123,15 +125,22 @@ func PushImageToRegistry(imageName string) error {
 	return nil
 }
 
+// 从镜像管理中心删除镜像
 func DeleteImageFromRegistry(imageName string) error {
 	ctx := context.Background()
+	ref, err := reference.Parse(imageName)
+	if err != nil {
+		return err
+	}
 
-	repo, err := getImageRepository(imageName)
+	// 通过镜像名称获取镜像的仓库，然后通过仓库获取镜像的描述信息
+	repo, err := rgclient.NewRepository(ref.(reference.Named), "http://"+Registry_Server_IP, http.DefaultTransport)
 
 	if err != nil {
 		return err
 	}
 
+	// 获取镜像的描述信息
 	descpt, err := repo.Tags(ctx).Get(ctx, "latest")
 	if err != nil {
 		return err
@@ -143,6 +152,7 @@ func DeleteImageFromRegistry(imageName string) error {
 		return err
 	}
 
+	// 删除镜像
 	err = manifestSvc.Delete(ctx, descpt.Digest)
 
 	if err != nil {
@@ -150,24 +160,4 @@ func DeleteImageFromRegistry(imageName string) error {
 	}
 
 	return nil
-}
-
-func ListImagesFromRegistry() error {
-
-	return nil
-}
-
-func getImageRepository(imageName string) (distribution.Repository, error) {
-	ref, err := reference.Parse(imageName)
-	if err != nil {
-		return nil, err
-	}
-
-	res, err := rgclient.NewRepository(ref.(reference.Named), "http://"+Registry_Server_IP, http.DefaultTransport)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return res, nil
 }

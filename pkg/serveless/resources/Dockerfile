@@ -15,4 +15,4 @@ ENTRYPOINT ["python3"]
 
 CMD ["server.py"]
 
-# docker build -t func-server:latest .
+# docker build -t musicminion/func-server:latest .

@@ -182,7 +182,7 @@ func AddFunction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "AddFunction: success",
 	})
 	/*
@@ -295,7 +295,6 @@ func UpdateFunction(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "UpdateFunction: success",
 	})
-
 }
 
 // selectiveUpdateFunction
@@ -341,7 +340,7 @@ func DeleteFunction(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "DeleteFunction: success",
 	})
 
@@ -372,5 +371,4 @@ func GetGlobalFunctions(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": stringutil.StringSliceToJsonArray(targetFunc),
 	})
-
 }

@@ -23,7 +23,7 @@ def callCloudFuncByPost():
         userparams = ""
     finally:
         res = func.main(userparams)
-    return 'This is a POST method!'
+    return json.dumps(res)
 
 @app.route("/", methods=['PUT'])
 def callCloudFuncByPut():

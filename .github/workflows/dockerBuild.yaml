@@ -64,8 +64,9 @@ jobs:
         id: docker_build2
         uses: docker/build-push-action@v2
         with:
+          # pkg/serveless/resources/Dockerfile
           context: ./pkg/serveless/resources
-          file: ./Dockerfile
+          file: ./pkg/serveless/resources/Dockerfile
           push: true
           tags: ${{ env.DOCKER_REGISTRY }}/${{ env.IMAGE2_NAME }}:${{ env.IMAGE2_TAG }}
           platforms: linux/amd64,linux/arm64/v8

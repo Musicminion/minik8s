@@ -151,11 +151,32 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 			}
 			// 更新service的endpoints
 			serviceStore.Status.Endpoints = totalEndpoints
+
 			// 创建用于更新service的serviceUpdate对象，
 			serviceUpdate := &entity.ServiceUpdate{
-				Action: message.UPDATE,
+				Action:        message.UPDATE,
 				ServiceTarget: serviceStore,
 			}
+
+			// 写入etcd
+			serviceJson, err := json.Marshal(serviceStore)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "marshal service failed"+err.Error())
+				return err
+			}
+			svcSelectorURL := path.Join(serverconfig.EtcdServiceSelectorPath, key, value, serviceStore.Metadata.UUID)
+			err = etcdclient.EtcdStore.Put(svcSelectorURL, serviceJson)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "put service failed"+err.Error())
+				return err
+			}
+			svcSelectorURL = path.Join(serverconfig.EtcdServicePath, serviceStore.Metadata.Namespace, serviceStore.Metadata.Name)
+			err = etcdclient.EtcdStore.Put(svcSelectorURL, serviceJson)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "put service failed"+err.Error())
+				return err
+			}
+
 			// 加入到消息队列中以便kubeproxy更新service
 			k8log.DebugLog("APIServer", "PublishUpdateService")
 			err = msgutil.PublishUpdateService(serviceUpdate)
@@ -173,8 +194,7 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 
 }
 
-
-func DeleteEndpoints(pod apiObject.PodStore) error{
+func DeleteEndpoints(pod apiObject.PodStore) error {
 	for key, value := range pod.Metadata.Labels {
 		endpointsKVURL := path.Join(serverconfig.EndpointPath, key, value)
 		totalEndpoints, err := GetEndpoints(key, value)
@@ -193,7 +213,7 @@ func DeleteEndpoints(pod apiObject.PodStore) error{
 				break
 			}
 		}
-		
+
 		// 根据Label从etcd找出所有匹配的service
 		serviceLRs, err := etcdclient.EtcdStore.PrefixGet(path.Join(serverconfig.EtcdServiceSelectorPath, key, value))
 		if err != nil {
@@ -211,9 +231,29 @@ func DeleteEndpoints(pod apiObject.PodStore) error{
 			serviceStore.Status.Endpoints = totalEndpoints
 			// 创建用于更新service的serviceUpdate对象，
 			serviceUpdate := &entity.ServiceUpdate{
-				Action: message.UPDATE,
+				Action:        message.UPDATE,
 				ServiceTarget: serviceStore,
 			}
+
+			// 写入etcd
+			serviceJson, err := json.Marshal(serviceStore)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "marshal service failed"+err.Error())
+				return err
+			}
+			svcSelectorURL := path.Join(serverconfig.EtcdServiceSelectorPath, key, value, serviceStore.Metadata.UUID)
+			err = etcdclient.EtcdStore.Put(svcSelectorURL, serviceJson)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "put service failed"+err.Error())
+				return err
+			}
+			svcSelectorURL = path.Join(serverconfig.EtcdServicePath, serviceStore.Metadata.Namespace, serviceStore.Metadata.Name)
+			err = etcdclient.EtcdStore.Put(svcSelectorURL, serviceJson)
+			if err != nil {
+				k8log.ErrorLog("APIServer", "put service failed"+err.Error())
+				return err
+			}
+
 			// 加入到消息队列中以便kubeproxy更新service
 			err = msgutil.PublishUpdateService(serviceUpdate)
 			if err != nil {

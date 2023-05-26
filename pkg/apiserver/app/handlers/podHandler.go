@@ -600,6 +600,7 @@ func selectiveUpdatePodStatus(oldPod *apiObject.PodStore, podStatus *apiObject.P
 		}
 		// 更新podIP
 		oldPod.Status.PodIP = podStatus.PodIP
+		// 更新pod的endpoints
 		helper.UpdateEndPoints(*oldPod)
 	}
 
@@ -607,6 +608,10 @@ func selectiveUpdatePodStatus(oldPod *apiObject.PodStore, podStatus *apiObject.P
 
 	// UpdateTime
 	oldPod.Status.UpdateTime = time.Now()
+
+	// UpdateResource
+	oldPod.Status.CpuPercent = podStatus.CpuPercent
+	oldPod.Status.MemPercent = podStatus.MemPercent
 
 }
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-url="http://localhost:80"
+url="192.168.92.32:88"
 num_requests=1000
 
 for ((i=1; i<=$num_requests; i++))

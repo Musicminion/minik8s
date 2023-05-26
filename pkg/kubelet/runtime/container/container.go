@@ -299,6 +299,57 @@ func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (stri
 	return output, nil
 }
 
+func (c *ContainerManager) CalculateContainerResource(containerID string) (float64, float64, error) {
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return 0, 0, err
+	}
+	defer client.Close()
+
+	stats, err := c.GetContainerStats(containerID)
+	if err != nil {
+		return 0, 0, err
+	}
+
+	// 计算cpu使用率
+	k8log.DebugLog("Container Manager", "container "+containerID+" stats: "+fmt.Sprintf("%+v", stats))
+	cpuPercent := calculateCPUPercentUnix(stats)
+	// 计算memory使用率
+	memoryPercent := calculateMemoryPercentUnix(stats)
+
+	return cpuPercent, memoryPercent, nil
+}
+
+// 辅助函数，用来计算CPU使用率
+func calculateCPUPercentUnix(v *types.StatsJSON) float64 {
+	var (
+		cpuPercent  = 0.0
+		cpuDelta    = float64(v.CPUStats.CPUUsage.TotalUsage) - float64(v.PreCPUStats.CPUUsage.TotalUsage)
+		systemDelta = float64(v.CPUStats.SystemUsage) - float64(v.PreCPUStats.SystemUsage)
+		onlineCPUs  = float64(v.CPUStats.OnlineCPUs)
+	)
+	if onlineCPUs == 0.0 {
+		onlineCPUs = float64(len(v.CPUStats.CPUUsage.PercpuUsage))
+	}
+	if systemDelta > 0.0 && cpuDelta > 0.0 {
+		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
+	}
+	return cpuPercent
+}
+
+// // 辅助函数，用来计算内存使用率
+func calculateMemoryPercentUnix(v *types.StatsJSON) float64 {
+	var (
+		memPercent = 0.0
+		memUsage   = float64(v.MemoryStats.Usage)
+		memLimit   = float64(v.MemoryStats.Limit)
+	)
+	if memLimit > 0.0 {
+		memPercent = memUsage / memLimit 
+	}
+	return memPercent
+}
+
 // import (
 // 	"miniK8s/pkg/kubelet/containerdClient"
 // 	"time"

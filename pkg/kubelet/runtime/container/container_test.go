@@ -2,8 +2,6 @@ package container
 
 import (
 	"testing"
-
-	"github.com/docker/docker/api/types"
 )
 
 var TestContainerURLs = []string{
@@ -187,34 +185,6 @@ var opt = map[string][]string{
 // // 		}
 // // 	}
 // // }
-
-func calculateCPUPercentUnix(v *types.StatsJSON) float64 {
-	var (
-		cpuPercent  = 0.0
-		cpuDelta    = float64(v.CPUStats.CPUUsage.TotalUsage) - float64(v.PreCPUStats.CPUUsage.TotalUsage)
-		systemDelta = float64(v.CPUStats.SystemUsage) - float64(v.PreCPUStats.SystemUsage)
-		onlineCPUs  = float64(v.CPUStats.OnlineCPUs)
-	)
-	if onlineCPUs == 0.0 {
-		onlineCPUs = float64(len(v.CPUStats.CPUUsage.PercpuUsage))
-	}
-	if systemDelta > 0.0 && cpuDelta > 0.0 {
-		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
-	}
-	return cpuPercent
-}
-
-func calculateMemoryPercentUnix(v *types.StatsJSON) float64 {
-	var (
-		memPercent = 0.0
-		memUsage   = float64(v.MemoryStats.Usage)
-		memLimit   = float64(v.MemoryStats.Limit)
-	)
-	if memLimit > 0.0 {
-		memPercent = memUsage / memLimit * 100.0
-	}
-	return memPercent
-}
 
 func TestGetContainerResource(t *testing.T) {
 	// 创建一个容器管理器对象

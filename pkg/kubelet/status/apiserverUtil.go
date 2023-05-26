@@ -64,21 +64,10 @@ func (s *statusManager) PushNodePodStatus() error {
 		curPodNamespace := podStatus.PodNamespace
 
 		// 获取Pod的状态信息的URL
-		// targetURL := stringutil.Replace(config.PodSpecStatusURL, config.URI_PARAM_NAME_PART, curPodName)
-		// targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAMESPACE_PART, curPodNamespace)
-		targetURL := config.PodSpecStatusURL
+		targetURL := s.apiserverURLPrefix + config.PodSpecStatusURL
 		// 注意必须要先替换namespace，再替换name，不然替换短的会导致替换长的时候出现问题
 		targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAMESPACE_PART, curPodNamespace)
 		targetURL = stringutil.Replace(targetURL, config.URL_PARAM_NAME_PART, curPodName)
-
-		targetURL = s.apiserverURLPrefix + targetURL
-
-		// // 输出podStatus
-		// podStatusStr, _ := json.Marshal(podStatus.PodStatus)
-
-		// logStr := "PushNodePodStatus podStatus: " + string(podStatusStr)
-		// k8log.WarnLog("kubelet", logStr)
-		// k8log.WarnLog("kubelet", "PushNodePodStatus podStatus: "+podStatus)
 
 		// 发送POST请求
 		code, res, err := netrequest.PostRequestByTarget(targetURL, podStatus.PodStatus)

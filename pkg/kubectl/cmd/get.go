@@ -483,8 +483,8 @@ func printPodResult(pod *apiObject.PodStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Pod)),
-			color.HiCyanString(pod.GetPodName()),
 			color.HiCyanString(pod.GetPodNamespace()),
+			color.HiCyanString(pod.GetPodName()),
 			coloredPodStatus,
 		},
 	})
@@ -508,8 +508,8 @@ func printServiceResult(service *apiObject.ServiceStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Service)),
-			color.HiCyanString(service.GetName()),
 			color.HiCyanString(service.GetNamespace()),
+			color.HiCyanString(service.GetName()),
 			color.GreenString(service.Spec.ClusterIP),
 		},
 	})
@@ -518,7 +518,7 @@ func printServiceResult(service *apiObject.ServiceStore, t table.Writer) {
 func printServicesPortInfo(service []apiObject.ServiceStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Namespace/Name", "ClusterIP", "Port", "TargetPort", "Protocol"})
+	t.AppendHeader(table.Row{"Namespace/Name", "ClusterIP", "Port", "EndpointIP/Port", "Protocol"})
 
 	// 遍历所有的Pod
 	for _, s := range service {
@@ -530,12 +530,18 @@ func printServicesPortInfo(service []apiObject.ServiceStore) {
 
 func printAServicePortInfo(service *apiObject.ServiceStore, t table.Writer) {
 	// HiCyan
+	endpointIPAndPort := ""
+	for _, endpoint := range service.Status.Endpoints{
+			for _, port := range endpoint.Ports{
+				endpointIPAndPort += endpoint.IP + "/" + port + " "
+			}
+	}
 	t.AppendRows([]table.Row{
 		{
 			color.HiCyanString(service.GetNamespace() + "/" + service.GetName()),
 			color.GreenString(service.Spec.ClusterIP),
 			color.HiCyanString(strconv.Itoa(int(service.Spec.Ports[0].Port))),
-			color.HiCyanString(strconv.Itoa(int(service.Spec.Ports[0].TargetPort))),
+			color.HiCyanString(endpointIPAndPort),
 			color.HiCyanString(string(service.Spec.Ports[0].Protocol)),
 		},
 	})
@@ -594,8 +600,8 @@ func printJobResult(job *apiObject.JobStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Job)),
-			color.HiCyanString(job.GetJobName()),
 			color.HiCyanString(job.GetJobNamespace()),
+			color.HiCyanString(job.GetJobName()),
 			coloredJobStatus,
 		},
 	})
@@ -665,8 +671,8 @@ func printDnsResult(dns *apiObject.DnsStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Dns)),
-			color.HiCyanString(dns.ToDns().GetObjectName()),
 			color.HiCyanString(dns.ToDns().GetObjectNamespace()),
+			color.HiCyanString(dns.ToDns().GetObjectName()),
 			coloredDnsStatus,
 		},
 	})

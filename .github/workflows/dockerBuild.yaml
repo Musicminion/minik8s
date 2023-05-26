@@ -33,7 +33,7 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build and push Docker image
-        id: docker_build
+        id: docker_build1
         uses: docker/build-push-action@v2
         with:
           context: .
@@ -43,7 +43,7 @@ jobs:
           platforms: linux/amd64,linux/arm64/v8
       
       - name: Build and push Docker image
-        id: docker_build
+        id: docker_build2
         uses: docker/build-push-action@v2
         with:
           context: ./pkg/serveless/resources

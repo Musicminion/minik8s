@@ -76,6 +76,16 @@ const (
 	DnsURL = "/apis/v1/namespaces/:namespace/dns"
 	// 某个特定Dns的URL
 	DnsSpecURL = "/apis/v1/namespaces/:namespace/dns/:name"
+
+	// HPA相关的URL
+	// 全局HPA的URL
+	GlobalHPAURL = "/apis/v1/hpa"
+	// 所有HPA的URL
+	HPAURL = "/apis/v1/namespaces/:namespace/hpa"
+	// 某个特定HPA的URL
+	HPASpecURL = "/apis/v1/namespaces/:namespace/hpa/:name"
+	// 获取HPA的某个状态的URL
+	HPASpecStatusURL = "/apis/v1/namespaces/:namespace/hpa/:name/status"
 )
 
 const (

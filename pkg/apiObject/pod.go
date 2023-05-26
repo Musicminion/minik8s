@@ -208,6 +208,11 @@ type PodStatus struct {
 	// 最新的更新时间
 	// UpdateTime string `json:"lastUpdateTime" yaml:"lastUpdateTime"`
 	UpdateTime time.Time `json:"lastUpdateTime" yaml:"lastUpdateTime"`
+
+	// Pod的容器的资源使用情况
+	CpuPercent float64 `json:"cpuPercent" yaml:"cpuPercent"`
+	MemPercent float64 `json:"memPercent" yaml:"memPercent"`
+
 }
 
 // PodStore是用来存储Pod的设定和他的状态的

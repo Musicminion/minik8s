@@ -191,8 +191,121 @@ func AddFunction(c *gin.Context) {
 }
 
 // UpdateFunction
+// PUT请求 "/apis/v1/namespaces/:namespace/functions/:name"
 func UpdateFunction(c *gin.Context) {
+	k8log.InfoLog("APIServer", "UpdateFunction")
 
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	name := c.Param(config.URL_PARAM_NAME)
+
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "UpdateFunction: name is empty",
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: name is empty")
+		return
+	}
+
+	key := fmt.Sprintf(serverconfig.EtcdFunctionPath+"%s/%s", namespace, name)
+
+	k8log.InfoLog("APIServer", "UpdateFunction: key="+key)
+
+	res, err := etcdclient.EtcdStore.Get(key)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateFunction: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: "+err.Error())
+		return
+	}
+
+	if len(res) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "UpdateFunction: not found",
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateFunction: " + err.Error(),
+		})
+		return
+	}
+
+	funObj := apiObject.Function{}
+	err = json.Unmarshal([]byte(res[0].Value), &funObj)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateFunction: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: "+err.Error())
+		return
+	}
+
+	// 从请求中获取参数
+	funcFromReq := apiObject.Function{}
+	err = c.ShouldBindJSON(&funcFromReq)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "UpdateFunction: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: "+err.Error())
+		return
+	}
+
+	selectiveUpdateFunction(&funObj, &funcFromReq)
+
+	funObjJson, err := json.Marshal(funObj)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateFunction: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: "+err.Error())
+		return
+	}
+
+	if funObj.Metadata.Namespace == "" || funObj.Metadata.Name == "" {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateFunction: namespace or name is empty",
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: namespace or name is empty")
+		return
+	}
+
+	key = fmt.Sprintf(serverconfig.EtcdFunctionPath+"%s/%s", funObj.Metadata.Namespace, funObj.Metadata.Name)
+	err = etcdclient.EtcdStore.Put(key, funObjJson)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateFunction: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", "UpdateFunction: "+err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "UpdateFunction: success",
+	})
+
+}
+
+// selectiveUpdateFunction
+func selectiveUpdateFunction(oldFun *apiObject.Function, newFun *apiObject.Function) {
+	if len(newFun.Spec.UserUploadFile) != 0 {
+		oldFun.Spec.UserUploadFile = newFun.Spec.UserUploadFile
+	}
+	if newFun.Spec.UserUploadFilePath != "" {
+		oldFun.Spec.UserUploadFilePath = newFun.Spec.UserUploadFilePath
+	}
 }
 
 // DeleteFunction

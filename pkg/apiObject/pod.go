@@ -7,11 +7,11 @@ import (
 )
 
 type ContainerPort struct {
-	Name          string `yaml:"name"`
-	HostPort      string `yaml:"hostPort"`
-	ContainerPort string `yaml:"containerPort"`
-	Protocol      string `yaml:"protocol"`
-	HostIP        string `yaml:"hostIP"`
+	Name          string `yaml:"name" json:"name"`
+	HostPort      string `yaml:"hostPort" json:"hostPort"`
+	ContainerPort string `yaml:"containerPort" json:"containerPort"`
+	Protocol      string `yaml:"protocol" json:"protocol"`
+	HostIP        string `yaml:"hostIP" json:"hostIP"`
 }
 
 // 参考Probe
@@ -19,27 +19,27 @@ type ContainerPort struct {
 type ContainerProbe struct {
 	// HTTPGet specifies the http request to perform.
 	HttpGet struct {
-		Path   string `yaml:"path"`
-		Port   int    `yaml:"port"`
-		Host   string `yaml:"host"`
-		Scheme string `yaml:"scheme"`
-	} `yaml:"httpGet"`
+		Path   string `yaml:"path" json:"path"`
+		Port   int    `yaml:"port" json:"port"`
+		Host   string `yaml:"host" json:"host"`
+		Scheme string `yaml:"scheme" json:"scheme"`
+	} `yaml:"httpGet" json:"httpGet"`
 	// Number of seconds after the container has started before liveness probes are initiated.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-	InitialDelaySeconds int `yaml:"initialDelaySeconds"`
+	InitialDelaySeconds int `yaml:"initialDelaySeconds" json:"initialDelaySeconds"`
 
 	// Number of seconds after which the probe times out. Defaults to 1 second. Minimum value is 1.
 	// More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle#container-probes
-	TimeoutSeconds int `yaml:"timeoutSeconds"`
+	TimeoutSeconds int `yaml:"timeoutSeconds" json:"timeoutSeconds"`
 
 	// How often (in seconds) to perform the probe. Default to 10 seconds. Minimum value is 1.
-	PeriodSeconds int `yaml:"periodSeconds"`
+	PeriodSeconds int `yaml:"periodSeconds" json:"periodSeconds"`
 }
 
 // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#envvar-v1-core
 type EnvVar struct {
-	Name  string `yaml:"name"`
-	Value string `yaml:"value"`
+	Name  string `yaml:"name" json:"name"`
+	Value string `yaml:"value" json:"value"`
 }
 
 // 看文档：VolumeMount用在Container中
@@ -65,8 +65,8 @@ type ContainerLifecycle struct {
 // 关于CPU和Memory怎么写，看这里
 // https://kubernetes.io/zh-cn/docs/concepts/configuration/manage-resources-containers/
 type ContainerResourcesTypes struct {
-	CPU    string `yaml:"cpu"`
-	Memory string `yaml:"memory"`
+	CPU    int `yaml:"cpu" json:"cpu"`       // 代表CPU的占比，最大是10^9
+	Memory int `yaml:"memory" json:"memory"` // 代表内存的占比，单位是byte
 }
 
 // 这个当你为 Pod 中的 Container 指定了资源 请求时， kube-scheduler 就利用该信息决定将 Pod 调度到哪个节点上。
@@ -76,8 +76,8 @@ type ContainerResourcesTypes struct {
 //
 // https://kubernetes.io/zh-cn/docs/concepts/configuration/manage-resources-containers/
 type ContainerResources struct {
-	Limits   ContainerResourcesTypes `yaml:"limits"`
-	Requests ContainerResourcesTypes `yaml:"requests"`
+	Limits   ContainerResourcesTypes `yaml:"limits"`   // 限制的资源(目前主要是CPU和Memory)
+	Requests ContainerResourcesTypes `yaml:"requests"` // 请求的资源
 }
 
 // Conatiner结构体

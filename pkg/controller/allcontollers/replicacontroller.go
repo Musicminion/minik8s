@@ -5,6 +5,7 @@ import (
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/util/executor"
 	netrequest "miniK8s/util/netRequest"
 	"miniK8s/util/stringutil"
@@ -86,6 +87,14 @@ func (rc *replicaController) routine() {
 		return
 	}
 
+	// 构造一个namespace/name的map，映射的value是replicasets的uuid
+	replicasetsMap := make(map[string]string, 0)
+
+	for _, rs := range replicasets {
+		key := rs.Metadata.Namespace + "/" + rs.Metadata.Name
+		replicasetsMap[key] = rs.Metadata.UUID
+	}
+
 	// 1. 遍历所有的replicasets
 	for _, rs := range replicasets {
 		meetRequirementPods := make([]apiObject.PodStore, 0)
@@ -98,7 +107,7 @@ func (rc *replicaController) routine() {
 		// 2. 根据pod的数量，调整replicasets的数量
 		if len(meetRequirementPods) < rs.Spec.Replicas {
 			// 需要增加replicasets的数量
-			rc.AddPodsNums(&rs.Spec.Template, rs.Spec.Replicas-len(meetRequirementPods))
+			rc.AddPodsNums(&rs.Metadata, &rs.Spec.Template, rs.Spec.Replicas-len(meetRequirementPods))
 		} else if len(meetRequirementPods) > rs.Spec.Replicas {
 			// 需要减少replicasets的数量
 			rc.ReducePodsNums(meetRequirementPods, len(meetRequirementPods)-rs.Spec.Replicas)
@@ -106,18 +115,38 @@ func (rc *replicaController) routine() {
 
 		// 3. 根据选择好的pod的状态，更新replicasets的状态
 		rc.UpdateReplicaSetStatus(meetRequirementPods, &rs)
+	}
 
+	// 2. 对于已经删除的replicasets，如果发现其对应的pod还存在，那么就删除这些pod
+	for _, pod := range pods {
+		if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Uuid] != "" {
+			if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] == "" {
+				continue
+			}
+			if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name] == "" {
+				continue
+			}
+
+			key := pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] + "/" + pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name]
+			if _, ok := replicasetsMap[key]; !ok {
+				// 说明这个pod对应的replicasets已经被删除了，那么就删除这个pod
+				rc.ReducePodsNums([]apiObject.PodStore{pod}, 1)
+			}
+		}
 	}
 }
 
 // 增加或者减少pod的数量
-func (rc *replicaController) AddPodsNums(pod *apiObject.PodTemplate, num int) error {
+func (rc *replicaController) AddPodsNums(replicaMeta *apiObject.Metadata, pod *apiObject.PodTemplate, num int) error {
 	// 创建一个pod的对象
 	newPod := apiObject.Pod{}
 	newPod.Metadata = pod.Metadata
 	newPod.Kind = "Pod"
 	newPod.APIVersion = "v1"
 	newPod.Spec = pod.Spec
+	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name] = replicaMeta.Name
+	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] = replicaMeta.Namespace
+	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Uuid] = replicaMeta.UUID
 
 	originalPodName := newPod.Metadata.Name
 
@@ -136,7 +165,7 @@ func (rc *replicaController) AddPodsNums(pod *apiObject.PodTemplate, num int) er
 		newPod.Metadata.Name = originalPodName + "-" + stringutil.GenerateRandomStr(5)
 
 		// 修改container的name
-		for index, _ := range newPod.Spec.Containers {
+		for index := range newPod.Spec.Containers {
 			newPod.Spec.Containers[index].Name = originalContainerNames[index] + "-" + stringutil.GenerateRandomStr(5)
 		}
 

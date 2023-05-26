@@ -35,6 +35,9 @@ const (
 
 	// 完整路径：/registry/dns/<namespace>/<dns-name>
 	EtcdDnsPath = "/registry/dns/"
+
+	// 完整路径：/registry/hpa/<namespace>/<hpa-name>
+	EtcdHpaPath = "/registry/hpa/"
 )
 
 type EtcdConfig struct {

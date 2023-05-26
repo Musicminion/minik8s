@@ -43,7 +43,7 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 	// 由于我们这些都是k8s的容器，所以我们需要给这些容器添加一些标签
 	option.Labels[minik8sTypes.ContainerLabel_IfK8S] = minik8sTypes.ContainerLabel_IfK8S_True
 	exposedPortSet := nat.PortSet{}
-	for key, _ := range option.ExposedPorts {
+	for key := range option.ExposedPorts {
 		exposedPortSet[nat.Port(key)] = struct{}{}
 	}
 
@@ -68,6 +68,10 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 			PidMode:      container.PidMode(option.PidMode),
 			VolumesFrom:  option.VolumesFrom,
 			Links:        option.Links,
+			Resources: container.Resources{
+				Memory:   option.MemoryLimit,
+				NanoCPUs: option.CPUResourceLimit,
+			},
 		},
 		nil,
 		nil,
@@ -80,7 +84,6 @@ func (c *ContainerManager) CreateContainer(name string, option *minik8sTypes.Con
 
 	// 将容器的ID返回
 	return result.ID, nil
-
 }
 
 // 启动一个容器，返回容器的ID和错误
@@ -160,6 +163,28 @@ func (c *ContainerManager) ListContainers() ([]types.Container, error) {
 	listFliter := filters.NewArgs()
 	listFliter.Add("label", fmt.Sprint(minik8sTypes.ContainerLabel_IfK8S, "=", minik8sTypes.ContainerLabel_IfK8S_True))
 
+	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
+		All:     true,
+		Filters: listFliter,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return containers, nil
+}
+
+// 列出所有的容器，包括非k8s的容器，返回容器的列表和错误
+func (c *ContainerManager) ListLocalContainers() ([]types.Container, error) {
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+
+	listFliter := filters.NewArgs()
 	containers, err := client.ContainerList(ctx, types.ContainerListOptions{
 		All:     true,
 		Filters: listFliter,
@@ -264,7 +289,7 @@ func (c *ContainerManager) RestartContainer(containerID string) (string, error) 
 }
 
 func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (string, error) {
-	k8log.DebugLog("Container Manager", "container " + containerID + "exec: " +strings.Join(cmd, " "))
+	k8log.DebugLog("Container Manager", "container "+containerID+"exec: "+strings.Join(cmd, " "))
 	ctx := context.Background()
 	client, err := dockerclient.NewDockerClient()
 	if err != nil {
@@ -293,6 +318,71 @@ func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (stri
 
 	output := strings.TrimSpace(outputBuf.String())
 	return output, nil
+}
+
+// 创建非标记为k8s的容器，返回容器的ID和错误
+func (c *ContainerManager) CreateHelperContainer(name string, option *minik8sTypes.ContainerConfig) (string, error) {
+	// 获取docker的client
+	k8log.DebugLog("Container Manager", "container create: "+name)
+	ctx := context.Background()
+	client, err := dockerclient.NewDockerClient()
+	if err != nil {
+		return "", err
+	}
+	defer client.Close()
+
+	// 处理镜像的拉取，创建一个ImageManager
+	imageManager := &image.ImageManager{}
+	// 拉取镜像，根据拉取镜像的策略
+	_, err = imageManager.PullImageWithPolicy(option.Image, option.ImagePullPolicy)
+	if err != nil {
+		return "", err
+	}
+
+	// 由于我们这些都是k8s的容器，所以我们需要给这些容器添加一些标签
+	// option.Labels[minik8sTypes.ContainerLabel_IfK8S] = minik8sTypes.ContainerLabel_IfK8S_True
+	exposedPortSet := nat.PortSet{}
+	for key := range option.ExposedPorts {
+		exposedPortSet[nat.Port(key)] = struct{}{}
+	}
+
+	// 创建容器的时候需要指定容器的配置、主机配置、网络配置、存储卷配置、容器名
+	result, err := client.ContainerCreate(
+		ctx,
+		&container.Config{
+			Image:        option.Image,
+			Cmd:          option.Cmd,
+			Env:          option.Env,
+			Tty:          option.Tty,
+			Labels:       option.Labels,
+			Entrypoint:   option.Entrypoint,
+			Volumes:      option.Volumes,
+			ExposedPorts: exposedPortSet,
+		},
+		&container.HostConfig{
+			NetworkMode:  container.NetworkMode(option.NetworkMode),
+			Binds:        option.Binds,
+			PortBindings: option.PortBindings,
+			IpcMode:      container.IpcMode(option.IpcMode),
+			PidMode:      container.PidMode(option.PidMode),
+			VolumesFrom:  option.VolumesFrom,
+			Links:        option.Links,
+			Resources: container.Resources{
+				Memory:   option.MemoryLimit,
+				NanoCPUs: option.CPUResourceLimit,
+			},
+		},
+		nil,
+		nil,
+		name,
+	)
+
+	if err != nil {
+		return "", err
+	}
+
+	// 将容器的ID返回
+	return result.ID, nil
 }
 
 // import (

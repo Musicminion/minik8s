@@ -18,9 +18,9 @@ spec:
         - containerPort: 80
     resources:
       requests:
-        memory: "100Mi"
+        memory: 100000
       limits:
-        memory: "200Mi"
+        memory: 200000
     command: ["stress"]
     args: ["--vm", "1", "--vm-bytes", "150M", "--vm-hang", "1"]
   - name: nginx

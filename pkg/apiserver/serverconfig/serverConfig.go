@@ -3,6 +3,7 @@ package serverconfig
 const (
 	ResourceName  = "ResourceName"
 	RequestPrefix = "http://0.0.0.0:8090"
+	APIVersion   = "v1"
 )
 
 type ServerConfig struct {

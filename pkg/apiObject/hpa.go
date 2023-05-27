@@ -46,9 +46,23 @@ func (hpa *HPA) ToHPAStore() *HPAStore {
 }
 
 // 定义hpaStore到hpa的转换函数
-func (hpaStore *HPAStore) ToHPA() *HPA {
+func (hs *HPAStore) ToHPA() *HPA {
 	return &HPA{
-		Basic: hpaStore.Basic,
-		Spec:  hpaStore.Spec,
+		Basic: hs.Basic,
+		Spec:  hs.Spec,
 	}
+}
+
+
+// 以下函数用来实现apiObject.Object接口
+func (h *HPA) GetObjectKind() string {
+	return h.Kind
+}
+
+func (h *HPA) GetObjectName() string {
+	return h.Metadata.Name
+}
+
+func (h *HPA) GetObjectNamespace() string {
+	return h.Metadata.Namespace
 }

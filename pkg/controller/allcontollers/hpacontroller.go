@@ -207,7 +207,7 @@ func (hc *hpaController) Routine() {
 				continue
 			}
 
-			key := pod.Metadata.Labels[minik8stypes.Pod_HPA_Namespace] + "/" + pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name]
+			key := pod.Metadata.Labels[minik8stypes.Pod_HPA_Namespace] + "/" + pod.Metadata.Labels[minik8stypes.Pod_HPA_Name]
 			if _, ok := hpaMap[key]; !ok {
 				// 说明这个pod对应的replicasets已经被删除了，那么就删除这个pod
 				hc.ReduceOneHpaPod(pod)

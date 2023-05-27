@@ -31,24 +31,23 @@ type Dns struct {
 
 type DnsStatus struct {
 	Phase      string    `json:"phase" yaml:"phase"`
-	UpdateTime time.Time `yaml:"updateTime" json:"updateTime"` 
+	UpdateTime time.Time `yaml:"updateTime" json:"updateTime"`
 }
 
-type DnsStore struct {
+type HpaStore struct {
 	Basic  `yaml:",inline" json:",inline"`
 	Spec   DnsSpec   `yaml:"spec" json:"spec"`
 	Status DnsStatus `yaml:"status" json:"status"`
 }
 
-
-func (d *Dns) ToDnsStore() *DnsStore {
-	return &DnsStore{
+func (d *Dns) ToDnsStore() *HpaStore {
+	return &HpaStore{
 		Basic: d.Basic,
 		Spec:  d.Spec,
 	}
 }
 
-func (ds *DnsStore) ToDns() *Dns {
+func (ds *HpaStore) ToDns() *Dns {
 	return &Dns{
 		Basic: ds.Basic,
 		Spec:  ds.Spec,
@@ -62,7 +61,6 @@ func (d *Dns) GetDnsName() string {
 func (d *Dns) GetDnsNamespace() string {
 	return d.Metadata.Namespace
 }
-
 
 // 以下函数用来实现apiObject.Object接口
 func (d *Dns) GetObjectKind() string {

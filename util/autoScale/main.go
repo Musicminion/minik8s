@@ -89,5 +89,5 @@ func main() {
 	r.GET("/hm", higherMemory)
 	r.GET("/lm", lowerMemory)
 
-	log.Fatal(r.Run(":8080"))
+	log.Fatal(r.Run(":8090"))
 }

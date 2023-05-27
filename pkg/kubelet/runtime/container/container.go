@@ -332,7 +332,7 @@ func calculateCPUPercentUnix(v *types.StatsJSON) float64 {
 		onlineCPUs = float64(len(v.CPUStats.CPUUsage.PercpuUsage))
 	}
 	if systemDelta > 0.0 && cpuDelta > 0.0 {
-		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 100.0
+		cpuPercent = (cpuDelta / systemDelta) * onlineCPUs * 1.0
 	}
 	return cpuPercent
 }

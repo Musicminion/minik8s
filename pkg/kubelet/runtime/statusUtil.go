@@ -128,6 +128,15 @@ func (r *runtimeManager) GetRuntimeAllPodStatus() (map[string]*RunTimePodStatus,
 
 			podStatus.ContainerStatuses = append(podStatus.ContainerStatuses, *containerStatus)
 
+			cpuPercent, memoryPercent, err := r.containerManager.CalculateContainerResource(containerID)
+			if err != nil {
+				k8log.ErrorLog("kubelet", err.Error())
+				continue
+			}
+			// 将容器的资源使用情况累加到Pod的资源使用情况中
+			podStatus.CpuPercent += cpuPercent
+			podStatus.MemPercent += memoryPercent
+
 			// 通过Weave网络获取容器的IP
 			containerIP, err := weave.WeaveFindIpByContainerID(containerID)
 

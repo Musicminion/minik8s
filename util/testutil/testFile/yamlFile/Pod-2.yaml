@@ -15,12 +15,12 @@ spec:
   - name: memory-demo-ctr
     image: polinux/stress
     ports:
-        - containerPort: 80
+        - containerPort: 8090
     resources:
       requests:
-        memory: 100000
+        memory: 100000000
       limits:
-        memory: 200000
+        memory: 200000000
     command: ["stress"]
     args: ["--vm", "1", "--vm-bytes", "150M", "--vm-hang", "1"]
   - name: nginx

@@ -12,19 +12,9 @@ spec:
     volumeMounts:
     - name: nginx-conf
       mountPath: /etc/nginx/conf.d/
-    # - name: nginx-html
-    #   mountPath: /usr/share/nginx/html/
-    # - name: nginx-log
-    #   mountPath: /var/log/nginx/
     ports:
     - containerPort: 80
   volumes:
   - name: nginx-conf
     hostPath:
       path: /etc/dns/nginx/conf/
-  # - name: nginx-html
-  #   hostPath:
-  #     path: /master/dns/nginx/html/
-  # - name: nginx-log
-  #   hostPath:
-  #     path: /master/dns/nginx/log/

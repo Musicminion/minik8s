@@ -151,4 +151,7 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.FunctionSpecURL, handlers.UpdateFunction) // 更新function
 	s.router.DELETE(config.FunctionSpecURL, handlers.DeleteFunction)
 	s.router.GET(config.GlobalFunctionsURL, handlers.GetGlobalFunctions) // 获取所有function
+
+	s.router.PUT(config.HPASpecStatusURL, handlers.UpdateHPAStatus) // 更新hpaStatus
+	
 }

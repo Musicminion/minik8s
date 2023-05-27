@@ -89,9 +89,6 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 	msgutil.PubelishUpdateHost(hostUpdate)
 }
 
-func (dc *dnsController) DnsUpdateHandler(parsedMsg *message.Message) {
-
-}
 
 func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
 	dnsUpdate := &entity.DnsUpdate{}
@@ -141,7 +138,7 @@ func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
 	msgutil.PubelishUpdateHost(hostUpdate)
 }
 
-func (dc *dnsController) MsgHandler(msg amqp.Delivery) {
+func (dc *dnsController) DnsUpdatehandler(msg amqp.Delivery) {
 	k8log.WarnLog("Dns-Controller", "收到消息"+string(msg.Body))
 
 	parsedMsg, err := message.ParseJsonMessageFromBytes(msg.Body)
@@ -245,7 +242,6 @@ func (dc *dnsController) CreateNginxService() {
 func (dc *dnsController) UpdateNginxSvcIP() {
 	// 获取nginx service的ip
 	// 通过api server获取nginx service的ip
-	// 通过api server获取nginx service的ip
 	nginxSvc := &apiObject.Service{}
 	URL := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAMESPACE_PART, config.DefaultNamespace)
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, dc.nginxSvcName)
@@ -300,7 +296,7 @@ func (dc *dnsController) CreateNginxDns() {
 
 func (dc *dnsController) Run() {
 	// 在每个node上创建一个nginx pod
-	// 1. 创建nginx pod
+	// 1. 创建nginx pod  // TODO: 改成relicaSet
 	// 2. 创建nginx service
 	// 3. 创建nginx dns
 	dc.CreateNginxPod()
@@ -308,7 +304,6 @@ func (dc *dnsController) Run() {
 	// 更新nginxService的ip
 	dc.UpdateNginxSvcIP()
 
-	// dc.CreateNginxDns()
-
-	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.MsgHandler, make(chan struct{}))
+	// 监听dns的更新
+	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.DnsUpdatehandler, make(chan struct{}))
 }

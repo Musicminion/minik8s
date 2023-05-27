@@ -70,6 +70,36 @@ var testService = apiObject.ServiceStore{
 	},
 }
 
+func TestAddEndPoints(t *testing.T) {
+	// 清空etcd
+	etcdclient.EtcdStore.PrefixDel("/")
+	
+	// 向etcd中写入带有selector的service
+	serviceJson, err := json.Marshal(testService)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	etcdURL := path.Join(serverconfig.EtcdServicePath, testService.Metadata.Namespace, testService.Metadata.Name)
+	etcdclient.EtcdStore.Put(etcdURL, serviceJson)
+
+	// etcdclient.EtcdStore.PrefixGet(path.Join(config.ServiceURL, "app", testService.Spec.Selector["app"]))
+	err = UpdateEndPoints(testPod)
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+	// 验证cache中是否存在新的endpoint
+	endpoints, err := GetEndpoints("app", testPod.Metadata.Labels["app"])
+	if err != nil {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// 验证endpoints的size
+	if len(endpoints) != len(testPod.Metadata.Labels) {
+		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
+	}
+
+}
+
 func TestGetEndpoints(t *testing.T) {
 	// 创建测试用例
 
@@ -86,36 +116,6 @@ func TestGetEndpoints(t *testing.T) {
 	}
 
 	// 验证结果
-	if len(endpoints) != len(testPod.Metadata.Labels) {
-		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
-	}
-
-	// 清空etcd
-	etcdclient.EtcdStore.PrefixDel("/")
-
-}
-
-func TestAddEndPoints(t *testing.T) {
-	// 向etcd中写入带有selector的service
-	serviceJson, err := json.Marshal(testService)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	etcdURL := path.Join(serverconfig.EtcdServicePath, testService.Metadata.Namespace , testService.Metadata.Name)
-	etcdclient.EtcdStore.Put(etcdURL, serviceJson)
-
-	// etcdclient.EtcdStore.PrefixGet(path.Join(config.ServiceURL, "app", testService.Spec.Selector["app"]))
-	err = UpdateEndPoints(testPod)
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-	// 验证cache中是否存在新的endpoint
-	endpoints, err := GetEndpoints("app", testPod.Metadata.Labels["app"])
-	if err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	// 验证endpoints的size
 	if len(endpoints) != len(testPod.Metadata.Labels) {
 		t.Errorf("expected %+v, but got %+v", len(testPod.Metadata.Labels), len(endpoints))
 	}

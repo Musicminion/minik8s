@@ -11,8 +11,9 @@ type CtrlManager interface {
 
 type ctrlManager struct {
 	jobController     allcontollers.JobController
-	replicaController allcontollers.ReplicaController
+	replicaController allcontollers.HpaController
 	dnsController     allcontollers.DnsController
+	hpaController     allcontollers.HpaController
 }
 
 func NewCtrlManager() CtrlManager {
@@ -32,10 +33,16 @@ func NewCtrlManager() CtrlManager {
 		panic(err)
 	}
 
+	newhc, err := allcontollers.NewHpaController()
+	if err != nil {
+		panic(err)
+	}
+
 	return &ctrlManager{
 		jobController:     newjc,
 		dnsController:     newdc,
 		replicaController: newrc,
+		hpaController:     newhc,
 	}
 }
 
@@ -44,6 +51,7 @@ func (cm *ctrlManager) Run(stopCh <-chan struct{}) {
 	go cm.jobController.Run()
 	go cm.dnsController.Run()
 	go cm.replicaController.Run()
+	go cm.hpaController.Run()
 
 	// wait for stop signal
 	_, ok := <-stopCh

@@ -1,0 +1,22 @@
+apiVersion: v1
+kind: Replicaset
+metadata:
+  name: testReplica-1
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      labelkey1: labelvalue1
+      labelkey2: labelvalue2
+  template:
+    metadata:
+      name: testRep
+      labels:
+        labelkey1: labelvalue1
+        labelkey2: labelvalue2
+    spec:
+      nodeName: ubuntu
+      containers:
+      - name: testContainer-1
+        image: docker.io/library/nginx
+        ImagePullPolicy: IfNotPresent

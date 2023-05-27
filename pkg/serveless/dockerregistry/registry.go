@@ -18,6 +18,13 @@ import (
 
 var cli *client.Client
 
+func init() {
+	if cli == nil {
+		cli, _ = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	}
+	CheckRegistry()
+}
+
 // 初始化的时候检查，如果发现没有镜像管理中心的容器，则创建一个
 // 创建一个docker image的镜像管理中心，用来管理用户上传的自定义的各种镜像
 func CheckRegistry() {

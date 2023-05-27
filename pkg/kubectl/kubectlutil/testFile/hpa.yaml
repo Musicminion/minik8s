@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Hpa
+metadata:
+  name: test-hpa
+spec:
+  minReplicas: 2
+  maxReplicas: 5
+  workload:
+    kind: Pod
+    metadata:
+      name: test-pod
+      namespace: test-namespace
+  adjustInterval: 15s
+  selector:
+    matchLabels: 
+      app: hpa
+  metrics:
+    cpuPercent: 0.35
+    memPercent: 0.5

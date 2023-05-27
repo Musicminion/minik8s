@@ -114,7 +114,7 @@ func deleteHandler(cmd *cobra.Command, args []string) {
 	// 根据API对象的种类，删除API对象
 	err = DeleteAPIObjectByKind(Kind, fileContent)
 	if err != nil {
-		printDeleteResult(DeleteObject(Kind), DeleteResult_Failed, "post obj failed", err.Error())
+		printDeleteResult(DeleteObject(Kind), DeleteResult_Failed, "delete obj failed", err.Error())
 		return
 	}
 

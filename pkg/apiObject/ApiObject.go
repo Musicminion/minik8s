@@ -9,6 +9,8 @@ const (
 	NodeKind       = "Node"
 	JobKind        = "Job"
 	ReplicaSetKind = "ReplicaSet"
+	HpaKind        = "Hpa"
+	FunctionKind  = "Function"
 )
 
 type APIObject interface {
@@ -25,4 +27,7 @@ var KindToStructType = map[string]reflect.Type{
 	DnsKind:     reflect.TypeOf(&Dns{}).Elem(),
 	JobKind:     reflect.TypeOf(&Job{}).Elem(),
 	NodeKind:    reflect.TypeOf(&Node{}).Elem(),
+	ReplicaSetKind: reflect.TypeOf(&ReplicaSet{}).Elem(),
+	HpaKind: reflect.TypeOf(&HPA{}).Elem(),
+	FunctionKind: reflect.TypeOf(&Function{}).Elem(),
 }

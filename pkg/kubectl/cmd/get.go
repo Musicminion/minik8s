@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/jedib0t/go-pretty/table"
@@ -36,11 +37,13 @@ const (
 	Get_Kind_Job        GetObject = "job"
 	Get_Kind_Replicaset GetObject = "replicaset"
 	Get_Kind_Dns        GetObject = "dns"
+	Get_Kind_Hpa        GetObject = "hpa"
 
 	Get_Kind_Pods        GetObject = "pods"
 	Get_Kind_Services    GetObject = "services"
 	Get_Kind_Jobs        GetObject = "jobs"
 	Get_Kind_Replicasets GetObject = "replicasets"
+	Get_Kind_Hpas        GetObject = "hpas"
 )
 
 func getHandler(cmd *cobra.Command, args []string) {
@@ -63,6 +66,8 @@ func getHandler(cmd *cobra.Command, args []string) {
 		// fmt.Println("Kind: Deployment")
 	case string(Get_Kind_Dns):
 		getDnsHandler(cmd, args)
+	case string(Get_Kind_Hpa):
+		getHpaHandler(cmd, args)
 	default:
 		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
 		fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
@@ -373,7 +378,7 @@ func getDnsHandler(cmd *cobra.Command, args []string) {
 		getNamespaceDns(namespace)
 
 	} else if len(args) == 2 {
-		// 获取namespace和podName
+		// 获取namespace和dnsName
 		namespace, name, err := parseNameAndNamespace(args[1])
 
 		if err != nil {
@@ -401,7 +406,7 @@ func getSpecificDns(namespace, name string) {
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 	url = config.API_Server_URL_Prefix + url
 
-	dns := &apiObject.DnsStore{}
+	dns := &apiObject.HpaStore{}
 	code, err := netrequest.GetRequestByTarget(url, dns, "data")
 
 	if err != nil {
@@ -413,7 +418,7 @@ func getSpecificDns(namespace, name string) {
 		fmt.Println("getSpecificDns: code:", code)
 		return
 	}
-	dnsStores := []apiObject.DnsStore{*dns}
+	dnsStores := []apiObject.HpaStore{*dns}
 	printDnssResult(dnsStores)
 }
 
@@ -421,7 +426,7 @@ func getNamespaceDns(namespace string) {
 
 	url := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = config.API_Server_URL_Prefix + url
-	dnsStores := []apiObject.DnsStore{}
+	dnsStores := []apiObject.HpaStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &dnsStores, "data")
 
@@ -439,6 +444,92 @@ func getNamespaceDns(namespace string) {
 }
 
 // ==============================================
+//
+// get hpa handler
+//
+// kubeclt get hpa [HpaNamespace]/[HpaName]
+// 测试命令
+// ==============================================
+func getHpaHandler(cmd *cobra.Command, args []string) {
+	if len(args) == 1 {
+		// 尝试获取用户是否指定了namespace
+		namespace, _ := cmd.Flags().GetString("namespace")
+
+		// 如果没有指定namespace，则使用默认的namespace
+		if namespace == "" {
+			namespace = config.DefaultNamespace
+		}
+
+		// 获取default namespace下的所有Dns
+		getNamespaceHpa(namespace)
+
+	} else if len(args) == 2 {
+		// 获取namespace和hpaName
+		namespace, name, err := parseNameAndNamespace(args[1])
+
+		if err != nil {
+			fmt.Println(err.Error())
+			return
+		}
+
+		if namespace == "" && name == "" {
+			fmt.Println("name of namespace or hpaName is empty")
+			fmt.Println("Use like: kubectl get hpa [hpaNamespace]/[hpaName]")
+			return
+		}
+
+		// 获取指定的Dns
+		getSpecificHpa(namespace, name)
+
+	} else {
+		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy|hpa]/[pods|services|jobs|deploys|hpas]")
+		fmt.Println("Use like: kubectl get hpa [hpaNamespace]/[hpaName]")
+	}
+}
+
+func getSpecificHpa(namespace, name string) {
+	url := stringutil.Replace(config.HPASpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
+	url = config.API_Server_URL_Prefix + url
+
+	hpa := &apiObject.HPAStore{}
+	code, err := netrequest.GetRequestByTarget(url, hpa, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getSpecificDns: code:", code)
+		return
+	}
+	hpaStores := []apiObject.HPAStore{*hpa}
+	printHpasResult(hpaStores)
+}
+
+func getNamespaceHpa(namespace string) {
+
+	url := stringutil.Replace(config.HPAURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = config.API_Server_URL_Prefix + url
+	hpaStores := []apiObject.HPAStore{}
+
+	code, err := netrequest.GetRequestByTarget(url, &hpaStores, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getNamespaceDnss: code:", code)
+		return
+	}
+
+	printHpasResult(hpaStores)
+}
+
+// ==============================================
 
 // 打印get的结果和报错信息，尽可能对用户友好
 // ==============================================
@@ -451,7 +542,7 @@ func getNamespaceDns(namespace string) {
 func printPodsResult(pods []apiObject.PodStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status"})
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status", "IP", "RunTime", "Node"})
 
 	// 遍历所有的Pod
 	for _, pod := range pods {
@@ -479,13 +570,27 @@ func printPodResult(pod *apiObject.PodStore, t table.Writer) {
 		coloredPodStatus = color.YellowString("Unknown")
 	}
 
-	// HiCyan
+	// 把string转换为time.Time类型
+	var createdTime time.Time
+	var currentTime time.Time
+	var runTime string
+	if len(pod.Status.ContainerStatuses) != 0 {
+		createdTime, _ = time.Parse(time.RFC3339, pod.Status.ContainerStatuses[0].StartedAt)
+		currentTime = time.Now()
+		// 得到运行时间，格式： 小时:分钟:秒
+		runTime = currentTime.Sub(createdTime).Truncate(time.Second).String()
+	} else {
+		runTime = "Not Created Yet"
+	} // HiCyan
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Pod)),
-			color.HiCyanString(pod.GetPodName()),
 			color.HiCyanString(pod.GetPodNamespace()),
+			color.HiCyanString(pod.GetPodName()),
 			coloredPodStatus,
+			color.GreenString(pod.Status.PodIP),
+			color.HiCyanString(runTime),
+			color.HiCyanString(pod.Spec.NodeName),
 		},
 	})
 }
@@ -508,8 +613,8 @@ func printServiceResult(service *apiObject.ServiceStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Service)),
-			color.HiCyanString(service.GetName()),
 			color.HiCyanString(service.GetNamespace()),
+			color.HiCyanString(service.GetName()),
 			color.GreenString(service.Spec.ClusterIP),
 		},
 	})
@@ -518,7 +623,7 @@ func printServiceResult(service *apiObject.ServiceStore, t table.Writer) {
 func printServicesPortInfo(service []apiObject.ServiceStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Namespace/Name", "ClusterIP", "Port", "TargetPort", "Protocol"})
+	t.AppendHeader(table.Row{"Namespace/Name", "ClusterIP", "Port", "EndpointIP/Port", "Protocol"})
 
 	// 遍历所有的Pod
 	for _, s := range service {
@@ -530,12 +635,20 @@ func printServicesPortInfo(service []apiObject.ServiceStore) {
 
 func printAServicePortInfo(service *apiObject.ServiceStore, t table.Writer) {
 	// HiCyan
+	endpointIPAndPort := ""
+	for _, endpoint := range service.Status.Endpoints {
+		for _, port := range endpoint.Ports {
+			if port == strconv.Itoa(service.Spec.Ports[0].TargetPort) {
+				endpointIPAndPort += endpoint.IP + "/" + port + " "
+			}
+		}
+	}
 	t.AppendRows([]table.Row{
 		{
 			color.HiCyanString(service.GetNamespace() + "/" + service.GetName()),
 			color.GreenString(service.Spec.ClusterIP),
 			color.HiCyanString(strconv.Itoa(int(service.Spec.Ports[0].Port))),
-			color.HiCyanString(strconv.Itoa(int(service.Spec.Ports[0].TargetPort))),
+			color.HiCyanString(endpointIPAndPort),
 			color.HiCyanString(string(service.Spec.Ports[0].Protocol)),
 		},
 	})
@@ -594,8 +707,8 @@ func printJobResult(job *apiObject.JobStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Job)),
-			color.HiCyanString(job.GetJobName()),
 			color.HiCyanString(job.GetJobNamespace()),
+			color.HiCyanString(job.GetJobName()),
 			coloredJobStatus,
 		},
 	})
@@ -630,7 +743,7 @@ func printJobOutPutResult(jobfile *apiObject.JobFile, t table.Writer) {
 	})
 }
 
-func printDnssResult(dnss []apiObject.DnsStore) {
+func printDnssResult(dnss []apiObject.HpaStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status"})
@@ -643,7 +756,7 @@ func printDnssResult(dnss []apiObject.DnsStore) {
 	t.Render()
 }
 
-func printDnsResult(dns *apiObject.DnsStore, t table.Writer) {
+func printDnsResult(dns *apiObject.HpaStore, t table.Writer) {
 	var coloredDnsStatus string
 
 	switch dns.Status.Phase {
@@ -665,9 +778,39 @@ func printDnsResult(dns *apiObject.DnsStore, t table.Writer) {
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Dns)),
-			color.HiCyanString(dns.ToDns().GetObjectName()),
 			color.HiCyanString(dns.ToDns().GetObjectNamespace()),
+			color.HiCyanString(dns.ToDns().GetObjectName()),
 			coloredDnsStatus,
+		},
+	})
+}
+
+func printHpasResult(hpas []apiObject.HPAStore) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "CurMem/TargetMem", "CurCpu/TargetCpu"})
+
+	// 遍历所有的DnsStore
+	for _, hpaStore := range hpas {
+		printHpaResult(&hpaStore, t)
+	}
+
+	t.Render()
+}
+
+func printHpaResult(hpa *apiObject.HPAStore, t table.Writer) {
+	var curCPUPercent = hpa.Status.CurCPUPercent
+	var targetCPUPercent = hpa.Spec.Metrics.CPUPercent
+	var curMemPercent = hpa.Status.CurMemPercent
+	var targetMemPercent = hpa.Spec.Metrics.MemPercent
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.BlueString(string(Get_Kind_Dns)),
+			color.HiCyanString(hpa.ToHPA().GetObjectNamespace()),
+			color.HiCyanString(hpa.ToHPA().GetObjectName()),
+			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curMemPercent * 100, targetMemPercent * 100)),
+			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curCPUPercent * 100, targetCPUPercent * 100)),
 		},
 	})
 }

@@ -124,6 +124,7 @@ func (s *apiServer) bind() {
 	s.router.GET(config.ReplicaSetSpecURL, handlers.GetReplicaSet)       // 获取单个replicaSet
 	s.router.POST(config.ReplicaSetsURL, handlers.AddReplicaSet)         // 创建replicaSet
 	s.router.DELETE(config.ReplicaSetSpecURL, handlers.DeleteReplicaSet) // 删除replicaSet
+	s.router.PUT(config.ReplicaSetSpecURL, handlers.UpdateReplicaSet)    // 更新replicaSet
 
 	//
 	s.router.GET(config.ReplicaSetSpecStatusURL, handlers.GetReplicaSetStatus)    // 获取replicaSetStatus
@@ -150,4 +151,7 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.FunctionSpecURL, handlers.UpdateFunction) // 更新function
 	s.router.DELETE(config.FunctionSpecURL, handlers.DeleteFunction)
 	s.router.GET(config.GlobalFunctionsURL, handlers.GetGlobalFunctions) // 获取所有function
+
+	s.router.PUT(config.HPASpecStatusURL, handlers.UpdateHPAStatus) // 更新hpaStatus
+	
 }

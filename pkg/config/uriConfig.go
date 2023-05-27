@@ -108,18 +108,22 @@ const (
 
 // kind->返回所有资源的URL(给定namespace)
 var ApiResourceMap = map[string]string{
-	apiObject.PodKind:     PodsURL,
-	apiObject.ServiceKind: ServiceURL,
-	apiObject.DnsKind:     DnsURL,
-	apiObject.NodeKind:    NodesURL,
-	apiObject.JobKind:     JobsURL,
+	apiObject.PodKind:        PodsURL,
+	apiObject.ServiceKind:    ServiceURL,
+	apiObject.DnsKind:        DnsURL,
+	apiObject.NodeKind:       NodesURL,
+	apiObject.JobKind:        JobsURL,
+	apiObject.ReplicaSetKind: ReplicaSetsURL,
+	apiObject.HpaKind:        HPAURL,
 }
 
 // kind->返回特定资源的URL(给定namespace)
 var ApiSpecResourceMap = map[string]string{
-	apiObject.PodKind:     PodSpecURL,
-	apiObject.ServiceKind: ServiceSpecURL,
-	apiObject.DnsKind:     DnsSpecURL,
-	apiObject.NodeKind:    NodeSpecURL,
-	apiObject.JobKind:     JobSpecURL,
+	apiObject.PodKind:        PodSpecURL,
+	apiObject.ServiceKind:    ServiceSpecURL,
+	apiObject.DnsKind:        DnsSpecURL,
+	apiObject.NodeKind:       NodeSpecURL,
+	apiObject.JobKind:        JobSpecURL,
+	apiObject.ReplicaSetKind: ReplicaSetSpecURL,
+	apiObject.HpaKind:        HPASpecURL,
 }

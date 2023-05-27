@@ -3,6 +3,7 @@ package allcontollers
 import (
 	"errors"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
@@ -24,24 +25,6 @@ func NewReplicaController() (ReplicaController, error) {
 	return &replicaController{}, nil
 }
 
-func (rc *replicaController) GetAllPodFromAPIServer() ([]apiObject.PodStore, error) {
-	url := config.API_Server_URL_Prefix + config.GlobalPodsURL
-
-	allPods := make([]apiObject.PodStore, 0)
-
-	code, err := netrequest.GetRequestByTarget(url, &allPods, "data")
-
-	if err != nil {
-		return nil, err
-	}
-
-	if code != http.StatusOK {
-		return nil, errors.New("get all pods from apiserver failed")
-	}
-
-	return allPods, nil
-}
-
 func (rc *replicaController) GetAllReplicasetsFromAPIServer() ([]apiObject.ReplicaSetStore, error) {
 	url := config.API_Server_URL_Prefix + config.GlobalReplicaSetsURL
 
@@ -60,22 +43,8 @@ func (rc *replicaController) GetAllReplicasetsFromAPIServer() ([]apiObject.Repli
 	return allReplicaSets, nil
 }
 
-func (rc *replicaController) CheckIfPodMeetRequirement(pod *apiObject.PodStore, selector *apiObject.ReplicaSetSelector) bool {
-	// 这里的匹配策略是：只要pod的label中有一个key-value对与selector中的key-value对相同，就认为pod满足要求
-	podLabel := pod.Metadata.Labels
-	for key, value := range selector.MatchLabels {
-		if podLabel[key] == value {
-			return true
-		} else {
-			continue
-		}
-	}
-
-	return false
-}
-
 func (rc *replicaController) routine() {
-	pods, err := rc.GetAllPodFromAPIServer()
+	pods, err := GetAllPodFromAPIServer()
 
 	if err != nil {
 		return
@@ -99,7 +68,7 @@ func (rc *replicaController) routine() {
 	for _, rs := range replicasets {
 		meetRequirementPods := make([]apiObject.PodStore, 0)
 		for _, pod := range pods {
-			if rc.CheckIfPodMeetRequirement(&pod, &rs.Spec.Selector) {
+			if CheckIfPodMeetRequirement(&pod, rs.Spec.Selector.MatchLabels) {
 				meetRequirementPods = append(meetRequirementPods, pod)
 			}
 		}
@@ -107,19 +76,20 @@ func (rc *replicaController) routine() {
 		// 2. 根据pod的数量，调整replicasets的数量
 		if len(meetRequirementPods) < rs.Spec.Replicas {
 			// 需要增加replicasets的数量
-			rc.AddPodsNums(&rs.Metadata, &rs.Spec.Template, rs.Spec.Replicas-len(meetRequirementPods))
+			rc.AddReplicaPodsNums(&rs.Metadata, &rs.Spec.Template, rs.Spec.Replicas-len(meetRequirementPods))
 		} else if len(meetRequirementPods) > rs.Spec.Replicas {
 			// 需要减少replicasets的数量
-			rc.ReducePodsNums(meetRequirementPods, len(meetRequirementPods)-rs.Spec.Replicas)
+			rc.ReduceReplicaPodsNums(meetRequirementPods, len(meetRequirementPods)-rs.Spec.Replicas)
 		}
 
 		// 3. 根据选择好的pod的状态，更新replicasets的状态
+		// 注意，以上对replicaset的修改不会马上反映在replicaset的status里
 		rc.UpdateReplicaSetStatus(meetRequirementPods, &rs)
 	}
 
 	// 2. 对于已经删除的replicasets，如果发现其对应的pod还存在，那么就删除这些pod
 	for _, pod := range pods {
-		if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Uuid] != "" {
+		if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_UUID] != "" {
 			if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] == "" {
 				continue
 			}
@@ -130,23 +100,23 @@ func (rc *replicaController) routine() {
 			key := pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] + "/" + pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name]
 			if _, ok := replicasetsMap[key]; !ok {
 				// 说明这个pod对应的replicasets已经被删除了，那么就删除这个pod
-				rc.ReducePodsNums([]apiObject.PodStore{pod}, 1)
+				rc.ReduceReplicaPodsNums([]apiObject.PodStore{pod}, 1)
 			}
 		}
 	}
 }
 
 // 增加或者减少pod的数量
-func (rc *replicaController) AddPodsNums(replicaMeta *apiObject.Metadata, pod *apiObject.PodTemplate, num int) error {
+func (rc *replicaController) AddReplicaPodsNums(replicaMeta *apiObject.Metadata, pod *apiObject.PodTemplate, num int) error {
 	// 创建一个pod的对象
 	newPod := apiObject.Pod{}
 	newPod.Metadata = pod.Metadata
-	newPod.Kind = "Pod"
-	newPod.APIVersion = "v1"
+	newPod.Kind = apiObject.PodKind
+	newPod.APIVersion = serverconfig.APIVersion
 	newPod.Spec = pod.Spec
 	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name] = replicaMeta.Name
 	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] = replicaMeta.Namespace
-	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Uuid] = replicaMeta.UUID
+	newPod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_UUID] = replicaMeta.UUID
 
 	originalPodName := newPod.Metadata.Name
 
@@ -191,17 +161,16 @@ func (rc *replicaController) AddPodsNums(replicaMeta *apiObject.Metadata, pod *a
 	return nil
 }
 
-func (rc *replicaController) ReducePodsNums(meetRequirePods []apiObject.PodStore, num int) error {
+func (rc *replicaController) ReduceReplicaPodsNums(meetRequirePods []apiObject.PodStore, num int) error {
 	// 遍历删除pod
 	if len(meetRequirePods) < num {
 		return errors.New("reduce pod nums failed")
 	}
 
 	for i := 0; i < num; i++ {
-		url := config.PodSpecURL
+		url := config.API_Server_URL_Prefix + config.PodSpecURL
 		url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, meetRequirePods[i].Metadata.Namespace)
 		url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, meetRequirePods[i].Metadata.Name)
-		url = config.API_Server_URL_Prefix + url
 
 		code, err := netrequest.DelRequest(url)
 
@@ -233,7 +202,7 @@ func (rc *replicaController) UpdateReplicaSetStatus(meetRequirePods []apiObject.
 		}
 
 		newReplicaSetStatus.Conditions = append(newReplicaSetStatus.Conditions, apiObject.ReplicaSetCondition{
-			Type:           "Pod",
+			Type:           apiObject.PodKind,
 			Status:         pod.Status.Phase,
 			LastUpdateTime: time.Now(),
 		})

@@ -138,6 +138,18 @@ func (c *funcController) BuildFuncImage(f *apiObject.Function) error {
 		return err
 	}
 
+	// 推送镜像到镜像仓库
+	err = dockerregistry.PushImageToRegistry(dockerregistry.Registry_Server_Prefix + "/func/" + f.Metadata.UUID + ":latest")
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("推送镜像成功")
+
+	// 删除文件夹
+	// err = os.RemoveAll(path.Join(curPath, f.Metadata.UUID))
+
 	return nil
 }
 

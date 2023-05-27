@@ -86,6 +86,14 @@ const (
 	HPASpecURL = "/apis/v1/namespaces/:namespace/hpa/:name"
 	// 获取HPA的某个状态的URL
 	HPASpecStatusURL = "/apis/v1/namespaces/:namespace/hpa/:name/status"
+
+	// Function相关的URL
+	// 全局Function的URL
+	GlobalFunctionsURL = "/apis/v1/functions"
+	// 所有Function的URL(Namespace级别)
+	FunctionURL = "/apis/v1/namespaces/:namespace/functions"
+	// 某个特定Function的URL
+	FunctionSpecURL = "/apis/v1/namespaces/:namespace/functions/:name"
 )
 
 const (

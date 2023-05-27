@@ -33,6 +33,7 @@ const (
 	Apply_kind_Replicaset ApplyObject = "Replicaset"
 	Apply_kind_Dns        ApplyObject = "Dns"
 	Apply_kind_Hpa        ApplyObject = "Hpa"
+	Apply_kind_Func       ApplyObject = "Function"
 )
 
 // Apply的Result
@@ -93,6 +94,9 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		applyDnsHandler(fileContent)
 	case string(Apply_kind_Hpa):
 		applyHpaHandler(fileContent)
+	case string(Apply_kind_Func):
+
+		applyFuncHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
@@ -415,6 +419,83 @@ func applyRepliacasetHandler(fileContent []byte) {
 		printApplyObjectInfo(Apply_kind_Replicaset, repliaset.Metadata.Name, repliaset.Metadata.Namespace)
 	} else {
 		printApplyResult(Apply_kind_Replicaset, ApplyResult_Failed, "failed", msg)
+	}
+}
+
+// ==============================================
+//
+// # Apply Func
+// go run ./main/ apply func ./
+// ==============================================
+func applyFuncHandler(fileContent []byte) {
+	var function apiObject.Function
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &function)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	if function.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "empty name", "function name is empty")
+		return
+	}
+
+	if function.Metadata.Namespace == "" {
+		function.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	fileInfo, err := os.Stat(function.Spec.UserUploadFilePath)
+	if !(err == nil && fileInfo.IsDir()) {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "submit folder not exist", "function submit folder not exist")
+		return
+	}
+
+	uploadFolder := function.Spec.UserUploadFilePath
+
+	err = zip.CompressToZip(uploadFolder, uploadFolder+".zip")
+
+	if err != nil {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "zip folder failed", err.Error())
+		return
+	}
+
+	zipFileBytes, err := os.ReadFile(uploadFolder + ".zip")
+
+	if err != nil {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "read zip file failed", err.Error())
+		return
+	}
+
+	function.Spec.UserUploadFile = zipFileBytes
+
+	// 删除产生的zip文件
+	err = os.Remove(uploadFolder + ".zip")
+
+	if err != nil {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "delete zip file failed", err.Error())
+		return
+	}
+
+	// 发请求
+	URL := config.API_Server_URL_Prefix + config.FunctionURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, function.Metadata.Namespace)
+
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, function)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
+
+	fmt.Println(code)
+
+	if code == http.StatusCreated {
+		printApplyResult(Apply_kind_Func, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_kind_Func, function.Metadata.Name, function.Metadata.Namespace)
+	} else {
+		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "failed", msg)
 	}
 }
 

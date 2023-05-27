@@ -143,6 +143,14 @@ func (s *apiServer) bind() {
 	s.router.DELETE(config.HPASpecURL, handlers.DeleteHPA)    // 删除hpa
 	s.router.GET(config.GlobalHPAURL, handlers.GetGlobalHPAs) // 获取所有hpa
 
+	// Function相关的api
+	s.router.GET(config.FunctionURL, handlers.GetFunctions)       // 获取所有function
+	s.router.GET(config.FunctionSpecURL, handlers.GetFunction)    // 获取单个function
+	s.router.POST(config.FunctionURL, handlers.AddFunction)       // 创建function
+	s.router.PUT(config.FunctionSpecURL, handlers.UpdateFunction) // 更新function
+	s.router.DELETE(config.FunctionSpecURL, handlers.DeleteFunction)
+	s.router.GET(config.GlobalFunctionsURL, handlers.GetGlobalFunctions) // 获取所有function
+
 	s.router.PUT(config.HPASpecStatusURL, handlers.UpdateHPAStatus) // 更新hpaStatus
 	
 }

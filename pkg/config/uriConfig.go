@@ -94,6 +94,16 @@ const (
 	FunctionURL = "/apis/v1/namespaces/:namespace/functions"
 	// 某个特定Function的URL
 	FunctionSpecURL = "/apis/v1/namespaces/:namespace/functions/:name"
+
+	// Workflow相关的URL
+	// 全局Workflow的URL
+	GlobalWorkflowsURL = "/apis/v1/workflows"
+	// 所有Workflow的URL(Namespace级别)
+	WorkflowURL = "/apis/v1/namespaces/:namespace/workflows"
+	// 某个特定Workflow的URL
+	WorkflowSpecURL = "/apis/v1/namespaces/:namespace/workflows/:name"
+	// Workflow的Status的URL
+	WorkflowSpecStatusURL = "/apis/v1/namespaces/:namespace/workflows/:name/status"
 )
 
 const (

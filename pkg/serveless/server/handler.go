@@ -11,6 +11,38 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (s *server) UpdateCountRecord(name, namespace string) {
+	// TODO
+	// 在s.callRecord中找到对应的记录，然后更新
+	// key := namespace + "/" + name
+	// record, ok := s.funcController.CallRecord[key]
+
+	// if !ok {
+	// 	// 如果没有找到，说明是第一次调用
+	// 	record = &LaunchRecord{
+	// 		StartTime:     time.Now(),
+	// 		EndTime:       time.Now().Add(time.Duration(5) * time.Minute),
+	// 		FuncName:      name,
+	// 		FuncNamespace: namespace,
+	// 		FuncCallTime:  1,
+	// 	}
+	// 	s.callRecord[key] = record
+	// } else {
+	// 	cur := time.Now()
+	// 	// 检查当前时间是否在record的EndTime之前
+	// 	if cur.Before(record.EndTime) {
+	// 		// 在EndTime之前，说明是同一个周期内的调用
+	// 		record.FuncCallTime++
+	// 	} else {
+	// 		// 不在EndTime之前，说明是一个新的周期
+	// 		record.StartTime = cur
+	// 		record.EndTime = cur.Add(time.Duration(5) * time.Minute)
+	// 		record.FuncCallTime = 1
+	// 	}
+	// }
+
+}
+
 // handleFuncRequest
 // /:funcNamespace/:funcName
 func (s *server) handleFuncRequest(c *gin.Context) {

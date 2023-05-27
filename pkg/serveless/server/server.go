@@ -71,9 +71,30 @@ func (s *server) updateRouteTableFromAPIServer() {
 	}
 }
 
+// // 周期运行函数检查调用的function情况
+// func (s *server) CheckUnusedFunc() {
+// 	// TODO 遍历map callRecord，检查是否有没有被调用的function
+// 	for _, record := range s.callRecord {
+// 		// 检查record的EndTime是否在当前时间之前
+// 		if record.EndTime.Before(time.Now()) {
+// 			// 说明这个function已经超时了，需要将其删除
+// 			if record.FuncCallTime == 0 {
+// 				// 执行缩容的操作
+
+// 			}
+
+// 			record.StartTime = time.Now()
+// 			record.EndTime = time.Now().Add(time.Duration(5) * time.Minute)
+// 			record.FuncCallTime = 0
+// 		}
+// 	}
+
+// }
+
 func (s *server) Run() {
 	// 周期性的更新routeTable
 	go executor.Period(RouterUpdate_Delay, RouterUpdate_WaitTime, s.updateRouteTableFromAPIServer, RouterUpdate_ifLoop)
+
 	// 周期性的检查function的情况，如果有新创建的function，那么就创建一个新的pod
 	go s.funcController.Run()
 

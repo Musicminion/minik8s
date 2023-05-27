@@ -125,6 +125,7 @@ var ApiResourceMap = map[string]string{
 	apiObject.JobKind:        JobsURL,
 	apiObject.ReplicaSetKind: ReplicaSetsURL,
 	apiObject.HpaKind:        HPAURL,
+	apiObject.FunctionKind:   FunctionURL,
 }
 
 // kind->返回特定资源的URL(给定namespace)
@@ -136,4 +137,5 @@ var ApiSpecResourceMap = map[string]string{
 	apiObject.JobKind:        JobSpecURL,
 	apiObject.ReplicaSetKind: ReplicaSetSpecURL,
 	apiObject.HpaKind:        HPASpecURL,
+	apiObject.FunctionKind:   FunctionSpecURL,
 }

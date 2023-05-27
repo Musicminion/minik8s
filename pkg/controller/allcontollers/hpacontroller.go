@@ -34,7 +34,7 @@ func NewHpaController() (HpaController, error) {
 }
 
 func (hc *hpaController) GetAllHpaFromAPIServer() ([]apiObject.HPAStore, error) {
-	url := config.API_Server_URL_Prefix + config.GlobalHPAURL
+	url := config.GetAPIServerURLPrefix() + config.GlobalHPAURL
 
 	allHPA := make([]apiObject.HPAStore, 0)
 
@@ -53,7 +53,7 @@ func (hc *hpaController) GetAllHpaFromAPIServer() ([]apiObject.HPAStore, error) 
 
 // 将更新过的hpa存入到etcd中
 func (hc *hpaController) UpdateHpaStatus(hpa apiObject.HPAStore) error {
-	url := config.API_Server_URL_Prefix + config.HPASpecStatusURL
+	url := config.GetAPIServerURLPrefix() + config.HPASpecStatusURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, hpa.Metadata.Namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, hpa.Metadata.Name)
 
@@ -86,7 +86,7 @@ func (hc *hpaController) AddOneHpaPod(hpa apiObject.HPAStore, podTemplate apiObj
 	newPod.Metadata.Labels[minik8stypes.Pod_HPA_UUID] = hpa.Metadata.UUID
 
 	// 通过api server创建pod
-	url := config.API_Server_URL_Prefix + config.PodsURL
+	url := config.GetAPIServerURLPrefix() + config.PodsURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, hpa.Spec.Workload.Metadata.Namespace)
 	code, _, err := netrequest.PostRequestByTarget(url, &newPod)
 	if err != nil {
@@ -103,7 +103,7 @@ func (hc *hpaController) AddOneHpaPod(hpa apiObject.HPAStore, podTemplate apiObj
 func (hc *hpaController) ReduceOneHpaPod(pod apiObject.PodStore) error {
 	k8log.DebugLog("HpaController", fmt.Sprintf("ReduceOneHpaPod: pod=%s", pod.Metadata.Name))
 	// 通过api server删除pod
-	url := config.API_Server_URL_Prefix + config.PodSpecURL
+	url := config.GetAPIServerURLPrefix() + config.PodSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, pod.Metadata.Namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, pod.Metadata.Name)
 

@@ -9,7 +9,7 @@ import (
 )
 
 func GetAllPodFromAPIServer() ([]apiObject.PodStore, error) {
-	url := config.API_Server_URL_Prefix + config.GlobalPodsURL
+	url := config.GetAPIServerURLPrefix() + config.GlobalPodsURL
 
 	allPods := make([]apiObject.PodStore, 0)
 

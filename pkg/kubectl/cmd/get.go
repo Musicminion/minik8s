@@ -128,7 +128,7 @@ func getObjectHandler(cmd *cobra.Command, args []string) {
 func getSpecificPod(namespace, name string) {
 	url := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	pod := &apiObject.PodStore{}
 	code, err := netrequest.GetRequestByTarget(url, pod, "data")
@@ -149,7 +149,7 @@ func getSpecificPod(namespace, name string) {
 
 func getNamespacePods(namespace string) {
 	url := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	pods := []apiObject.PodStore{}
 
@@ -179,7 +179,7 @@ func getNamespacePods(namespace string) {
 func getSpecificService(namespace, name string) {
 	url := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	service := &apiObject.ServiceStore{}
 	code, err := netrequest.GetRequestByTarget(url, service, "data")
@@ -201,7 +201,7 @@ func getSpecificService(namespace, name string) {
 
 func getNamespaceServices(namespace string) {
 	url := stringutil.Replace(config.ServiceURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	services := []apiObject.ServiceStore{}
 
@@ -225,7 +225,7 @@ func getNamespaceServices(namespace string) {
 func getSpecificJob(namespace, name string) {
 	url := stringutil.Replace(config.JobSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	job := &apiObject.JobStore{}
 	code, err := netrequest.GetRequestByTarget(url, job, "data")
@@ -246,7 +246,7 @@ func getSpecificJob(namespace, name string) {
 	if job.Status.State == apiObject.JobState_COMPLETED {
 		fileURL := stringutil.Replace(config.JobFileSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 		fileURL = stringutil.Replace(fileURL, config.URL_PARAM_NAME_PART, name)
-		fileURL = config.API_Server_URL_Prefix + fileURL
+		fileURL = config.GetAPIServerURLPrefix() + fileURL
 
 		jobFile := &apiObject.JobFile{}
 		code, err := netrequest.GetRequestByTarget(fileURL, jobFile, "data")
@@ -270,7 +270,7 @@ func getSpecificJob(namespace, name string) {
 
 func getNamespaceJobs(namespace string) {
 	url := stringutil.Replace(config.JobsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	fmt.Println(url)
 
@@ -302,7 +302,7 @@ func getNamespaceJobs(namespace string) {
 func getSpecificDns(namespace, name string) {
 	url := stringutil.Replace(config.DnsSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	dns := &apiObject.HpaStore{}
 	code, err := netrequest.GetRequestByTarget(url, dns, "data")
@@ -323,7 +323,7 @@ func getSpecificDns(namespace, name string) {
 func getNamespaceDns(namespace string) {
 
 	url := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 	dnsStores := []apiObject.HpaStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &dnsStores, "data")
@@ -352,7 +352,7 @@ func getNamespaceDns(namespace string) {
 func getSpecificHpa(namespace, name string) {
 	url := stringutil.Replace(config.HPASpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	hpa := &apiObject.HPAStore{}
 	code, err := netrequest.GetRequestByTarget(url, hpa, "data")
@@ -373,7 +373,7 @@ func getSpecificHpa(namespace, name string) {
 func getNamespaceHpas(namespace string) {
 
 	url := stringutil.Replace(config.HPAURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 	hpaStores := []apiObject.HPAStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &hpaStores, "data")
@@ -402,7 +402,7 @@ func getNamespaceHpas(namespace string) {
 func getSpecificReplicaSet(namespace, name string) {
 	url := stringutil.Replace(config.ReplicaSetSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	replicaset := &apiObject.ReplicaSetStore{}
 	code, err := netrequest.GetRequestByTarget(url, replicaset, "data")
@@ -423,7 +423,7 @@ func getSpecificReplicaSet(namespace, name string) {
 func getNamespaceReplicaSets(namespace string) {
 
 	url := stringutil.Replace(config.ReplicaSetsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 	replicasetStores := []apiObject.ReplicaSetStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &replicasetStores, "data")
@@ -452,7 +452,7 @@ func getNamespaceReplicaSets(namespace string) {
 func getSpecificFunction(namespace, name string) {
 	url := stringutil.Replace(config.HPASpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	hpa := &apiObject.HPAStore{}
 	code, err := netrequest.GetRequestByTarget(url, hpa, "data")
@@ -473,7 +473,7 @@ func getSpecificFunction(namespace, name string) {
 func getNamespaceFunctions(namespace string) {
 
 	url := stringutil.Replace(config.HPAURL, config.URL_PARAM_NAMESPACE_PART, namespace)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 	hpaStores := []apiObject.HPAStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &hpaStores, "data")
@@ -776,7 +776,6 @@ func printHpaResult(hpa *apiObject.HPAStore, t table.Writer) {
 		},
 	})
 }
-
 
 func printReplicasetsResult(replicasets []apiObject.ReplicaSetStore) {
 	t := table.NewWriter()

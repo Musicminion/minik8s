@@ -51,7 +51,7 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 
 	// 主动请求job的信息
 	targetURI := parsedMsg.ResourceURI
-	targetURI = config.API_Server_URL_Prefix + targetURI
+	targetURI = config.GetAPIServerURLPrefix() + targetURI
 
 	job := &apiObject.JobStore{}
 	code, err := netrequest.GetRequestByTarget(targetURI, job, "data")
@@ -101,7 +101,7 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 	}
 
 	podURI := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, job.Metadata.Namespace)
-	podURI = config.API_Server_URL_Prefix + podURI
+	podURI = config.GetAPIServerURLPrefix() + podURI
 
 	code, _, err = netrequest.PostRequestByTarget(podURI, pod)
 

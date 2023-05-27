@@ -2,6 +2,7 @@ package function
 
 import (
 	"errors"
+	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
 	"miniK8s/util/executor"
@@ -23,6 +24,10 @@ type FuncController interface {
 	Run()
 
 	GetFuncRecord(funcName, funcNamespace string) *LaunchRecord
+	AddCallRecord(funcName, funcNamespace string) error
+
+	ScaleUp(funcName, funcNamespace string, num int) error
+	ScaleDown(funcName, funcNamespace string) error
 }
 
 type funcController struct {
@@ -32,7 +37,8 @@ type funcController struct {
 
 func NewFuncController() FuncController {
 	return &funcController{
-		cache: make(map[string]*apiObject.Function),
+		cache:      make(map[string]*apiObject.Function),
+		CallRecord: make(map[string]*LaunchRecord),
 	}
 }
 
@@ -85,7 +91,7 @@ func (c *funcController) routine() {
 						// 缩容
 						c.ScaleDown(f.Metadata.Name, f.Metadata.Namespace)
 					} else if c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime > 100 {
-						newSize := c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime / 100
+						newSize := 2 + c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime/100
 						// 扩容
 						c.ScaleUp(f.Metadata.Name, f.Metadata.Namespace, newSize)
 					}
@@ -159,12 +165,13 @@ func (c *funcController) AddCallRecord(funcName, funcNamespace string) error {
 }
 
 func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
+	fmt.Println("scale down start")
 	// 【TODO】
 	url := config.API_Server_URL_Prefix + config.FunctionSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 
-	replica := &apiObject.ReplicaSet{}
+	replica := &apiObject.ReplicaSetStore{}
 	code, err := netrequest.GetRequestByTarget(url, replica, "data")
 
 	if err != nil {
@@ -182,24 +189,28 @@ func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
 	code, _, err = netrequest.PutRequestByTarget(url, replica)
 
 	if err != nil {
+		fmt.Println("put function from apiserver failed" + err.Error())
 		return err
 	}
 
 	if code != http.StatusOK {
+		fmt.Println("put function from apiserver failed, not 200")
 		return errors.New("put function from apiserver failed, not 200")
 	}
 
+	fmt.Println("scale down end")
 	return nil
 }
 
 // 【TODO】
 func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error {
+	fmt.Println("scale up start")
 	// 【TODO】
 	url := config.API_Server_URL_Prefix + config.FunctionSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 
-	replica := &apiObject.ReplicaSet{}
+	replica := &apiObject.ReplicaSetStore{}
 	code, err := netrequest.GetRequestByTarget(url, replica, "data")
 
 	if err != nil {
@@ -224,5 +235,6 @@ func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error 
 		return errors.New("put function from apiserver failed, not 200")
 	}
 
+	fmt.Println("scale up end")
 	return nil
 }

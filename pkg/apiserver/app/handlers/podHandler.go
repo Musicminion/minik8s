@@ -309,7 +309,11 @@ func UpdatePod(c *gin.Context) {
 	podName := c.Param(config.URL_PARAM_NAME)
 	podNamespace := c.Param(config.URL_PARAM_NAMESPACE)
 
-	if podName == "" || podNamespace == "" {
+	if podNamespace == "" {
+		podNamespace = config.DefaultNamespace
+	}
+
+	if podName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "namespace or name is empty",
 		})

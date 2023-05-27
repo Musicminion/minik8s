@@ -71,6 +71,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 
 	// 随机选择一个pod的ip地址
 	if len(podIPs) == 0 {
+		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "funcNamespace or funcName is not exist, maybe creating",
 		})
@@ -102,6 +103,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	resp, err := http.Post(url, "application/json", c.Request.Body)
 
 	if err != nil {
+		s.funcController.ScaleUp(funcNamespace, funcName, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "forward request to pod error, " + err.Error(),
 		})
@@ -138,6 +140,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 			})
 		}
 	} else {
+		s.funcController.ScaleUp(funcNamespace, funcName, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "forward request to pod error 2, " + err.Error(),
 		})

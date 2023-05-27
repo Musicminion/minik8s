@@ -43,6 +43,8 @@ func (s *server) updateRouteTableFromAPIServer() {
 		return
 	}
 
+	remoteData := make(map[string][]string)
+
 	// 遍历所有的pod，将其加入到routeTable中
 	for _, pod := range pods {
 		// 说明是一个Function Pod
@@ -52,6 +54,7 @@ func (s *server) updateRouteTableFromAPIServer() {
 			key := funcNamespace + "/" + funcName
 			// 检查ip是否为空
 			if pod.Status.PodIP != "" {
+				remoteData[key] = append(remoteData[key], pod.Status.PodIP)
 				// 检查routeTable中是否有这个ip
 				ifExist := false
 				for _, ip := range s.routeTable[key] {
@@ -65,6 +68,31 @@ func (s *server) updateRouteTableFromAPIServer() {
 					// ip不为空，说明这个pod已经启动了，可以将其加入到routeTable中
 					s.routeTable[key] = append(s.routeTable[key], pod.Status.PodIP)
 					fmt.Println("update routeTable: ", s.routeTable)
+				}
+			}
+		}
+	}
+
+	// 遍历本地的routeTable，检查是否有需要删除的ip
+	for key, ips := range s.routeTable {
+		for _, ip := range ips {
+			// 检查ip是否在remoteData中
+			ifExist := false
+			for _, remoteIp := range remoteData[key] {
+				if remoteIp == ip {
+					ifExist = true
+					break
+				}
+			}
+
+			if !ifExist {
+				// 说明这个ip已经不存在了，需要将其删除
+				fmt.Println("delete ip: ", ip)
+				for i, localIp := range s.routeTable[key] {
+					if localIp == ip {
+						s.routeTable[key] = append(s.routeTable[key][:i], s.routeTable[key][i+1:]...)
+						break
+					}
 				}
 			}
 		}

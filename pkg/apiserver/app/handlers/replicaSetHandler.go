@@ -430,3 +430,106 @@ func selectiveUpdateReplicaStatus(oldReplica *apiObject.ReplicaSetStore, newRepl
 	}
 
 }
+
+// UpdateReplicaSet
+// PUT
+// "/apis/v1/namespaces/:namespace/replicasets/:name"
+func UpdateReplicaSet(c *gin.Context) {
+	k8log.InfoLog("APIServer", "UpdateReplicaSet")
+
+	name := c.Param(config.URL_PARAM_NAME)
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+
+	if name == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "name is empty",
+		})
+		return
+	}
+
+	// 从etcd中获取指定的replicaSet
+	logStr := "UpdateReplicaSet: namespace=" + namespace + ", name=" + name
+	k8log.InfoLog("APIServer", logStr)
+
+	key := fmt.Sprintf(serverconfig.EtcdReplicaSetPath+"%s/%s", namespace, name)
+	res, err := etcdclient.EtcdStore.Get(key)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "get replicaset err, " + err.Error(),
+		})
+		return
+	}
+
+	if len(res) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{
+			"error": "replicaSet not found",
+		})
+		return
+	}
+
+	if len(res) != 1 {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "replicaSet is not unique",
+		})
+		return
+	}
+
+	replicaStore := &apiObject.ReplicaSetStore{}
+	err = json.Unmarshal([]byte(res[0].Value), replicaStore)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "unmarshal replicaset err, " + err.Error(),
+		})
+		return
+	}
+
+	// 解析请求体里面的replicaSet
+	replicaSet := &apiObject.ReplicaSetStore{}
+	err = c.ShouldBind(replicaSet)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "bind replicaset err, " + err.Error(),
+		})
+		return
+	}
+
+	// 选择性的更新replicaSet
+	selectiveUpdateReplicaSet(replicaStore, replicaSet)
+
+	// replicaSet转化为json
+	replicaSetJson, err := json.Marshal(replicaStore)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "marshal replicaset err, " + err.Error(),
+		})
+		return
+	}
+
+	key = fmt.Sprintf(serverconfig.EtcdReplicaSetPath+"%s/%s", replicaStore.Metadata.Namespace, replicaStore.Metadata.Name)
+	err = etcdclient.EtcdStore.Put(key, replicaSetJson)
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "update replicaset err, " + err.Error(),
+		})
+		return
+	}
+
+	// 返回结果
+	c.JSON(http.StatusOK, gin.H{
+		"message": "replicaSet updated",
+	})
+}
+
+// 选择性的更新replicaSet
+func selectiveUpdateReplicaSet(oldReplica *apiObject.ReplicaSetStore, newReplica *apiObject.ReplicaSetStore) {
+	oldReplica.Spec.Replicas = newReplica.Spec.Replicas
+}

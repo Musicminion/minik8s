@@ -124,6 +124,7 @@ func (s *apiServer) bind() {
 	s.router.GET(config.ReplicaSetSpecURL, handlers.GetReplicaSet)       // 获取单个replicaSet
 	s.router.POST(config.ReplicaSetsURL, handlers.AddReplicaSet)         // 创建replicaSet
 	s.router.DELETE(config.ReplicaSetSpecURL, handlers.DeleteReplicaSet) // 删除replicaSet
+	s.router.PUT(config.ReplicaSetSpecURL, handlers.UpdateReplicaSet)    // 更新replicaSet
 
 	//
 	s.router.GET(config.ReplicaSetSpecStatusURL, handlers.GetReplicaSetStatus)    // 获取replicaSetStatus

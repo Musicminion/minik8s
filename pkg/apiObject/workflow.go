@@ -15,6 +15,7 @@ const (
 type WorkflowFuncData struct {
 	FuncName      string `json:"funcName" yaml:"funcName"`
 	FuncNamespace string `json:"funcNamespace" yaml:"funcNamespace"`
+	NextNodeName  string `json:"nextNodeName" yaml:"nextNodeName"`
 }
 
 type ChoiceCheckType string

@@ -16,7 +16,6 @@ import (
 
 	"miniK8s/pkg/entity"
 	"path"
-	"sync"
 )
 
 // 根据key和value获取所有的endpoints
@@ -30,42 +29,19 @@ func GetEndpoints(key, value string) ([]apiObject.Endpoint, error) {
 		return nil, err
 	}
 
-	// 构造endpoint map并解析endpointsJson
-	endpoints := make(entity.Endpoints)
-	if len(endpointsJsonStr) != 0 {
-		if err := json.Unmarshal([]byte(endpointsJsonStr[0].Value), &endpoints); err != nil {
+	//解析endpointsJson
+	endpoints := []apiObject.Endpoint{}
+	for _, endpointJson := range endpointsJsonStr {
+		endpoint := apiObject.Endpoint{}
+		if err := json.Unmarshal([]byte(endpointJson.Value), &endpoint); err == nil {
+			endpoints = append(endpoints, endpoint)
+		} else {
+			k8log.ErrorLog("APIServer", "Unmarshal endpoints failed"+err.Error())
 			return nil, err
 		}
 	}
 
-	// 并发获取每个终端
-	endpointChan := make(chan apiObject.Endpoint, len(endpoints))
-	var wg sync.WaitGroup
-	for _, arr := range endpoints {
-		for _, UID := range arr {
-			endpointURL := path.Join(serverconfig.EndpointPath, UID)
-			wg.Add(1)
-			go func(url string) {
-				defer wg.Done()
-				if endpointStr, err := etcdclient.EtcdStore.Get(url); err == nil {
-					endpoint := apiObject.Endpoint{}
-					if err := json.Unmarshal([]byte(endpointStr[0].Value), &endpoint); err == nil {
-						endpointChan <- endpoint
-					}
-				}
-			}(endpointURL)
-		}
-	}
-	wg.Wait()
-	close(endpointChan)
-
-	// 从通道中读取所有终端
-	endpointArray := make([]apiObject.Endpoint, 0, len(endpointChan))
-	for endpoint := range endpointChan {
-		endpointArray = append(endpointArray, endpoint)
-	}
-
-	return endpointArray, nil
+	return endpoints, nil
 }
 
 func UpdateEndPoints(pod apiObject.PodStore) error {

@@ -1,9 +1,12 @@
 package server
 
 import (
-	"encoding/json"
+	"fmt"
+	"io"
+	"math/rand"
 	netrequest "miniK8s/util/netRequest"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -42,7 +45,10 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 		return
 	}
 
-	podIP := podIPs[0]
+	// 产生一个随机的数，大小为0-(len(podIPs)-1)之间
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	randID := r.Intn(len(podIPs))
+	podIP := podIPs[randID]
 
 	// 将请求转发到pod上
 	// 读取请求的body
@@ -55,36 +61,84 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 		return
 	}
 
+	// 把请求的body打印出来
+	fmt.Println(string(body))
+
 	// 将请求转发到pod上
 	url := "http://" + podIP + ":18080"
-	code, respBody, err := netrequest.PostRequestByTarget(url, body)
+
+	resp, err := http.Post(url, "application/json", c.Request.Body)
 
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "forward request to pod error",
+			"message": "forward request to pod error, " + err.Error(),
 		})
 		return
 	}
 
-	if code != http.StatusOK {
+	defer resp.Body.Close()
+
+	// 读取pod的响应
+	// var respJson interface{}
+
+	// // 打印输出resp的body
+	// fmt.Println(resp.Body)
+
+	// if err := json.NewDecoder(resp.Body).Decode(&respJson); err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"message": "forward request to pod error, " + err.Error(),
+	// 	})
+	// 	return
+	// }
+
+	var respPtr *http.Response
+
+	if respPtr, err = netrequest.PostString(url, string(body)); err == nil {
+		var data []byte
+		if data, err = io.ReadAll(respPtr.Body); err == nil {
+			defer respPtr.Body.Close()
+			c.JSON(http.StatusOK, gin.H{
+				"data": string(data),
+			})
+		} else {
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": "forward request to pod error 1, " + err.Error(),
+			})
+		}
+	} else {
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "forward request to pod error",
+			"message": "forward request to pod error 2, " + err.Error(),
 		})
-		return
 	}
 
-	bodyBytes, err := json.Marshal(respBody)
+	// code, respBody, err := netrequest.PostRequestByTarget(url, body)
 
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "forward request to pod error",
-		})
-		return
-	}
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"message": "forward request to pod error, " + err.Error(),
+	// 	})
+	// 	return
+	// }
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": string(bodyBytes),
-	})
+	// if code != http.StatusOK {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"message": "forward request to pod error, code is not 200",
+	// 	})
+	// 	return
+	// }
+
+	// bodyBytes, err := json.Marshal(respBody)
+
+	// if err != nil {
+	// 	c.JSON(http.StatusBadRequest, gin.H{
+	// 		"message": "forward request to pod error" + err.Error(),
+	// 	})
+	// 	return
+	// }
+
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"data": string(bodyBytes),
+	// })
 }
 
 // func checkAndCreate(funcNamespace, funcName string) {

@@ -52,9 +52,20 @@ func (s *server) updateRouteTableFromAPIServer() {
 			key := funcNamespace + "/" + funcName
 			// 检查ip是否为空
 			if pod.Status.PodIP != "" {
-				// ip不为空，说明这个pod已经启动了，可以将其加入到routeTable中
-				s.routeTable[key] = append(s.routeTable[key], pod.Status.PodIP)
-				fmt.Println("update routeTable: ", s.routeTable)
+				// 检查routeTable中是否有这个ip
+				ifExist := false
+				for _, ip := range s.routeTable[key] {
+					if ip == pod.Status.PodIP {
+						ifExist = true
+						break
+					}
+				}
+
+				if !ifExist {
+					// ip不为空，说明这个pod已经启动了，可以将其加入到routeTable中
+					s.routeTable[key] = append(s.routeTable[key], pod.Status.PodIP)
+					fmt.Println("update routeTable: ", s.routeTable)
+				}
 			}
 		}
 	}

@@ -263,7 +263,7 @@ func DeleteReplicaSet(c *gin.Context) {
 	}
 
 	// 返回结果
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "replicaSet deleted",
 	})
 
@@ -422,6 +422,7 @@ func selectiveUpdateReplicaStatus(oldReplica *apiObject.ReplicaSetStore, newRepl
 
 	oldReplica.Status.Replicas = newReplicaStatus.Replicas
 	oldReplica.Status.Conditions = newReplicaStatus.Conditions
+	oldReplica.Status.ReadyReplicas = newReplicaStatus.ReadyReplicas
 
 	if len(newReplicaStatus.Conditions) > 0 {
 		oldReplica.Status.Conditions = newReplicaStatus.Conditions

@@ -21,12 +21,32 @@ import (
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Kubectl get can get apiObject in a declarative way",
-	Long:  "Kubectl get can get apiObject in a declarative way, usage kubectl get [pod|service|job|deploy|dns]/[pods|services|jobs|deploys]",
-	Run:   getHandler,
+	Long:  "Kubectl get can get apiObject in a declarative way, usage kubectl get " + apiObject.AllResourceKind,
+	Run:   getObjectHandler,
 }
+
+var getNamespaceObjectFuncMap = make(map[string]func(namespace string))
+var getSpecificObjectFunMap = make(map[string]func(namespace string, name string))
 
 func init() {
 	getCmd.PersistentFlags().StringP("namespace", "n", "", "Namespace")
+
+	// 构建kind到函数的映射
+	getNamespaceObjectFuncMap[string(Get_Kind_Pod)] = getNamespacePods
+	getNamespaceObjectFuncMap[string(Get_Kind_Service)] = getNamespaceServices
+	getNamespaceObjectFuncMap[string(Get_Kind_Job)] = getNamespaceJobs
+	getNamespaceObjectFuncMap[string(Get_Kind_Replicaset)] = getNamespaceReplicaSets
+	getNamespaceObjectFuncMap[string(Get_Kind_Hpa)] = getNamespaceHpas
+	getNamespaceObjectFuncMap[string(Get_Kind_Function)] = getNamespaceFunctions
+	getNamespaceObjectFuncMap[string(Get_Kind_Dns)] = getNamespaceDns
+
+	getSpecificObjectFunMap[string(Get_Kind_Pod)] = getSpecificPod
+	getSpecificObjectFunMap[string(Get_Kind_Service)] = getSpecificService
+	getSpecificObjectFunMap[string(Get_Kind_Job)] = getSpecificJob
+	getSpecificObjectFunMap[string(Get_Kind_Replicaset)] = getSpecificReplicaSet
+	getSpecificObjectFunMap[string(Get_Kind_Hpa)] = getSpecificHpa
+	getSpecificObjectFunMap[string(Get_Kind_Function)] = getSpecificFunction
+	getSpecificObjectFunMap[string(Get_Kind_Dns)] = getSpecificDns
 }
 
 type GetObject string
@@ -38,50 +58,29 @@ const (
 	Get_Kind_Replicaset GetObject = "replicaset"
 	Get_Kind_Dns        GetObject = "dns"
 	Get_Kind_Hpa        GetObject = "hpa"
+	Get_Kind_Function   GetObject = "function"
 
 	Get_Kind_Pods        GetObject = "pods"
 	Get_Kind_Services    GetObject = "services"
 	Get_Kind_Jobs        GetObject = "jobs"
 	Get_Kind_Replicasets GetObject = "replicasets"
 	Get_Kind_Hpas        GetObject = "hpas"
+	Get_Kind_Functions   GetObject = "functions"
 )
 
-func getHandler(cmd *cobra.Command, args []string) {
+func getObjectHandler(cmd *cobra.Command, args []string) {
 	if len(args) == 0 {
-		fmt.Println("getHandler: no args, please specify [pod|service|job|replicaset]/[pods|services|jobs|deploys]")
+		fmt.Println("getObjectHandler: no args, please specify " + apiObject.AllResourceKind)
 		cmd.Usage()
 		return
 	}
-
-	args[0] = strings.ToLower(args[0])
-
-	switch args[0] {
-	case string(Get_Kind_Pod), string(Get_Kind_Pods):
-		getPodHandler(cmd, args)
-	case string(Get_Kind_Service), string(Get_Kind_Services):
-		getServiceHandler(cmd, args)
-	case string(Get_Kind_Job), string(Get_Kind_Jobs):
-		getJobHandler(cmd, args)
-	case string(Get_Kind_Replicaset), string(Get_Kind_Replicasets):
-		// fmt.Println("Kind: Deployment")
-	case string(Get_Kind_Dns):
-		getDnsHandler(cmd, args)
-	case string(Get_Kind_Hpa):
-		getHpaHandler(cmd, args)
-	default:
-		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
+	kind := args[0]
+	// 判断kind是否在apiObject.AllResourceKind中
+	if !strings.Contains(apiObject.AllResourceKind, kind) {
+		fmt.Println("getObjectHandler: args mismatch, please specify " + apiObject.AllResourceKind)
 		fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
+		return
 	}
-}
-
-// ==============================================
-//
-// get pod handler
-//
-// kubeclt get pod [podNamespace]/[podName]
-// 测试命令
-// ==============================================
-func getPodHandler(cmd *cobra.Command, args []string) {
 	if len(args) == 1 {
 		// 尝试获取用户是否指定了namespace
 		namespace, _ := cmd.Flags().GetString("namespace")
@@ -91,8 +90,8 @@ func getPodHandler(cmd *cobra.Command, args []string) {
 			namespace = config.DefaultNamespace
 		}
 
-		// 获取default namespace下的所有Pod
-		getNamespacePods(namespace)
+		// 获取default namespace下的所有指定kind的对象
+		getNamespaceObjectFuncMap[kind](namespace)
 
 	} else if len(args) == 2 {
 		// 获取namespace和podName
@@ -105,18 +104,26 @@ func getPodHandler(cmd *cobra.Command, args []string) {
 
 		if namespace == "" || name == "" {
 			fmt.Println("name of namespace or podName is empty")
-			fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
+			fmt.Println("Use like: kubectl get" + kind + "[podNamespace]/[podName]")
 			return
 		}
 
 		// 获取指定的Pod
-		getSpecificPod(namespace, name)
+		getSpecificObjectFunMap[kind](namespace, name)
 
 	} else {
-		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
+		fmt.Println("getHandler: args mismatch, please specify " + apiObject.AllResourceKind)
 		fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
 	}
 }
+
+// ==============================================
+//
+// get pod handler
+//
+// kubeclt get pod [podNamespace]/[podName]
+// 测试命令
+// ==============================================
 
 func getSpecificPod(namespace, name string) {
 	url := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
@@ -169,43 +176,6 @@ func getNamespacePods(namespace string) {
 // 测试命令
 // ==============================================
 
-func getServiceHandler(cmd *cobra.Command, args []string) {
-	if len(args) == 1 {
-		// 尝试获取用户是否指定了namespace
-		namespace, _ := cmd.Flags().GetString("namespace")
-
-		// 如果没有指定namespace，则使用默认的namespace
-		if namespace == "" {
-			namespace = config.DefaultNamespace
-		}
-
-		// 获取default namespace下的所有Pod
-		getNamespaceServices(namespace)
-
-	} else if len(args) == 2 {
-		// 获取namespace和podName
-		namespace, name, err := parseNameAndNamespace(args[1])
-
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		if namespace == "" || name == "" {
-			fmt.Println("name of namespace or service Name is empty")
-			fmt.Println("Use like: kubectl get service [serviceNamespace]/[serviceName]")
-			return
-		}
-
-		// 获取指定的Pod
-		getSpecificService(namespace, name)
-
-	} else {
-		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
-		fmt.Println("Use like: kubectl get service [serviceNamespace]/[serviceName]")
-	}
-}
-
 func getSpecificService(namespace, name string) {
 	url := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
@@ -250,42 +220,6 @@ func getNamespaceServices(namespace string) {
 	printServicesResult(services)
 	fmt.Println("")
 	printServicesPortInfo(services)
-}
-
-func getJobHandler(cmd *cobra.Command, args []string) {
-	if len(args) == 1 {
-		// 尝试获取用户是否指定了namespace
-		namespace, _ := cmd.Flags().GetString("namespace")
-
-		// 如果没有指定namespace，则使用默认的namespace
-		if namespace == "" {
-			namespace = config.DefaultNamespace
-		}
-
-		// 获取default namespace下的所有Job
-		getNamespaceJobs(namespace)
-
-	} else if len(args) == 2 {
-		// 获取namespace和jobName
-		namespace, name, err := parseNameAndNamespace(args[1])
-
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		if namespace == "" || name == "" {
-			fmt.Println("name of namespace or job Name is empty")
-			fmt.Println("Use like: kubectl get job [jobNamespace]/[jobName]")
-			return
-		}
-
-		// 获取指定的Job
-		getSpecificJob(namespace, name)
-	} else {
-		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
-		fmt.Println("Use like: kubectl get job [jobNamespace]/[jobName]")
-	}
 }
 
 func getSpecificJob(namespace, name string) {
@@ -364,42 +298,6 @@ func getNamespaceJobs(namespace string) {
 // kubeclt get dns [DnsNamespace]/[DnsName]
 // 测试命令
 // ==============================================
-func getDnsHandler(cmd *cobra.Command, args []string) {
-	if len(args) == 1 {
-		// 尝试获取用户是否指定了namespace
-		namespace, _ := cmd.Flags().GetString("namespace")
-
-		// 如果没有指定namespace，则使用默认的namespace
-		if namespace == "" {
-			namespace = config.DefaultNamespace
-		}
-
-		// 获取default namespace下的所有Dns
-		getNamespaceDns(namespace)
-
-	} else if len(args) == 2 {
-		// 获取namespace和dnsName
-		namespace, name, err := parseNameAndNamespace(args[1])
-
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		if namespace == "" && name == "" {
-			fmt.Println("name of namespace or dnsName is empty")
-			fmt.Println("Use like: kubectl get dns [dnsNamespace]/[dnsName]")
-			return
-		}
-
-		// 获取指定的Dns
-		getSpecificDns(namespace, name)
-
-	} else {
-		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy]/[pods|services|jobs|deploys]")
-		fmt.Println("Use like: kubectl get dns [podNamespace]/[podName]")
-	}
-}
 
 func getSpecificDns(namespace, name string) {
 	url := stringutil.Replace(config.DnsSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
@@ -450,44 +348,108 @@ func getNamespaceDns(namespace string) {
 // kubeclt get hpa [HpaNamespace]/[HpaName]
 // 测试命令
 // ==============================================
-func getHpaHandler(cmd *cobra.Command, args []string) {
-	if len(args) == 1 {
-		// 尝试获取用户是否指定了namespace
-		namespace, _ := cmd.Flags().GetString("namespace")
-
-		// 如果没有指定namespace，则使用默认的namespace
-		if namespace == "" {
-			namespace = config.DefaultNamespace
-		}
-
-		// 获取default namespace下的所有Dns
-		getNamespaceHpa(namespace)
-
-	} else if len(args) == 2 {
-		// 获取namespace和hpaName
-		namespace, name, err := parseNameAndNamespace(args[1])
-
-		if err != nil {
-			fmt.Println(err.Error())
-			return
-		}
-
-		if namespace == "" && name == "" {
-			fmt.Println("name of namespace or hpaName is empty")
-			fmt.Println("Use like: kubectl get hpa [hpaNamespace]/[hpaName]")
-			return
-		}
-
-		// 获取指定的Dns
-		getSpecificHpa(namespace, name)
-
-	} else {
-		fmt.Println("getHandler: args mismatch, please specify [pod|service|job|deploy|hpa]/[pods|services|jobs|deploys|hpas]")
-		fmt.Println("Use like: kubectl get hpa [hpaNamespace]/[hpaName]")
-	}
-}
 
 func getSpecificHpa(namespace, name string) {
+	url := stringutil.Replace(config.HPASpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
+	url = config.API_Server_URL_Prefix + url
+
+	hpa := &apiObject.HPAStore{}
+	code, err := netrequest.GetRequestByTarget(url, hpa, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getSpecificHpa: code:", code)
+		return
+	}
+	hpaStores := []apiObject.HPAStore{*hpa}
+	printHpasResult(hpaStores)
+}
+
+func getNamespaceHpas(namespace string) {
+
+	url := stringutil.Replace(config.HPAURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = config.API_Server_URL_Prefix + url
+	hpaStores := []apiObject.HPAStore{}
+
+	code, err := netrequest.GetRequestByTarget(url, &hpaStores, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getNamespaceHpas: code:", code)
+		return
+	}
+
+	printHpasResult(hpaStores)
+}
+
+// ==============================================
+//
+// get replicaset handler
+//
+// kubeclt get replicaset [Namespace]/[Name]
+// 测试命令
+// ==============================================
+
+func getSpecificReplicaSet(namespace, name string) {
+	url := stringutil.Replace(config.ReplicaSetSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
+	url = config.API_Server_URL_Prefix + url
+
+	replicaset := &apiObject.ReplicaSetStore{}
+	code, err := netrequest.GetRequestByTarget(url, replicaset, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getSpecificDns: code:", code)
+		return
+	}
+	replicasetStores := []apiObject.ReplicaSetStore{*replicaset}
+	printReplicasetsResult(replicasetStores)
+}
+
+func getNamespaceReplicaSets(namespace string) {
+
+	url := stringutil.Replace(config.ReplicaSetsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = config.API_Server_URL_Prefix + url
+	replicasetStores := []apiObject.ReplicaSetStore{}
+
+	code, err := netrequest.GetRequestByTarget(url, &replicasetStores, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getNamespaceReplicaSets: code:", code)
+		return
+	}
+
+	printReplicasetsResult(replicasetStores)
+}
+
+// ==============================================
+//
+// get function handler
+//
+// kubeclt get hpa [HpaNamespace]/[HpaName]
+// 测试命令
+// ==============================================
+
+func getSpecificFunction(namespace, name string) {
 	url := stringutil.Replace(config.HPASpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 	url = config.API_Server_URL_Prefix + url
@@ -508,7 +470,7 @@ func getSpecificHpa(namespace, name string) {
 	printHpasResult(hpaStores)
 }
 
-func getNamespaceHpa(namespace string) {
+func getNamespaceFunctions(namespace string) {
 
 	url := stringutil.Replace(config.HPAURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = config.API_Server_URL_Prefix + url
@@ -809,8 +771,34 @@ func printHpaResult(hpa *apiObject.HPAStore, t table.Writer) {
 			color.BlueString(string(Get_Kind_Dns)),
 			color.HiCyanString(hpa.ToHPA().GetObjectNamespace()),
 			color.HiCyanString(hpa.ToHPA().GetObjectName()),
-			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curMemPercent * 100, targetMemPercent * 100)),
-			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curCPUPercent * 100, targetCPUPercent * 100)),
+			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curMemPercent*100, targetMemPercent*100)),
+			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curCPUPercent*100, targetCPUPercent*100)),
+		},
+	})
+}
+
+
+func printReplicasetsResult(replicasets []apiObject.ReplicaSetStore) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Cur/Expect replica"})
+
+	// 遍历所有的DnsStore
+	for _, replicaset := range replicasets {
+		printReplicasetResult(&replicaset, t)
+	}
+
+	t.Render()
+}
+
+func printReplicasetResult(replicaset *apiObject.ReplicaSetStore, t table.Writer) {
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.BlueString(string(Get_Kind_Dns)),
+			color.HiCyanString(replicaset.ToReplicaSet().GetObjectNamespace()),
+			color.HiCyanString(replicaset.ToReplicaSet().GetObjectName()),
+			color.GreenString(fmt.Sprintf("\t\t%d/%d", replicaset.Status.ReadyReplicas, replicaset.Status.Replicas)),
 		},
 	})
 }

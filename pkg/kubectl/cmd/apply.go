@@ -95,7 +95,6 @@ func applyHandler(cmd *cobra.Command, args []string) {
 	case string(Apply_kind_Hpa):
 		applyHpaHandler(fileContent)
 	case string(Apply_kind_Func):
-
 		applyFuncHandler(fileContent)
 	default:
 		fmt.Println("default")

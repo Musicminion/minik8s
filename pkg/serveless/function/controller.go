@@ -91,7 +91,6 @@ func (c *funcController) ComplareTwoFunc(old *apiObject.Function, new *apiObject
 	if len(old.Spec.UserUploadFile) != len(new.Spec.UserUploadFile) {
 		return false
 	}
-
 	return true
 }
 

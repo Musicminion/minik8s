@@ -186,7 +186,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	}
 
 	var scheduledNode string
-	
+
 	// 如果在pod中指定了node
 	if podStore.Spec.NodeName != "" {
 		// 检查node是否存在
@@ -196,7 +196,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 			}
 		}
 	}
-	
+
 	// 如果未指定node或者指定的node无效，则选择一个节点
 	if scheduledNode == "" {
 		scheduledNode = sch.ChooseFromNodes(nodes)
@@ -213,7 +213,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 	// 更新Apiserver中的Pod信息
 	URL := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAMESPACE_PART, podStore.GetPodNamespace())
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, podStore.GetPodName())
-	URL = config.API_Server_URL_Prefix + URL
+	URL = config.GetAPIServerURLPrefix() + URL
 
 	code, _, err := netrequest.PutRequestByTarget(URL, podStore)
 	if err != nil {

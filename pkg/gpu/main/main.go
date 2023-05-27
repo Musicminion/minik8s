@@ -16,9 +16,8 @@ import (
 )
 
 type mainArg struct {
-	JobName       string // 任务的名字
-	JobNamespace  string // 任务的命名空间
-	APIServerAddr string // 与API Server通讯的地址 默认值为 http://127.0.0.1:8090
+	JobName      string // 任务的名字
+	JobNamespace string // 任务的命名空间
 }
 
 var (
@@ -26,9 +25,8 @@ var (
 )
 
 const (
-	Default_API_Server_Addr = "http://127.0.0.1:8090"
-	JobDirectory            = "/job/"
-	JobResultDirectory      = JobDirectory + "jobresult"
+	JobDirectory       = "/job/"
+	JobResultDirectory = JobDirectory + "jobresult"
 )
 
 // 通过API Server获取任务的配置信息
@@ -36,7 +34,7 @@ const (
 func getJobFromAPIServer() (*apiObject.JobStore, error) {
 	jobURL := stringutil.Replace(config.JobSpecURL, config.URL_PARAM_NAMESPACE_PART, args.JobNamespace)
 	jobURL = stringutil.Replace(jobURL, config.URL_PARAM_NAME_PART, args.JobName)
-	jobURL = args.APIServerAddr + jobURL
+	jobURL = config.GetAPIServerURLPrefix() + jobURL
 
 	// 通过http请求获取任务的配置信息
 	job := &apiObject.JobStore{}
@@ -58,7 +56,7 @@ func getJobFileFromAPIServer(job *apiObject.JobStore, conf *jobserver.JobServerC
 	// 1. 获取文件的URL
 	fileURL := stringutil.Replace(config.JobFileSpecURL, config.URL_PARAM_NAMESPACE_PART, args.JobNamespace)
 	fileURL = stringutil.Replace(fileURL, config.URL_PARAM_NAME_PART, args.JobName)
-	fileURL = args.APIServerAddr + fileURL
+	fileURL = config.GetAPIServerURLPrefix() + fileURL
 
 	// 2. 下载文件
 	jobFile := &apiObject.JobFile{}
@@ -176,7 +174,7 @@ func prepareJobConfig() (*jobserver.JobServerConfig, error) {
 	// 13. 任务每个节点的CPU数量
 	conf.NodeCPUNums = jobInfo.Spec.NTasksPerNode
 	// 14. API Server的地址
-	conf.APIServerAddr = args.APIServerAddr
+	conf.APIServerAddr = config.GetAPIServerURLPrefix()
 	// 15. 任务的ID
 	conf.JobUUID = jobInfo.Metadata.UUID
 	// 16. 远程的工作目录
@@ -200,9 +198,10 @@ func prepareJobConfig() (*jobserver.JobServerConfig, error) {
 // YourAPIServerAddr: http://192.168.126.130:8090
 func main() {
 	// 第一个参数 指针、第二个参数的名字 第三个参数默认值 第四个参数的描述帮助信息
+	apiServerAddr := config.GetAPIServerURLPrefix()
 	flag.StringVar(&args.JobName, "jobName", "", "-jobName YourJobName")
 	flag.StringVar(&args.JobNamespace, "jobNamespace", "", "-jobNamespace YourJobNamespace")
-	flag.StringVar(&args.APIServerAddr, "apiServerAddr", Default_API_Server_Addr, "-apiServerAddr YourAPIServerAddr")
+	flag.StringVar(&apiServerAddr, "apiServerAddr", config.GetAPIServerURLPrefix(), "-apiServerAddr YourAPIServerAddr")
 	flag.Parse()
 
 	if args.JobName == "" || args.JobNamespace == "" {

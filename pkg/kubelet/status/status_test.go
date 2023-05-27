@@ -2,17 +2,14 @@ package status
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/config"
 	"testing"
-)
-
-const (
-	apiserverPrefix = "http://127.0.0.1:8090"
 )
 
 // 测试执行之前，先删除Redis中的所有数据
 func TestMain(m *testing.M) {
 	// 1. 删除Redis中的所有数据
-	statusManager := NewStatusManager(apiserverPrefix)
+	statusManager := NewStatusManager(config.GetAPIServerIP())
 	statusManager.ResetCache()
 
 	// 2. 执行测试用例
@@ -45,7 +42,7 @@ func TestAddPodToCache(t *testing.T) {
 	}
 
 	// 2. 初始化一个StatusManager对象
-	statusManager := NewStatusManager(apiserverPrefix)
+	statusManager := NewStatusManager(config.GetAPIServerURLPrefix())
 	err := statusManager.AddPodToCache(pod1)
 
 	// 3. 检查返回值
@@ -61,7 +58,7 @@ func TestAddPodToCache(t *testing.T) {
 
 func TestGetPodFromCache(t *testing.T) {
 	// 1. 初始化一个StatusManager对象
-	statusManager := NewStatusManager(apiserverPrefix)
+	statusManager := NewStatusManager(config.GetAPIServerURLPrefix())
 
 	// 2. 调用GetPodFromCache()函数
 	pod, err := statusManager.GetPodFromCache("ABCD-ABCD-ABCD-ABCD")
@@ -89,7 +86,7 @@ func TestGetPodFromCache(t *testing.T) {
 
 func TestGetAllPodFromCache(t *testing.T) {
 	// 1. 初始化一个StatusManager对象
-	statusManager := NewStatusManager(apiserverPrefix)
+	statusManager := NewStatusManager(config.GetAPIServerURLPrefix())
 
 	// 2. 调用GetAllPodFromCache()函数
 	podMap, err := statusManager.GetAllPodFromCache()
@@ -115,7 +112,7 @@ func TestGetAllPodFromCache(t *testing.T) {
 
 func TestDelPodFromCache(t *testing.T) {
 	// 1. 初始化一个StatusManager对象
-	statusManager := NewStatusManager(apiserverPrefix)
+	statusManager := NewStatusManager(config.GetAPIServerURLPrefix())
 
 	// 2. 调用DelPodFromCache()函数
 	err := statusManager.DelPodFromCache("ABCD-ABCD-ABCD-ABCD")
@@ -140,7 +137,7 @@ func TestDelPodFromCache(t *testing.T) {
 
 func TestReset(t *testing.T) {
 	// 1. 初始化一个StatusManager对象
-	statusManager := NewStatusManager(apiserverPrefix)
+	statusManager := NewStatusManager(config.GetAPIServerURLPrefix())
 
 	// 2. 调用Reset()函数
 	err := statusManager.ResetCache()

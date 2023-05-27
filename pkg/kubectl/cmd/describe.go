@@ -27,6 +27,7 @@ func init() {
 }
 
 type DescribeObject string
+
 // ==============================================
 // 通过kind describe资源
 // ==============================================
@@ -66,7 +67,7 @@ func describeKindHandler(cmd *cobra.Command, args []string) {
 }
 
 func describeNamespaceObjects(kind, namespace string) error {
-	url := config.API_Server_URL_Prefix + config.ApiResourceMap[kind]
+	url := config.GetAPIServerURLPrefix() + config.ApiResourceMap[kind]
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, namespace)
 
 	// 根据 Kind 类型从映射中查找相应的结构体类型
@@ -101,7 +102,7 @@ func describeNamespaceObjects(kind, namespace string) error {
 }
 
 func describeSpecificObject(kind, namespace, name string) error {
-	url := config.API_Server_URL_Prefix + config.ApiSpecResourceMap[kind]
+	url := config.GetAPIServerURLPrefix() + config.ApiSpecResourceMap[kind]
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 	fmt.Printf("describeSpecificObject: url: %s\n", url)

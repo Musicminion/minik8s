@@ -18,9 +18,9 @@ type KubeletConfig struct {
 }
 
 func DefaultKubeletConfig() *KubeletConfig {
-	apiserverIP := "127.0.0.1"
-	apiserverPort := 8090
-	apiserverScheme := "http://"
+	apiserverIP := config.GetAPIServerIP()
+	apiserverPort := config.API_Server_Port
+	apiserverScheme := config.API_Server_Scheme
 	apiserverURLPrefix := apiserverScheme + apiserverIP + ":" + strconv.Itoa(apiserverPort)
 	lwconf := listwatcher.DefaultListwatcherConfig()
 
@@ -35,10 +35,10 @@ func DefaultKubeletConfig() *KubeletConfig {
 }
 
 func ProductionKubeletConfig() *KubeletConfig {
-	apiserverIP := config.API_Server_IP
+	apiserverIP := config.GetAPIServerIP()
 	apiserverPort := config.API_Server_Port
 	apiserverScheme := config.API_Server_Scheme
-	apiserverURLPrefix := config.API_Server_URL_Prefix
+	apiserverURLPrefix := config.GetAPIServerURLPrefix()
 	lwconf := listwatcher.DefaultListwatcherConfig()
 
 	return &KubeletConfig{

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/pkg/serveless/dockerregistry"
@@ -185,8 +186,8 @@ func (c *funcController) CreateFuncReplica(f *apiObject.Function) error {
 	// 【TODO】
 	replica := &apiObject.ReplicaSet{
 		Basic: apiObject.Basic{
-			Kind:       "Replicaset",
-			APIVersion: "v1",
+			Kind:       apiObject.ReplicaSetKind,
+			APIVersion: serverconfig.APIVersion,
 			Metadata: apiObject.Metadata{
 				Name:      f.Metadata.Name,
 				Namespace: f.Metadata.Namespace,
@@ -233,7 +234,7 @@ func (c *funcController) CreateFuncReplica(f *apiObject.Function) error {
 		},
 	}
 
-	url := config.API_Server_URL_Prefix + config.ReplicaSetsURL
+	url := config.GetAPIServerURLPrefix() + config.ReplicaSetsURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, f.Metadata.Namespace)
 
 	code, _, err := netrequest.PostRequestByTarget(url, replica)
@@ -251,7 +252,7 @@ func (c *funcController) CreateFuncReplica(f *apiObject.Function) error {
 
 func (c *funcController) DeleteFuncReplica(f *apiObject.Function) error {
 	// 【TODO】
-	url := config.API_Server_URL_Prefix + config.ReplicaSetSpecURL
+	url := config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, f.Metadata.Namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, f.Metadata.Name)
 

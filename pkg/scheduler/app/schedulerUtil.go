@@ -10,7 +10,7 @@ import (
 )
 
 func (sch *Scheduler) GetAllNodes() (nodes []apiObject.NodeStore, err error) {
-	uriPrefix := config.API_Server_URL_Prefix
+	uriPrefix := config.GetAPIServerURLPrefix()
 	uri := uriPrefix + config.NodesURL
 	var allNodes []apiObject.NodeStore
 	code, err := netrequest.GetRequestByTarget(uri, &allNodes, "data")

@@ -398,7 +398,6 @@ func (c *ContainerManager) CalculateContainerResource(containerID string) (float
 	}
 
 	// 计算cpu使用率
-	k8log.DebugLog("Container Manager", "container "+containerID+" stats: "+fmt.Sprintf("%+v", stats))
 	cpuPercent := calculateCPUPercentUnix(stats)
 	// 计算memory使用率
 	memoryPercent := calculateMemoryPercentUnix(stats)

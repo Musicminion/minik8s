@@ -178,7 +178,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 
 // func checkAndCreate(funcNamespace, funcName string) {
 // 	// 尝试通过api server获取到function的信息
-// 	url := config.API_Server_URL_Prefix + config.FunctionSpecURL
+// 	url := config.GetAPIServerURLPrefix() + config.FunctionSpecURL
 // 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 // 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 
@@ -194,7 +194,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 // 	}
 
 // 	// 尝试通过api server获取到function的对应的replicaset的信息
-// 	url = config.API_Server_URL_Prefix + config.ReplicaSetSpecURL
+// 	url = config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 // 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 // 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 

@@ -26,7 +26,7 @@ func NewReplicaController() (ReplicaController, error) {
 }
 
 func (rc *replicaController) GetAllReplicasetsFromAPIServer() ([]apiObject.ReplicaSetStore, error) {
-	url := config.API_Server_URL_Prefix + config.GlobalReplicaSetsURL
+	url := config.GetAPIServerURLPrefix() + config.GlobalReplicaSetsURL
 
 	allReplicaSets := make([]apiObject.ReplicaSetStore, 0)
 
@@ -128,7 +128,7 @@ func (rc *replicaController) AddReplicaPodsNums(replicaMeta *apiObject.Metadata,
 	}
 
 	// 通过api server创建pod
-	url := config.API_Server_URL_Prefix + config.PodsURL
+	url := config.GetAPIServerURLPrefix() + config.PodsURL
 
 	errStr := ""
 	for i := 0; i < num; i++ {
@@ -168,7 +168,7 @@ func (rc *replicaController) ReduceReplicaPodsNums(meetRequirePods []apiObject.P
 	}
 
 	for i := 0; i < num; i++ {
-		url := config.API_Server_URL_Prefix + config.PodSpecURL
+		url := config.GetAPIServerURLPrefix() + config.PodSpecURL
 		url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, meetRequirePods[i].Metadata.Namespace)
 		url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, meetRequirePods[i].Metadata.Name)
 
@@ -214,7 +214,7 @@ func (rc *replicaController) UpdateReplicaSetStatus(meetRequirePods []apiObject.
 	// 2. 更新replicaset的状态
 	url := stringutil.Replace(config.ReplicaSetSpecStatusURL, config.URL_PARAM_NAMESPACE_PART, replicaset.Metadata.Namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, replicaset.Metadata.Name)
-	url = config.API_Server_URL_Prefix + url
+	url = config.GetAPIServerURLPrefix() + url
 
 	code, _, err := netrequest.PutRequestByTarget(url, &newReplicaSetStatus)
 

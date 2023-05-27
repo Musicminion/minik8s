@@ -71,7 +71,6 @@ func (r *ReplicaSetStore) ToReplicaSet() *ReplicaSet {
 	}
 }
 
-
 // 以下函数用来实现apiObject.Object接口
 func (r *ReplicaSet) GetObjectKind() string {
 	return r.Kind

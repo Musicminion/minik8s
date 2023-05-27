@@ -2,24 +2,43 @@ package function
 
 import (
 	"errors"
+	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
 	"miniK8s/util/executor"
 	netrequest "miniK8s/util/netRequest"
+	"miniK8s/util/stringutil"
 	"net/http"
+	"time"
 )
+
+type LaunchRecord struct {
+	StartTime     time.Time
+	EndTime       time.Time
+	FuncName      string
+	FuncNamespace string
+	FuncCallTime  int
+}
 
 type FuncController interface {
 	Run()
+
+	GetFuncRecord(funcName, funcNamespace string) *LaunchRecord
+	AddCallRecord(funcName, funcNamespace string) error
+
+	ScaleUp(funcName, funcNamespace string, num int) error
+	ScaleDown(funcName, funcNamespace string) error
 }
 
 type funcController struct {
-	cache map[string]*apiObject.Function
+	cache      map[string]*apiObject.Function
+	CallRecord map[string]*LaunchRecord // key: namespace/funcName
 }
 
 func NewFuncController() FuncController {
 	return &funcController{
-		cache: make(map[string]*apiObject.Function),
+		cache:      make(map[string]*apiObject.Function),
+		CallRecord: make(map[string]*LaunchRecord),
 	}
 }
 
@@ -55,9 +74,35 @@ func (c *funcController) routine() {
 			// 如果不在cache中，说明是新的function，需要创建
 			// 【TODO】
 			c.cache[f.Metadata.UUID] = &f
+			c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name] = &LaunchRecord{
+				FuncName:      f.Metadata.Name,
+				FuncNamespace: f.Metadata.Namespace,
+				StartTime:     time.Now(),
+				EndTime:       time.Now().Add(time.Duration(5) * time.Minute),
+			}
 			c.CreateFunction(&f)
 
 		} else {
+			// 检查c.CallRecord是否过期
+			if c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name] != nil {
+				if time.Now().After(c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].EndTime) {
+
+					if c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime == 0 {
+						// 缩容
+						c.ScaleDown(f.Metadata.Name, f.Metadata.Namespace)
+					} else if c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime > 100 {
+						newSize := 2 + c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime/100
+						// 扩容
+						c.ScaleUp(f.Metadata.Name, f.Metadata.Namespace, newSize)
+					}
+
+					// 过期了，需要重置
+					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime = 0
+					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].StartTime = time.Now()
+					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].EndTime = time.Now().Add(time.Duration(5) * time.Minute)
+				}
+			}
+
 			// 如果在cache中，说明是已经存在的function，需要检查是否需要更新
 			// 【TODO】
 			if !c.ComplareTwoFunc(c.cache[f.Metadata.UUID], &f) {
@@ -76,6 +121,7 @@ func (c *funcController) routine() {
 			//
 			c.DeleteFunction(f)
 			delete(c.cache, uuid)
+			delete(c.CallRecord, f.Metadata.Namespace+"/"+f.Metadata.Name)
 		}
 	}
 
@@ -91,10 +137,104 @@ func (c *funcController) ComplareTwoFunc(old *apiObject.Function, new *apiObject
 	if len(old.Spec.UserUploadFile) != len(new.Spec.UserUploadFile) {
 		return false
 	}
-
 	return true
 }
 
 func (c *funcController) Run() {
 	executor.Period(FuncControllerUpdateDelay, FuncControllerUpdateFrequency, c.routine, FuncControllerUpdateLoop)
+}
+
+func (c *funcController) GetFuncRecord(funcName, funcNamespace string) *LaunchRecord {
+	return c.CallRecord[funcNamespace+"/"+funcName]
+}
+
+func (c *funcController) AddCallRecord(funcName, funcNamespace string) error {
+
+	if c.CallRecord[funcNamespace+"/"+funcName] != nil {
+		c.CallRecord[funcNamespace+"/"+funcName].FuncCallTime++
+	} else {
+		c.CallRecord[funcNamespace+"/"+funcName] = &LaunchRecord{
+			FuncName:      funcName,
+			FuncNamespace: funcNamespace,
+			StartTime:     time.Now(),
+			EndTime:       time.Now().Add(time.Duration(5) * time.Minute),
+			FuncCallTime:  1,
+		}
+	}
+	return nil
+}
+
+func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
+	fmt.Println("scale down start")
+	// 【TODO】
+	url := config.API_Server_URL_Prefix + config.FunctionSpecURL
+	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
+
+	replica := &apiObject.ReplicaSetStore{}
+	code, err := netrequest.GetRequestByTarget(url, replica, "data")
+
+	if err != nil {
+		return err
+	}
+
+	if code != http.StatusOK {
+		return errors.New("get function from apiserver failed, not 200")
+	}
+
+	if replica.Spec.Replicas > 0 {
+		replica.Spec.Replicas = replica.Spec.Replicas / 2
+	}
+
+	code, _, err = netrequest.PutRequestByTarget(url, replica)
+
+	if err != nil {
+		fmt.Println("put function from apiserver failed" + err.Error())
+		return err
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("put function from apiserver failed, not 200")
+		return errors.New("put function from apiserver failed, not 200")
+	}
+
+	fmt.Println("scale down end")
+	return nil
+}
+
+// 【TODO】
+func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error {
+	fmt.Println("scale up start")
+	// 【TODO】
+	url := config.API_Server_URL_Prefix + config.FunctionSpecURL
+	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
+
+	replica := &apiObject.ReplicaSetStore{}
+	code, err := netrequest.GetRequestByTarget(url, replica, "data")
+
+	if err != nil {
+		return err
+	}
+
+	if code != http.StatusOK {
+		return errors.New("get function from apiserver failed, not 200")
+	}
+
+	if replica.Spec.Replicas > 0 {
+		replica.Spec.Replicas = num
+	}
+
+	code, _, err = netrequest.PutRequestByTarget(url, replica)
+
+	if err != nil {
+		return err
+	}
+
+	if code != http.StatusOK {
+		return errors.New("put function from apiserver failed, not 200")
+	}
+
+	fmt.Println("scale up end")
+	return nil
 }

@@ -12,6 +12,12 @@ type HPASpec struct {
 	MaxReplicas    int           `yaml:"maxReplicas" json:"maxReplicas"`
 	Workload       Basic         `yaml:"workload" json:"workload"`
 	AdjustInterval time.Duration `yaml:"adjustInterval" json:"adjustInterval"` // 调整的时间间隔
+	Selector       HPASelector   `yaml:"selector" json:"selector"`
+	Metrics        HPAMetrics  `yaml:"metrics" json:"metrics"`
+}
+
+type HPASelector struct {
+	MatchLabels map[string]string `yaml:"matchLabels" json:"matchLabels"`
 }
 
 type HPA struct {
@@ -27,6 +33,8 @@ type HPAStore struct {
 
 type HPAStatus struct {
 	CurrentReplicas int `yaml:"currentReplicas" json:"currentReplicas"`
+	CurCPUPercent    float64 `yaml:"curCPUPercent" json:"curCPUPercent"`
+	CurMemPercent    float64 `yaml:"curMemPercent" json:"curMemPercent"`
 }
 
 // 定义hpa到hpaStore的转换函数
@@ -38,9 +46,23 @@ func (hpa *HPA) ToHPAStore() *HPAStore {
 }
 
 // 定义hpaStore到hpa的转换函数
-func (hpaStore *HPAStore) ToHPA() *HPA {
+func (hs *HPAStore) ToHPA() *HPA {
 	return &HPA{
-		Basic: hpaStore.Basic,
-		Spec:  hpaStore.Spec,
+		Basic: hs.Basic,
+		Spec:  hs.Spec,
 	}
+}
+
+
+// 以下函数用来实现apiObject.Object接口
+func (h *HPA) GetObjectKind() string {
+	return h.Kind
+}
+
+func (h *HPA) GetObjectName() string {
+	return h.Metadata.Name
+}
+
+func (h *HPA) GetObjectNamespace() string {
+	return h.Metadata.Namespace
 }

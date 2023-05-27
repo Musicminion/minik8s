@@ -11,3 +11,18 @@ type FunctionSpec struct {
 	UserUploadFile     []byte `yaml:"userUploadFile" json:"userUploadFile"`
 	UserUploadFilePath string `yaml:"userUploadFilePath" json:"userUploadFilePath"`
 }
+
+
+
+// 以下函数用来实现apiObject.Object接口
+func (f *Function) GetObjectKind() string {
+	return f.Kind
+}
+
+func (f *Function) GetObjectName() string {
+	return f.Metadata.Name
+}
+
+func (f *Function) GetObjectNamespace() string {
+	return f.Metadata.Namespace
+}

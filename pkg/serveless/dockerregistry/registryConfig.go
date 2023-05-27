@@ -8,7 +8,7 @@ const (
 	Registry_Server_IP             = "127.0.0.1"
 	Registry_Server_BindIP         = "0.0.0.0"
 	Registry_Server_Port           = "5000"
-	Registry_Server_URL            = Registry_Server_IP + ":" + Registry_Server_Port
+	Registry_Server_Prefix         = Registry_Server_IP + ":" + Registry_Server_Port
 	Registry_Server_Port_Protocol  = "5000/tcp"
 	Registry_Server_Container_Name = "minik8s-registry"
 

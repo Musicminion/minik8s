@@ -70,3 +70,17 @@ func (r *ReplicaSetStore) ToReplicaSet() *ReplicaSet {
 		Spec:  r.Spec,
 	}
 }
+
+
+// 以下函数用来实现apiObject.Object接口
+func (r *ReplicaSet) GetObjectKind() string {
+	return r.Kind
+}
+
+func (r *ReplicaSet) GetObjectName() string {
+	return r.Metadata.Name
+}
+
+func (r *ReplicaSet) GetObjectNamespace() string {
+	return r.Metadata.Namespace
+}

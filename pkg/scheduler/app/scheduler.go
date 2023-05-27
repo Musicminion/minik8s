@@ -165,6 +165,10 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 
 	allNodes, err := sch.GetAllNodes()
 
+	if err != nil {
+		k8log.ErrorLog("Scheduler", "获取所有节点失败"+err.Error())
+	}
+
 	// 调度的时候筛选存活的节点
 	nodes := make([]apiObject.NodeStore, 0)
 	for _, node := range allNodes {
@@ -173,21 +177,33 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		}
 	}
 
-	if err != nil {
-		k8log.ErrorLog("Scheduler", "获取所有节点失败"+err.Error())
-	}
-
-	scheduledNode := sch.ChooseFromNodes(nodes)
-
-	if scheduledNode == "" {
-		k8log.ErrorLog("Scheduler", "没有可用的节点")
-		return
-	}
-
+	// 反序列化pod
 	podStore := &apiObject.PodStore{}
 	err = json.Unmarshal([]byte(parsedMsg.Content), &podStore)
 	if err != nil {
 		k8log.ErrorLog("Scheduler", "反序列化pod失败")
+		return
+	}
+
+	var scheduledNode string
+	
+	// 如果在pod中指定了node
+	if podStore.Spec.NodeName != "" {
+		// 检查node是否存在
+		for _, node := range nodes {
+			if node.GetName() == podStore.Spec.NodeName {
+				scheduledNode = podStore.Spec.NodeName
+			}
+		}
+	}
+	
+	// 如果未指定node或者指定的node无效，则选择一个节点
+	if scheduledNode == "" {
+		scheduledNode = sch.ChooseFromNodes(nodes)
+	}
+
+	if scheduledNode == "" {
+		k8log.ErrorLog("Scheduler", "没有可用的节点")
 		return
 	}
 
@@ -209,14 +225,12 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		return
 	}
 
-	// TODO: 将podUpdate发送给对应的Node
 	podUpdate := &entity.PodUpdate{
 		Action:    message.CREATE,
 		PodTarget: *podStore,
 		Node:      scheduledNode,
 	}
 	msgutil.PublishUpdatePod(podUpdate)
-	// sch.publisher.Publish("apiServer", message.ContentTypeJson, result)
 }
 
 // 调度器的消息处理函数,分发给不同的消息处理函数

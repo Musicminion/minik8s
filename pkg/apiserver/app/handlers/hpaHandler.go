@@ -10,6 +10,7 @@ import (
 	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"net/http"
+	"path"
 
 	"github.com/gin-gonic/gin"
 	"github.com/goccy/go-json"
@@ -182,7 +183,7 @@ func AddHPA(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusCreated, gin.H{
 		"message": "AddHPA: success",
 	})
 
@@ -232,7 +233,7 @@ func DeleteHPA(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "DeleteHPA: success",
 	})
 
@@ -254,14 +255,6 @@ func GetGlobalHPAs(c *gin.Context) {
 		})
 		return
 	}
-
-	// if len(res) == 0 {
-	// 	c.JSON(http.StatusNotFound, gin.H{
-	// 		"error": "GetGlobalHPAs: not found",
-	// 	})
-	// 	return
-	// }
-
 	targetHPAs := make([]string, 0)
 	for _, hpa := range res {
 		targetHPAs = append(targetHPAs, string(hpa.Value))
@@ -270,4 +263,85 @@ func GetGlobalHPAs(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": stringutil.StringSliceToJsonArray(targetHPAs),
 	})
+}
+
+// PUT 更新HPAStatus
+func UpdateHPAStatus(c *gin.Context) {
+	// log
+	k8log.InfoLog("APIServer", "UpdateHPAStatus")
+	hpaNamespace := c.Param(config.URL_PARAM_NAMESPACE)
+	hpaName := c.Param(config.URL_PARAM_NAME)
+
+	// 检查参数
+	if hpaNamespace == "" || hpaName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "namespace or name is empty",
+		})
+		return
+	}
+
+	// 从etcd中获取指定的hpa
+	key := path.Join(serverconfig.EtcdHpaPath, hpaNamespace, hpaName)
+	res, err := etcdclient.EtcdStore.Get(key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateHPAStatus: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+	if len(res) != 1 {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "UpdateHPAStatus: " + "not found",
+		})
+		return
+	}
+
+	// 把hpaStoreJson转化为hpaStore
+	hpaStore := &apiObject.HPAStore{}
+	err = json.Unmarshal([]byte(res[0].Value), hpaStore)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateHPAStatus: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	// 解析请求体里面的HpaStatus
+	hpaStatus := &apiObject.HPAStatus{}
+	err = c.ShouldBind(hpaStatus)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "bind hpa status err: " + err.Error(),
+		})
+		return
+	}
+
+	// 更新hpaStore的status
+	hpaStore.Status = *hpaStatus
+
+	// 把hpaStore转化为json
+	hpaJson, err := json.Marshal(hpaStore)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "marshal hpa err, " + err.Error(),
+		})
+		return 
+	}
+
+	// 更新etcd中的hpa
+	err = etcdclient.EtcdStore.Put(key, hpaJson)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "UpdateHPAStatus: " + err.Error(),
+		})
+		k8log.ErrorLog("APIServer", err.Error())
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "UpdateHPAStatus: success",
+	})
+
 }

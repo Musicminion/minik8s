@@ -3,8 +3,8 @@ package netrequest
 import (
 	"bytes"
 	"encoding/json"
-	"net/http"
 	"miniK8s/pkg/k8log"
+	"net/http"
 )
 
 // Post请求
@@ -28,4 +28,13 @@ func PostRequestByTarget(uri string, target interface{}) (int, interface{}, erro
 	}
 
 	return response.StatusCode, bodyJson, nil
+}
+
+func PostString(uri string, str string) (*http.Response, error) {
+	cli := http.Client{}
+	req, err := http.NewRequest(http.MethodPost, uri, bytes.NewReader([]byte(str)))
+	if err != nil {
+		return nil, err
+	}
+	return cli.Do(req)
 }

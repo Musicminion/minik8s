@@ -1,53 +1,51 @@
 package apiObject
 
 type ServiceStatus struct {
-	// 
-	Endpoints []Endpoint 
-	Phase string	
-}	
-
+	//
+	Endpoints []Endpoint
+	Phase     string
+}
 
 // ServicePort contains information on service's port.
 type ServicePort struct {
 	// AppProtocol    string   `yaml:"appProtocol"`
-    Name       string        `yaml:"name"`
+	Name string `yaml:"name"`
 	// The port that will be exposed by this service.
-    Port       int				`yaml:"port"`
-	// The port on each node on which this service is exposed when type is NodePort or LoadBalancer. 
-	NodePort   int 				`yaml:"nodePort"`
+	Port int `yaml:"port"`
+	// The port on each node on which this service is exposed when type is NodePort or LoadBalancer.
+	NodePort int `yaml:"nodePort"`
 
-    TargetPort int          `yaml:"targetPort"`
+	TargetPort int `yaml:"targetPort"`
 
 	// The IP protocol for this port. Supports "TCP", "UDP", and "SCTP". Default is TCP.
-    Protocol   string        `yaml:"protocol"`
+	Protocol string `yaml:"protocol"`
 }
 
 // https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.27/#servicespec-v1-core
 type ServiceSpec struct {
 	// 将service流量路由到具有与此selector匹配的标签键和值的pod。
-    Selector           map[string]string 	`yaml:"selector"`
+	Selector map[string]string `yaml:"selector"`
 	// 该service所暴露的端口列表。
-    Ports              []ServicePort		`yaml:"ports"`
+	Ports []ServicePort `yaml:"ports"`
 	// 是否将为LoadBalancer类型的service自动分配节点端口。默认为 "true"。
-	AllocateLoadBalancerNodePorts  bool   `yaml:"allocateLoadBalancerNodePorts"`
+	AllocateLoadBalancerNodePorts bool `yaml:"allocateLoadBalancerNodePorts"`
 	// 决定该service的暴露方式。默认为 ClusterIP。有效选项是ExternalName、ClusterIP、NodePort和LoadBalancer。
-    Type               string   `yaml:"type"`
+	Type string `yaml:"type"`
 	// service的IP地址，通常是随机分配的。
-	ClusterIP         string    `yaml:"clusterIP"`
+	ClusterIP string `yaml:"clusterIP"`
 	// 分配给该服务的IP地址列表，通常是随机分配的。
-	ClusterIPs		[]string    `yaml:"clusterIPs"`
+	ClusterIPs []string `yaml:"clusterIPs"`
 }
 
-
 type Service struct {
-	Basic  `json:",inline" yaml:",inline"`
-	Spec ServiceSpec `json:"spec" yaml:"spec"`
+	Basic `json:",inline" yaml:",inline"`
+	Spec  ServiceSpec `json:"spec" yaml:"spec"`
 }
 
 // ServiceStore用来存储Service的设定和它的状态
 type ServiceStore struct {
 	Basic `json:",inline" yaml:",inline"`
-	Spec ServiceSpec `json:"spec" yaml:"spec"`
+	Spec  ServiceSpec `json:"spec" yaml:"spec"`
 	// Service的状态
 	Status ServiceStatus `json:"status" yaml:"status"`
 }
@@ -73,7 +71,7 @@ func (s *Service) GetAPIVersion() string {
 	return s.Basic.APIVersion
 }
 
-func (s *Service) GetKind() string{
+func (s *Service) GetKind() string {
 	return s.Basic.Kind
 }
 
@@ -93,12 +91,11 @@ func (s *Service) GetNamespace() string {
 	return s.Basic.Metadata.Namespace
 }
 
-
 func (s *ServiceStore) GetAPIVersion() string {
 	return s.Basic.APIVersion
 }
 
-func (s *ServiceStore) GetKind() string{
+func (s *ServiceStore) GetKind() string {
 	return s.Basic.Kind
 }
 
@@ -130,7 +127,6 @@ func (s *Service) GetObjectName() string {
 func (s *Service) GetObjectNamespace() string {
 	return s.Metadata.Namespace
 }
-
 
 // 从Condition到ServiceStatus基本都是和负载均衡相关的内容，目前暂不考虑实现
 

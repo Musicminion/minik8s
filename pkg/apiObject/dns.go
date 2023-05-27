@@ -74,3 +74,4 @@ func (d *Dns) GetObjectName() string {
 func (d *Dns) GetObjectNamespace() string {
 	return d.Metadata.Namespace
 }
+

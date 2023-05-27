@@ -207,10 +207,9 @@ func AddPod(c *gin.Context) {
 	// 哪怕用户自己设置了UUID，也会被覆盖
 	pod.Metadata.UUID = uuid.NewUUID()
 
-	
 	// 把Pod转化为PodStore
 	podStore := pod.ToStore()
-	
+
 	// 设置pod的status
 	podStore.Status.Phase = apiObject.PodPending
 
@@ -250,9 +249,9 @@ func AddPod(c *gin.Context) {
 		后面需要发送请求给调度器，让调度器进行调度到节点上面
 		注意，只有当nodeName为空的时候，才会进行调度
 	*/
-	
+
 	msgutil.PublishRequestNodeScheduleMsg(podStore)
-	
+
 }
 
 // 删除的时候直接删除etcd中的数据即可
@@ -534,7 +533,7 @@ func UpdatePodStatus(c *gin.Context) {
 	// 获取请求体，转化为PodStatus
 	podStatus := &apiObject.PodStatus{}
 	// var podStatus apiObject.PodStatus
-	err = c.ShouldBind(&podStatus)
+	err = c.ShouldBind(podStatus)
 
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{

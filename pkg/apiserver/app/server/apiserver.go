@@ -155,11 +155,12 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.HPASpecStatusURL, handlers.UpdateHPAStatus) // 更新hpaStatus
 
 	// WorkFlow相关的api
-	s.router.GET(config.WorkflowURL, handlers.GetWorkFlows)          // 获取所有WorkFlow
-	s.router.GET(config.WorkflowSpecURL, handlers.GetWorkFlow)       // 获取单个WorkFlow
-	s.router.POST(config.WorkflowURL, handlers.AddWorkFlow)          // 创建WorkFlow
-	s.router.PUT(config.WorkflowSpecURL, handlers.UpdateWorkFlow)    // 更新WorkFlow
-	s.router.DELETE(config.WorkflowSpecURL, handlers.DeleteWorkFlow) // 删除WorkFlow
+	s.router.GET(config.GlobalWorkflowsURL, handlers.GetGlobalWorkFlows) // 获取所有WorkFlow
+	s.router.GET(config.WorkflowURL, handlers.GetWorkFlows)              // 获取所有WorkFlow
+	s.router.GET(config.WorkflowSpecURL, handlers.GetWorkFlow)           // 获取单个WorkFlow
+	s.router.POST(config.WorkflowURL, handlers.AddWorkFlow)              // 创建WorkFlow
+	s.router.PUT(config.WorkflowSpecURL, handlers.UpdateWorkFlow)        // 更新WorkFlow
+	s.router.DELETE(config.WorkflowSpecURL, handlers.DeleteWorkFlow)     // 删除WorkFlow
 
 	// WorkFlowStatus相关的api
 	s.router.GET(config.WorkflowSpecStatusURL, handlers.GetWorkFlowStatus)    // 获取WorkFlowStatus

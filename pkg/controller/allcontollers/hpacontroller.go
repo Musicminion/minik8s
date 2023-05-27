@@ -199,7 +199,7 @@ func (hc *hpaController) Routine() {
 
 	// 对于已经删除的hpa，如果发现其对应的pod还存在，那么就删除这些pod
 	for _, pod := range pods {
-		if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_UUID] != "" {
+		if pod.Metadata.Labels[minik8stypes.Pod_HPA_UUID] != "" {
 			if pod.Metadata.Labels[minik8stypes.Pod_HPA_Namespace] == "" {
 				continue
 			}

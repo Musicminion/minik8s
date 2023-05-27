@@ -233,7 +233,7 @@ func DeleteHPA(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.JSON(http.StatusNoContent, gin.H{
 		"message": "DeleteHPA: success",
 	})
 

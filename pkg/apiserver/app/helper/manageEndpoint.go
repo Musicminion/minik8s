@@ -19,23 +19,10 @@ import (
 	"sync"
 )
 
-// 定义缓存对象
-var cache = struct {
-	endpoints map[string][]apiObject.Endpoint
-	sync.RWMutex
-}{endpoints: make(map[string][]apiObject.Endpoint)}
-
 // 根据key和value获取所有的endpoints
 func GetEndpoints(key, value string) ([]apiObject.Endpoint, error) {
 	// 构建终端数组URL
 	endpointsKVURL := path.Join(serverconfig.EndpointPath, key, value)
-	//TODO: 从缓存中查找endpoint
-	cache.RLock()
-	if endpoints, ok := cache.endpoints[endpointsKVURL]; ok {
-		cache.RUnlock()
-		return endpoints, nil
-	}
-	cache.RUnlock()
 
 	// 从Etcd中获取终端数组
 	endpointsJsonStr, err := etcdclient.EtcdStore.PrefixGet(endpointsKVURL)
@@ -77,11 +64,6 @@ func GetEndpoints(key, value string) ([]apiObject.Endpoint, error) {
 	for endpoint := range endpointChan {
 		endpointArray = append(endpointArray, endpoint)
 	}
-
-	// TODO: 更新缓存数组
-	cache.Lock()
-	cache.endpoints[endpointsKVURL] = endpointArray
-	cache.Unlock()
 
 	return endpointArray, nil
 }
@@ -184,10 +166,6 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 				k8log.ErrorLog("APIServer", "publish endpoint update message failed"+err.Error())
 			}
 		}
-
-		cache.Lock()
-		cache.endpoints[endpointsKVURL] = totalEndpoints
-		cache.Unlock()
 	}
 
 	return nil
@@ -261,9 +239,6 @@ func DeleteEndpoints(pod apiObject.PodStore) error {
 			}
 		}
 
-		cache.Lock()
-		cache.endpoints[endpointsKVURL] = totalEndpoints
-		cache.Unlock()
 	}
 
 	return nil

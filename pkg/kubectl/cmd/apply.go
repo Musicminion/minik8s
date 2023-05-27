@@ -34,6 +34,7 @@ const (
 	Apply_kind_Dns        ApplyObject = "Dns"
 	Apply_kind_Hpa        ApplyObject = "Hpa"
 	Apply_kind_Func       ApplyObject = "Function"
+	Apply_kind_Workflow   ApplyObject = "Workflow"
 )
 
 // Apply的Result
@@ -96,6 +97,8 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		applyHpaHandler(fileContent)
 	case string(Apply_kind_Func):
 		applyFuncHandler(fileContent)
+	case string(Apply_kind_Workflow):
+		applyWorkflowHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
@@ -542,6 +545,53 @@ func applyHpaHandler(fileContent []byte) {
 	} else {
 		printApplyResult(Apply_kind_Hpa, ApplyResult_Failed, "failed", msg)
 	}
+}
+
+// ==============================================
+//
+// 处理Workflow的Apply
+//
+//
+// ==============================================
+
+func applyWorkflowHandler(fileContent []byte) {
+	var workflow apiObject.Workflow
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &workflow)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Workflow的名字是否为空
+	if workflow.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "empty name", "workflow name is empty")
+		return
+	}
+
+	URL := config.GetAPIServerURLPrefix() + config.WorkflowURL
+
+	if workflow.Metadata.Namespace == "" {
+		workflow.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, workflow.Metadata.Namespace)
+
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, workflow)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
+
+	if code == http.StatusCreated {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_kind_Workflow, workflow.Metadata.Name, workflow.Metadata.Namespace)
+	} else {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "failed", msg)
+	}
+
 }
 
 // ==============================================

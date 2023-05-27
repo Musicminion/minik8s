@@ -118,7 +118,7 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 		}
 	}
 
-	statusURL := config.API_Server_URL_Prefix + config.WorkflowSpecStatusURL
+	statusURL := config.GetAPIServerURLPrefix() + config.WorkflowSpecStatusURL
 	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, workflow.GetNamespace())
 	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, workflow.GetName())
 

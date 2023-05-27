@@ -103,7 +103,7 @@ func (hc *hpaController) AddOneHpaPod(hpa apiObject.HPAStore, podTemplate apiObj
 func (hc *hpaController) ReduceOneHpaPod(pod apiObject.PodStore) error {
 	k8log.DebugLog("HpaController", fmt.Sprintf("ReduceOneHpaPod: pod=%s", pod.Metadata.Name))
 	// 通过api server删除pod
-	url := config.API_Server_URL_Prefix + config.PodsURL
+	url := config.API_Server_URL_Prefix + config.PodSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, pod.Metadata.Namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, pod.Metadata.Name)
 
@@ -200,14 +200,14 @@ func (hc *hpaController) Routine() {
 	// 对于已经删除的hpa，如果发现其对应的pod还存在，那么就删除这些pod
 	for _, pod := range pods {
 		if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_UUID] != "" {
-			if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] == "" {
+			if pod.Metadata.Labels[minik8stypes.Pod_HPA_Namespace] == "" {
 				continue
 			}
-			if pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name] == "" {
+			if pod.Metadata.Labels[minik8stypes.Pod_HPA_Name] == "" {
 				continue
 			}
 
-			key := pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Namespace] + "/" + pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name]
+			key := pod.Metadata.Labels[minik8stypes.Pod_HPA_Namespace] + "/" + pod.Metadata.Labels[minik8stypes.Pod_ReplicaSet_Name]
 			if _, ok := hpaMap[key]; !ok {
 				// 说明这个pod对应的replicasets已经被删除了，那么就删除这个pod
 				hc.ReduceOneHpaPod(pod)

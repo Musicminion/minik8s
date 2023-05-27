@@ -15,5 +15,5 @@ spec:
     matchLabels: 
       app: hpa
   metrics:
-    cpuPercent: 0.5
+    cpuPercent: 0.35
     memPercent: 0.5

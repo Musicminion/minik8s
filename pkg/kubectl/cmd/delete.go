@@ -59,7 +59,7 @@ func DeleteAPIObjectByKind(kind string, yamlContent []byte) error {
 		return errors.Errorf("Failed to get %s name", kind)
 	}
 
-	url := config.API_Server_URL_Prefix + config.ApiSpecResourceMap[kind]
+	url := config.GetAPIServerURLPrefix() + config.ApiSpecResourceMap[kind]
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 

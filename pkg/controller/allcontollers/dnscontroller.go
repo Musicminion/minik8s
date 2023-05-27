@@ -89,7 +89,6 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 	msgutil.PubelishUpdateHost(hostUpdate)
 }
 
-
 func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
 	dnsUpdate := &entity.DnsUpdate{}
 	err := json.Unmarshal([]byte(parsedMsg.Content), dnsUpdate)
@@ -132,7 +131,7 @@ func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
 		DnsTarget: dnsStore,
 		HostList:  dc.hostList,
 	}
-	
+
 	// TODO: 通知所有的节点进行hosts的修改
 	k8log.DebugLog("Dns-Controller", "DnsCreateHandler: publish hostUpdate")
 	msgutil.PubelishUpdateHost(hostUpdate)
@@ -190,7 +189,7 @@ func (dc *dnsController) CreateNginxPod() {
 	}
 
 	URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetPodNamespace())
-	URL = config.API_Server_URL_Prefix + URL
+	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxPod)
 	if err != nil {
@@ -222,7 +221,7 @@ func (dc *dnsController) CreateNginxService() {
 	}
 
 	URL := stringutil.Replace(config.ServiceURL, config.URL_PARAM_NAMESPACE_PART, nginxService.GetNamespace())
-	URL = config.API_Server_URL_Prefix + URL
+	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxService)
 	if err != nil {
@@ -245,7 +244,7 @@ func (dc *dnsController) UpdateNginxSvcIP() {
 	nginxSvc := &apiObject.Service{}
 	URL := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAMESPACE_PART, config.DefaultNamespace)
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, dc.nginxSvcName)
-	URL = config.API_Server_URL_Prefix + URL
+	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, err := netrequest.GetRequestByTarget(URL, nginxSvc, "data")
 	if err != nil {
@@ -279,7 +278,7 @@ func (dc *dnsController) CreateNginxDns() {
 	}
 
 	URL := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, nginxDns.GetDnsNamespace())
-	URL = config.API_Server_URL_Prefix + URL
+	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxDns)
 	if err != nil {

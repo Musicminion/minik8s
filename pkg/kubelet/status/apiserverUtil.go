@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	netrequest "miniK8s/util/netRequest"
@@ -255,8 +256,8 @@ func (s *statusManager) RegisterNode() error {
 	// 组装一个Node的数据
 	node := apiObject.Node{
 		NodeBasic: apiObject.NodeBasic{
-			APIVersion: "v1",
-			Kind:       "Node",
+			APIVersion: serverconfig.APIVersion,
+			Kind:       apiObject.NodeKind,
 			NodeMetadata: apiObject.NodeMetadata{
 				Name: s.runtimeManager.GetRuntimeNodeName(),
 			},

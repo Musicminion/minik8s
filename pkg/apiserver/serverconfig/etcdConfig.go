@@ -41,6 +41,9 @@ const (
 
 	// 完整路径：/registry/function/<namespace>/<function-name>
 	EtcdFunctionPath = "/registry/function/"
+
+	// 完整路径：/registry/workflows/<namespace>/<workflow-name>
+	EtcdWorkflowPath = "/registry/workflows/"
 )
 
 type EtcdConfig struct {

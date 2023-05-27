@@ -1,6 +1,9 @@
 package apiObject
 
-import "reflect"
+import (
+	"reflect"
+	"strings"
+)
 
 const (
 	PodKind        = "Pod"
@@ -8,10 +11,13 @@ const (
 	DnsKind        = "Dns"
 	NodeKind       = "Node"
 	JobKind        = "Job"
-	ReplicaSetKind = "ReplicaSet"
+	ReplicaSetKind = "Replicaset"
 	HpaKind        = "Hpa"
 	FunctionKind  = "Function"
 )
+
+var AllResourceKind =  strings.ToLower("[" + PodKind + "/" + ServiceKind + "/" + DnsKind + "/" + NodeKind + "/" + JobKind + 
+						"/" + ReplicaSetKind + "/" + HpaKind + "/" + FunctionKind + "]")
 
 type APIObject interface {
 	// GetObjectName() string

@@ -1,8 +1,9 @@
 package serverconfig
 
+import "miniK8s/pkg/config"
+
 const (
 	ResourceName  = "ResourceName"
-	RequestPrefix = "http://0.0.0.0:8090"
 	APIVersion   = "v1"
 )
 
@@ -16,6 +17,6 @@ func DefaultServerConfig() *ServerConfig {
 	return &ServerConfig{
 		IfDebug:  false,
 		ListenIP: "0.0.0.0",
-		Port:     8090,
+		Port:     config.API_Server_Port,
 	}
 }

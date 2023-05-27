@@ -95,7 +95,6 @@ func applyHandler(cmd *cobra.Command, args []string) {
 	case string(Apply_kind_Hpa):
 		applyHpaHandler(fileContent)
 	case string(Apply_kind_Func):
-
 		applyFuncHandler(fileContent)
 	default:
 		fmt.Println("default")
@@ -126,7 +125,7 @@ func applyPodHandler(fileContent []byte) {
 	}
 
 	// 发请求
-	URL := config.API_Server_URL_Prefix + config.PodsURL
+	URL := config.GetAPIServerURLPrefix() + config.PodsURL
 
 	if pod.GetPodNamespace() == "" {
 		pod.Metadata.Namespace = config.DefaultNamespace
@@ -178,7 +177,7 @@ func applyServiceHandler(fileContent []byte) {
 	}
 
 	// 发请求
-	URL := config.API_Server_URL_Prefix + config.ServiceURL
+	URL := config.GetAPIServerURLPrefix() + config.ServiceURL
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, service.Metadata.Namespace)
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, service)
@@ -247,7 +246,7 @@ func applyJobHandler(fileContent []byte) {
 	if err == nil && fileInfo.IsDir() {
 		// fmt.Println("文件夹存在")
 		// 发请求
-		URL := config.API_Server_URL_Prefix + config.JobsURL
+		URL := config.GetAPIServerURLPrefix() + config.JobsURL
 		URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, job.Metadata.Namespace)
 		code, err, msg := kubectlutil.PostAPIObjectToServer(URL, job)
 
@@ -292,7 +291,7 @@ func applyJobHandler(fileContent []byte) {
 		}
 
 		// 然后将userZipFile上传到服务器
-		fileURL := config.API_Server_URL_Prefix + config.JobFileURL
+		fileURL := config.GetAPIServerURLPrefix() + config.JobFileURL
 
 		code, err, msg = kubectlutil.PostAPIObjectToServer(fileURL, userZipFile)
 
@@ -354,7 +353,7 @@ func applyDnsHandler(fileContent []byte) {
 	}
 
 	// 发请求
-	URL := config.API_Server_URL_Prefix + config.DnsURL
+	URL := config.GetAPIServerURLPrefix() + config.DnsURL
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, dns.Metadata.Namespace)
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, dns)
@@ -380,7 +379,6 @@ func applyDnsHandler(fileContent []byte) {
 //
 // =========================================================
 
-
 func applyRepliacasetHandler(fileContent []byte) {
 	var repliaset apiObject.ReplicaSet
 	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &repliaset)
@@ -403,7 +401,7 @@ func applyRepliacasetHandler(fileContent []byte) {
 
 	// 发请求
 
-	URL := config.API_Server_URL_Prefix + config.ReplicaSetsURL
+	URL := config.GetAPIServerURLPrefix() + config.ReplicaSetsURL
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, repliaset.Metadata.Namespace)
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, repliaset)
@@ -478,7 +476,7 @@ func applyFuncHandler(fileContent []byte) {
 	}
 
 	// 发请求
-	URL := config.API_Server_URL_Prefix + config.FunctionURL
+	URL := config.GetAPIServerURLPrefix() + config.FunctionURL
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, function.Metadata.Namespace)
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, function)
@@ -498,9 +496,6 @@ func applyFuncHandler(fileContent []byte) {
 		printApplyResult(Apply_kind_Func, ApplyResult_Failed, "failed", msg)
 	}
 }
-
-
-
 
 // =========================================================
 //
@@ -530,7 +525,7 @@ func applyHpaHandler(fileContent []byte) {
 	}
 
 	// 发请求
-	URL := config.API_Server_URL_Prefix + config.HPAURL
+	URL := config.GetAPIServerURLPrefix() + config.HPAURL
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, hpa.Metadata.Namespace)
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, hpa)
@@ -611,7 +606,7 @@ func printApplyObjectInfo(kind ApplyObject, name string, namespace string) {
 //
 // ==============================================
 func delUnusedJob(name string, namespace string) {
-	URL := config.API_Server_URL_Prefix + config.JobSpecURL
+	URL := config.GetAPIServerURLPrefix() + config.JobSpecURL
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, name)
 

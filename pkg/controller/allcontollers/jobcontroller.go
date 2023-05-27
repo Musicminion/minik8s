@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
 	msgutil "miniK8s/pkg/apiserver/msgUtil"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
@@ -81,15 +82,15 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 	// 创建一个pod
 	pod := &apiObject.Pod{
 		Basic: apiObject.Basic{
-			APIVersion: "v1",
-			Kind:       "Pod",
+			APIVersion: serverconfig.APIVersion,
+			Kind:       apiObject.PodKind,
 			Metadata: apiObject.Metadata{
 				Name:      job.Metadata.Name,
 				Namespace: job.Metadata.Namespace,
 			},
 		},
 		Spec: apiObject.PodSpec{
-			NodeName: "ubuntu",
+			// NodeName: "ubuntu",   // TODO: change node
 			Containers: []apiObject.Container{
 				{
 					Name:    "gpu-server" + job.Metadata.UUID,

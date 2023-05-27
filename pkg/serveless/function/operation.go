@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/pkg/serveless/dockerregistry"
@@ -185,8 +186,8 @@ func (c *funcController) CreateFuncReplica(f *apiObject.Function) error {
 	// 【TODO】
 	replica := &apiObject.ReplicaSet{
 		Basic: apiObject.Basic{
-			Kind:       "Replicaset",
-			APIVersion: "v1",
+			Kind:       apiObject.ReplicaSetKind,
+			APIVersion: serverconfig.APIVersion,
 			Metadata: apiObject.Metadata{
 				Name:      f.Metadata.Name,
 				Namespace: f.Metadata.Namespace,

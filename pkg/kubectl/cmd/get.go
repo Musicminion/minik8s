@@ -483,12 +483,17 @@ func printPodResult(pod *apiObject.PodStore, t table.Writer) {
 	}
 
 	// 把string转换为time.Time类型
-	createdTime, _ := time.Parse(time.RFC3339, pod.Status.ContainerStatuses[0].StartedAt)
-	currentTime := time.Now()
-	// 得到运行时间，格式： 小时:分钟:秒
-	runTime := currentTime.Sub(createdTime).Truncate(time.Second).String()
-
-	// HiCyan
+	var createdTime time.Time
+	var currentTime time.Time
+	var runTime string 
+	if len(pod.Status.ContainerStatuses) != 0 {
+		createdTime, _ = time.Parse(time.RFC3339, pod.Status.ContainerStatuses[0].StartedAt)
+		currentTime = time.Now()
+		// 得到运行时间，格式： 小时:分钟:秒
+		runTime = currentTime.Sub(createdTime).Truncate(time.Second).String()
+	} else {
+		runTime = "Not Created Yet"
+	}// HiCyan
 	t.AppendRows([]table.Row{
 		{
 			color.BlueString(string(Get_Kind_Pod)),

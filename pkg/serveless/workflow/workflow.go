@@ -9,6 +9,7 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/util/executor"
 	netrequest "miniK8s/util/netRequest"
+	"miniK8s/util/stringutil"
 	"net/http"
 	"strconv"
 )
@@ -99,6 +100,8 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 				break
 			}
 
+			curNodeName = curNode.FuncData.NextNodeName
+
 		} else if curNode.Type == apiObject.WorkflowNodeTypeChoice {
 			res, err := w.CompareCheck(curNode.ChoiceData.CheckType, lastStepResult, curNode.ChoiceData.CompareValue, curNode.ChoiceData.CheckVarName)
 
@@ -114,6 +117,23 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 			}
 		}
 	}
+
+	statusURL := config.API_Server_URL_Prefix + config.WorkflowSpecStatusURL
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, workflow.GetNamespace())
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, workflow.GetName())
+
+	code, _, err := netrequest.PutRequestByTarget(statusURL, workflow.Status)
+
+	if err != nil {
+		fmt.Println("put request failed + ", err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("put request failed + ", err.Error())
+		return
+	}
+
 }
 
 func (w *workflowController) Run() {

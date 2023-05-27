@@ -32,6 +32,7 @@ const (
 	Apply_kind_Service    ApplyObject = "Service"
 	Apply_kind_Replicaset ApplyObject = "Replicaset"
 	Apply_kind_Dns        ApplyObject = "Dns"
+	Apply_kind_Hpa        ApplyObject = "Hpa"
 )
 
 // Apply的Result
@@ -90,6 +91,8 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		applyJobHandler(fileContent)
 	case string(Apply_kind_Dns):
 		applyDnsHandler(fileContent)
+	case string(Apply_kind_Hpa):
+		applyHpaHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
@@ -366,6 +369,14 @@ func applyDnsHandler(fileContent []byte) {
 	}
 }
 
+// =========================================================
+//
+// 处理ReplicaSet的Apply
+// 测试用例  go run ./main/ apply ./kubectlutil/testFile/replica.yaml
+//
+// =========================================================
+
+
 func applyRepliacasetHandler(fileContent []byte) {
 	var repliaset apiObject.ReplicaSet
 	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &repliaset)
@@ -404,6 +415,56 @@ func applyRepliacasetHandler(fileContent []byte) {
 		printApplyObjectInfo(Apply_kind_Replicaset, repliaset.Metadata.Name, repliaset.Metadata.Namespace)
 	} else {
 		printApplyResult(Apply_kind_Replicaset, ApplyResult_Failed, "failed", msg)
+	}
+}
+
+
+
+
+// =========================================================
+//
+// 处理Hpa的Apply
+// 测试用例  go run ./main/ apply ./kubectlutil/testFile/hpa.yaml
+//
+// =========================================================
+
+func applyHpaHandler(fileContent []byte) {
+	var hpa apiObject.HPA
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &hpa)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Hpa, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Dns的名字是否为空
+	if hpa.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Service, ApplyResult_Failed, "empty name", "hpa name is empty")
+		return
+	}
+
+	// 检查Dns的Namespace是否为空
+	if hpa.Metadata.Namespace == "" {
+		hpa.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	// 发请求
+	URL := config.API_Server_URL_Prefix + config.HPAURL
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, hpa.Metadata.Namespace)
+
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, hpa)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Hpa, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
+
+	if code == http.StatusCreated {
+		printApplyResult(Apply_kind_Dns, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_kind_Hpa, hpa.Metadata.Name, hpa.Metadata.Namespace)
+	} else {
+		printApplyResult(Apply_kind_Hpa, ApplyResult_Failed, "failed", msg)
 	}
 }
 

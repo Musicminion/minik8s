@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-for-hpa
+  namespace: default
+  labels:
+    app: hpa
+spec:
+  restartPolicy: Never
+  containers:
+  - name: autoscale
+    image: registry.cn-shanghai.aliyuncs.com/breaking_wave/minik8s:v1
+    ports:
+        - containerPort: 8090
+    resources:
+      requests:
+        memory: 100000000   #100M
+        cpu: 1000000000
+      limits:
+        memory: 200000000   #200M
+        cpu: 2000000000

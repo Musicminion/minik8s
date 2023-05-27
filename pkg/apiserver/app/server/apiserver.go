@@ -142,4 +142,7 @@ func (s *apiServer) bind() {
 	s.router.PUT(config.HPASpecURL, handlers.UpdateHPA)       // 更新hpa
 	s.router.DELETE(config.HPASpecURL, handlers.DeleteHPA)    // 删除hpa
 	s.router.GET(config.GlobalHPAURL, handlers.GetGlobalHPAs) // 获取所有hpa
+
+	s.router.PUT(config.HPASpecStatusURL, handlers.UpdateHPAStatus) // 更新hpaStatus
+	
 }

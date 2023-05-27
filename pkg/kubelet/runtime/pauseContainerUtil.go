@@ -93,13 +93,13 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 				return nil, fmt.Errorf("port conflict")
 			}
 
-			// 绑定端口
-			PodAllPortsBinds[portBindingKey] = []nat.PortBinding{
-				{
-					HostIP:   port.HostIP,
-					HostPort: port.HostPort,
-				},
-			}
+			// // 绑定端口
+			// PodAllPortsBinds[portBindingKey] = []nat.PortBinding{
+			// 	{
+			// 		HostIP:   port.HostIP,
+			// 		HostPort: port.HostPort,
+			// 	},
+			// }
 
 			// 将端口添加到PodAllPortsSet中
 			PodAllPortsSet[string(portBindingKey)] = struct{}{}
@@ -135,7 +135,7 @@ func (r *runtimeManager) getPauseContainerConfig(pod *apiObject.PodStore) (*mini
 	config := minik8sTypes.ContainerConfig{
 		Image:        PauseContainerImage,
 		Labels:       pauseLabels,
-		PortBindings: PodAllPortsBinds,
+		PortBindings: nil,
 		ExposedPorts: PodAllPortsSet,
 		Volumes:      nil,
 		Env:          nil,

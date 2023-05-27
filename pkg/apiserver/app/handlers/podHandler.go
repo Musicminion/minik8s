@@ -207,8 +207,12 @@ func AddPod(c *gin.Context) {
 	// 哪怕用户自己设置了UUID，也会被覆盖
 	pod.Metadata.UUID = uuid.NewUUID()
 
+	
 	// 把Pod转化为PodStore
 	podStore := pod.ToStore()
+	
+	// 设置pod的status
+	podStore.Status.Phase = apiObject.PodPending
 
 	// 把PodStore转化为json
 	podStoreJson, err := json.Marshal(podStore)

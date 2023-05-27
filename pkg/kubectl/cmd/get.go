@@ -37,11 +37,13 @@ const (
 	Get_Kind_Job        GetObject = "job"
 	Get_Kind_Replicaset GetObject = "replicaset"
 	Get_Kind_Dns        GetObject = "dns"
+	Get_Kind_Hpa        GetObject = "hpa"
 
 	Get_Kind_Pods        GetObject = "pods"
 	Get_Kind_Services    GetObject = "services"
 	Get_Kind_Jobs        GetObject = "jobs"
 	Get_Kind_Replicasets GetObject = "replicasets"
+	Get_Kind_Hpas        GetObject = "hpas"
 )
 
 func getHandler(cmd *cobra.Command, args []string) {

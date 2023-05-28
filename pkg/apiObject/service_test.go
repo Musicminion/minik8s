@@ -33,9 +33,9 @@ func TestServiceYaml(t *testing.T) {
 	// 输出转换后的Node对象
 	t.Log(service.GetAPIVersion())
 	t.Log(service.GetType())
-	t.Log(service.GetKind())
+	t.Log(service.GetObjectKind())
 	t.Log(service.GetPorts())
-	t.Log(service.GetName())
+	t.Log(service.GetObjectName())
 }
 
 func TestServiceJson(t *testing.T) {
@@ -62,7 +62,7 @@ func TestServiceJson(t *testing.T) {
 	// 输出转换后的Node对象
 	t.Log(service.GetAPIVersion())
 	t.Log(service.GetType())
-	t.Log(service.GetKind())
+	t.Log(service.GetObjectKind())
 	t.Log(service.GetPorts())
-	t.Log(service.GetName())
+	t.Log(service.GetObjectName())
 }

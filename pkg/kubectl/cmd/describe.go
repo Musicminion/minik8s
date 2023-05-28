@@ -13,6 +13,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 var describeCmd = &cobra.Command{
@@ -40,7 +42,9 @@ func describeKindHandler(cmd *cobra.Command, args []string) {
 	}
 
 	kind := strings.ToLower(args[0])
-	kind = strings.Title(kind)
+	// kind = strings.Title(kind)
+	tag := language.English
+	kind = cases.Title(tag).String(kind)
 
 	if len(args) == 1 {
 		// 获取namespace

@@ -240,15 +240,6 @@ func (p *PodStore) ToPod() *Pod {
 	}
 }
 
-// 工具函数，用来获取Pod的名字
-func (p *Pod) GetPodName() string {
-	return p.Metadata.Name
-}
-
-func (p *Pod) GetPodNamespace() string {
-	return p.Metadata.Namespace
-}
-
 func (p *Pod) GetPodUUID() string {
 	return p.Metadata.UUID
 }

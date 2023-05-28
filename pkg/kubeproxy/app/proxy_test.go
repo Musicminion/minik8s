@@ -82,7 +82,7 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 					// add endpoint to serviceUpdate.ServiceTarget.Endpoints
 					serviceUpdate.ServiceTarget.Status.Endpoints = append(serviceUpdate.ServiceTarget.Status.Endpoints, endpoint)
 				}
-				k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
+				k8log.DebugLog("APIServer", "endpoints number of service "+service.GetObjectName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
 				// serviceUpdate.ServiceTarget.Endpoints = append(serviceUpdate.ServiceTarget.Endpoints, endpoints...)
 			}
 		}(key, value)

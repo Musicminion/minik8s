@@ -127,7 +127,7 @@ func AddService(c *gin.Context) {
 				serviceStore.Status.Endpoints = append(serviceStore.Status.Endpoints, endpoints...)
 			}
 
-			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
+			k8log.DebugLog("APIServer", "endpoints number of service "+service.GetObjectName()+" is "+strconv.Itoa(len(serviceUpdate.ServiceTarget.Status.Endpoints)))
 
 		}(key, value)
 	}

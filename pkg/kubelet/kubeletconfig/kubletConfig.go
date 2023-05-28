@@ -18,7 +18,7 @@ type KubeletConfig struct {
 }
 
 func DefaultKubeletConfig() *KubeletConfig {
-	apiserverIP := config.GetAPIServerIP()
+	apiserverIP := config.GetMasterIP()
 	apiserverPort := config.API_Server_Port
 	apiserverScheme := config.API_Server_Scheme
 	apiserverURLPrefix := apiserverScheme + apiserverIP + ":" + strconv.Itoa(apiserverPort)
@@ -35,7 +35,7 @@ func DefaultKubeletConfig() *KubeletConfig {
 }
 
 func ProductionKubeletConfig() *KubeletConfig {
-	apiserverIP := config.GetAPIServerIP()
+	apiserverIP := config.GetMasterIP()
 	apiserverPort := config.API_Server_Port
 	apiserverScheme := config.API_Server_Scheme
 	apiserverURLPrefix := config.GetAPIServerURLPrefix()

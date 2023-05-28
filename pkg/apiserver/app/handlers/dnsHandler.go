@@ -83,7 +83,7 @@ func AddDns(c *gin.Context) {
 			return
 		}
 
-		serviceKey := path.Join(serverconfig.EtcdServicePath, dns.GetDnsNamespace(), p.SvcName)
+		serviceKey := path.Join(serverconfig.EtcdServicePath, dns.GetObjectNamespace(), p.SvcName)
 		serviceRes, err := etcdclient.EtcdStore.Get(serviceKey)
 		if err != nil {
 			k8log.ErrorLog("APIServer", "AddDns, err is "+err.Error())

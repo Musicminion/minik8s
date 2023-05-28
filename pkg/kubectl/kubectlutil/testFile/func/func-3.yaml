@@ -3,4 +3,5 @@ kind: Function
 metadata:
   name: func3
 spec:
-  userUploadFilePath: "/home/minik8s/minik8s/pkg/serveless/test-data/example-3"
+  userUploadFilePath:  "/home/wave/Desktop/miniK8s/pkg/serveless/test-data/example-3"
+  # userUploadFilePath: "/home/minik8s/minik8s/pkg/serveless/test-data/example-3"

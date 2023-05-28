@@ -9,7 +9,7 @@ import (
 // 测试执行之前，先删除Redis中的所有数据
 func TestMain(m *testing.M) {
 	// 1. 删除Redis中的所有数据
-	statusManager := NewStatusManager(config.GetAPIServerIP())
+	statusManager := NewStatusManager(config.GetMasterIP())
 	statusManager.ResetCache()
 
 	// 2. 执行测试用例

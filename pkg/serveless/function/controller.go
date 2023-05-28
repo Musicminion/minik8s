@@ -224,7 +224,7 @@ func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error 
 		return errors.New("get function from apiserver failed, not 200")
 	}
 
-	if replica.Spec.Replicas > 0 {
+	if num > 0 {
 		replica.Spec.Replicas = num
 	}
 

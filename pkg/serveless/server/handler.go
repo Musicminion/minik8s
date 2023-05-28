@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"miniK8s/pkg/k8log"
 	netrequest "miniK8s/util/netRequest"
 	"net/http"
 	"time"
@@ -50,6 +51,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	funcNamespace := c.Param("funcNamespace")
 	funcName := c.Param("funcName")
 
+	k8log.InfoLog("serveless", "func: "+ funcNamespace + "/" + funcName + " is called")
 	if funcNamespace == "" || funcName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "funcNamespace or funcName is empty",
@@ -66,7 +68,6 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "The function you call has no pod running, maybe creating, please try again later",
 		})
-
 		return
 	}
 

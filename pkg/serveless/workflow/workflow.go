@@ -90,7 +90,7 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 
 		// 如果是函数节点，就执行函数
 		if curNode.Type == apiObject.WorkflowNodeTypeFunc {
-			url := "http://" + config.GetAPIServerIP() + ":28080" + curNode.FuncData.FuncNamespace + "/" + curNode.FuncData.FuncName
+			url := config.GetServelessServerURLPrefix() + curNode.FuncData.FuncNamespace + "/" + curNode.FuncData.FuncName
 			resp, err := netrequest.PostString(url, lastStepResult)
 
 			if err != nil {

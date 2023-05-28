@@ -55,14 +55,16 @@ func (w *workflowController) routine() {
 		if flow.Status.Result != "" {
 			continue
 		}
+		
+		// 先更新workflow的phase为running
+		if (flow.Status.Phase == "") {
+			w.WriteBackResultToServer(apiObject.WorkflowRunning, "", flow.GetNamespace(), flow.GetName())
+		}
 
 		// 如果workflow的某个func node无实例，进行创建，等待下一次的routine执行
 		if !(w.checkWorkflowNode(flow)) {
 			continue
 		}
-
-		w.WriteBackResultToServer(apiObject.WorkflowRunning, "", flow.GetNamespace(), flow.GetName())
-		// 先更新workflow的phase为running
 
 		go w.executeWorkflow(flow)
 	}

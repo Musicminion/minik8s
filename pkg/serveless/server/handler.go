@@ -200,7 +200,8 @@ func (s *server) checkFunction(c *gin.Context) {
 	}
 
 	// 判断function是否存在pod实例
-	if s.routeTable[funcNamespace + "/" + funcName] == nil {
+	ips := s.routeTable[funcNamespace + "/" + funcName]
+	if  len(ips) == 0{
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "function has no pod running",
 			"data": false,

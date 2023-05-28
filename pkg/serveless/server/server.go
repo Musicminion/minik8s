@@ -4,6 +4,7 @@ import (
 	"fmt"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/pkg/serveless/function"
+	"miniK8s/pkg/serveless/workflow"
 	"miniK8s/util/executor"
 
 	"github.com/gin-gonic/gin"
@@ -22,13 +23,17 @@ type server struct {
 
 	// func的controller
 	funcController function.FuncController
+
+	// workflow的controller
+	workflowController workflow.WorkflowController
 }
 
 func NewServer() Server {
 	return &server{
-		httpServer:     gin.Default(),
-		routeTable:     make(map[string][]string),
-		funcController: function.NewFuncController(),
+		httpServer:         gin.Default(),
+		routeTable:         make(map[string][]string),
+		funcController:     function.NewFuncController(),
+		workflowController: workflow.NewWorkflowController(),
 	}
 }
 
@@ -125,6 +130,9 @@ func (s *server) Run() {
 
 	// 周期性的检查function的情况，如果有新创建的function，那么就创建一个新的pod
 	go s.funcController.Run()
+
+	// 周期性的检查workflow的情况，如果有新创建的workflow，那么就创建一个新的pod
+	go s.workflowController.Run()
 
 	// 初始化服务器
 	s.httpServer.POST("/:funcNamespace/:funcName", s.handleFuncRequest)

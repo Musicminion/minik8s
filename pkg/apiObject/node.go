@@ -45,16 +45,8 @@ func (n *Node) GetAPIVersion() string {
 	return n.NodeBasic.APIVersion
 }
 
-func (n *Node) GetKind() string {
-	return n.NodeBasic.Kind
-}
-
 func (n *Node) GetUUID() string {
 	return n.NodeBasic.NodeMetadata.UUID
-}
-
-func (n *Node) GetName() string {
-	return n.NodeBasic.NodeMetadata.Name
 }
 
 func (n *Node) GetLabels() map[string]string {
@@ -71,7 +63,7 @@ func (n *Node) GetObjectKind() string {
 }
 
 func (n *Node) GetObjectName() string {
-	return n.GetName()
+	return n.NodeMetadata.Name
 }
 
 func (n *Node) GetObjectNamespace() string {

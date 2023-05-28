@@ -7,6 +7,7 @@ programs=(
     "scheduler"
     "kubeproxy"
     "controller"
+    "serveless"
 )
 
 # 遍历进程列表，逐个杀死进程

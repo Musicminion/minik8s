@@ -54,14 +54,6 @@ func (ds *HpaStore) ToDns() *Dns {
 	}
 }
 
-func (d *Dns) GetDnsName() string {
-	return d.Metadata.Name
-}
-
-func (d *Dns) GetDnsNamespace() string {
-	return d.Metadata.Namespace
-}
-
 // 以下函数用来实现apiObject.Object接口
 func (d *Dns) GetObjectKind() string {
 	return d.Kind

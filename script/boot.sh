@@ -5,17 +5,6 @@ export MINIK8S_PATH="$PROJECT_ROOT"
 
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# cd $SCRIPTS_ROOT/../
-
-# 定义启动的程序列表，每个元素对应一个 main.go 文件和日志文件路径
-programs=(
-    "./pkg/apiserver/main/main.go:./log/apiserver.log"
-    "./pkg/kubelet/main/main.go:./log/kubelet.log"
-    "./pkg/scheduler/main/main.go:./log/scheduler.log"
-    "./pkg/kubeproxy/main/main.go:./log/kubeproxy.log"
-    "./pkg/controller/main/main.go:./log/controller.log"
-)
-
 # 初始化测试环境
 # 删除 etcd 中所有内容
 . "$SCRIPTS_ROOT/remake.sh" /
@@ -33,12 +22,14 @@ programs=(
 
 cd $PROJECT_ROOT
 
+# 定义启动的程序列表，每个元素对应一个 main.go 文件和日志文件路径
 programs=(
     "./pkg/apiserver/main/main.go:./log/apiserver.log"
     "./pkg/kubelet/main/main.go:./log/kubelet.log"
     "./pkg/scheduler/main/main.go:./log/scheduler.log"
     "./pkg/kubeproxy/main/main.go:./log/kubeproxy.log"
     "./pkg/controller/main/main.go:./log/controller.log"
+    "./pkg/serveless/main/main.go:./log/serverless.log"
 )
 
 # 循环启动程序

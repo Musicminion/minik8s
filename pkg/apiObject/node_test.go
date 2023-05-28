@@ -32,11 +32,11 @@ func TestYaml(t *testing.T) {
 	// 比较转换后的Node对象与预期的Node对象是否相同
 	// 输出转换后的Node对象
 	t.Log(node.GetAPIVersion())
-	t.Log(node.GetKind())
+	t.Log(node.GetObjectKind())
 	t.Log(node.GetAnnotations())
 	t.Log(node.GetLabels())
 	t.Log(node.GetUUID())
-	t.Log(node.GetName())
+	t.Log(node.GetObjectName())
 	t.Log(node.GetIP())
 }
 
@@ -63,10 +63,10 @@ func TestJson(t *testing.T) {
 	// 比较转换后的Node对象与预期的Node对象是否相同
 	// 输出转换后的Node对象
 	t.Log(node.GetAPIVersion())
-	t.Log(node.GetKind())
+	t.Log(node.GetObjectKind())
 	t.Log(node.GetAnnotations())
 	t.Log(node.GetLabels())
 	t.Log(node.GetUUID())
-	t.Log(node.GetName())
+	t.Log(node.GetObjectName())
 	t.Log(node.GetIP())
 }

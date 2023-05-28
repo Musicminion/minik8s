@@ -55,6 +55,10 @@ func (w *workflowController) routine() {
 		if flow.Status.Result != "" {
 			continue
 		}
+
+		w.WriteBackResultToServer(apiObject.WorkflowRunning, "", flow.GetNamespace(), flow.GetName())
+		// 先更新workflow的phase为running
+
 		go w.executeWorkflow(flow)
 	}
 }
@@ -71,6 +75,8 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 	lastStepResult := workflow.Spec.EntryParams
 
 	for {
+		fmt.Println("curNodeName is ", curNodeName)
+		fmt.Println("lastStepResult is ", lastStepResult)
 		// 如果当前节点是空的，说明已经执行完了，就退出
 		if curNodeName == "" {
 			break
@@ -84,7 +90,7 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 
 		// 如果是函数节点，就执行函数
 		if curNode.Type == apiObject.WorkflowNodeTypeFunc {
-			url := "http://" + config.GetAPIServerIP() + ":28080" + curNode.FuncData.FuncNamespace + "/" + curNode.FuncData.FuncName
+			url := config.GetServelessServerURLPrefix() + "/" + curNode.FuncData.FuncNamespace + "/" + curNode.FuncData.FuncName
 			resp, err := netrequest.PostString(url, lastStepResult)
 
 			if err != nil {
@@ -92,9 +98,17 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 				break
 			}
 
-			if data, err := io.ReadAll(resp.Body); err != nil {
+			if data, err := io.ReadAll(resp.Body); err == nil {
 				defer resp.Body.Close()
-				lastStepResult = string(data)
+				// 将data反序列化为map
+				var result map[string]interface{}
+				err := json.Unmarshal(data, &result)
+				if err != nil {
+					fmt.Println("unmarshal failed + ", err.Error())
+					break
+				}
+				lastStepResult = result["data"].(string)
+
 			} else {
 				fmt.Println("read resp body failed + ", err.Error())
 				break
@@ -118,11 +132,21 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 		}
 	}
 
-	statusURL := config.GetAPIServerURLPrefix() + config.WorkflowSpecStatusURL
-	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, workflow.GetNamespace())
-	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, workflow.GetName())
+	w.WriteBackResultToServer(apiObject.WorkflowCompleted, lastStepResult, workflow.GetNamespace(), workflow.GetName())
 
-	code, _, err := netrequest.PutRequestByTarget(statusURL, workflow.Status)
+}
+
+func (w *workflowController) WriteBackResultToServer(phase string, result string, namespace string, name string) {
+	statusURL := config.GetAPIServerURLPrefix() + config.WorkflowSpecStatusURL
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME_PART, name)
+
+	writeBackStatus := &apiObject.WorkflowStatus{
+		Phase:  phase,
+		Result: result,
+	}
+
+	code, _, err := netrequest.PutRequestByTarget(statusURL, writeBackStatus)
 
 	if err != nil {
 		fmt.Println("put request failed + ", err.Error())
@@ -130,10 +154,9 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 	}
 
 	if code != http.StatusOK {
-		fmt.Println("put request failed + ", err.Error())
+		fmt.Println("put request failed expected code 200, get " + strconv.Itoa(code))
 		return
 	}
-
 }
 
 func (w *workflowController) Run() {

@@ -65,24 +65,12 @@ func (s *Service) GetAPIVersion() string {
 	return s.Basic.APIVersion
 }
 
-func (s *Service) GetKind() string {
-	return s.Basic.Kind
-}
-
 func (s *Service) GetType() string {
 	return s.Spec.Type
 }
 
 func (s *Service) GetPorts() []ServicePort {
 	return s.Spec.Ports
-}
-
-func (s *Service) GetName() string {
-	return s.Basic.Metadata.Name
-}
-
-func (s *Service) GetNamespace() string {
-	return s.Basic.Metadata.Namespace
 }
 
 func (s *ServiceStore) GetAPIVersion() string {

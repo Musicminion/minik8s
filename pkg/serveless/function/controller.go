@@ -67,20 +67,20 @@ func (c *funcController) routine() {
 	}
 
 	remoteFuncs := make(map[string]bool)
-	for _, f := range res {
+	for id, f := range res {
 		remoteFuncs[f.Metadata.UUID] = true
 		// 检查f是否在cache中
 		if _, ok := c.cache[f.Metadata.UUID]; !ok {
 			// 如果不在cache中，说明是新的function，需要创建
 			// 【TODO】
-			c.cache[f.Metadata.UUID] = &f
+			c.cache[f.Metadata.UUID] = &res[id]
 			c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name] = &LaunchRecord{
 				FuncName:      f.Metadata.Name,
 				FuncNamespace: f.Metadata.Namespace,
 				StartTime:     time.Now(),
 				EndTime:       time.Now().Add(time.Duration(5) * time.Minute),
 			}
-			c.CreateFunction(&f)
+			c.CreateFunction(&res[id])
 
 		} else {
 			// 检查c.CallRecord是否过期
@@ -105,11 +105,12 @@ func (c *funcController) routine() {
 
 			// 如果在cache中，说明是已经存在的function，需要检查是否需要更新
 			// 【TODO】
-			if !c.ComplareTwoFunc(c.cache[f.Metadata.UUID], &f) {
-				c.cache[f.Metadata.UUID] = &f
-				c.UpdateFunction(&f)
+			if !c.ComplareTwoFunc(c.cache[f.Metadata.UUID], &res[id]) {
+				c.cache[f.Metadata.UUID] = &res[id]
+				// c.UpdateFunction(&f)
+				fmt.Println("update function")
 			} else {
-				c.cache[f.Metadata.UUID] = &f
+				c.cache[f.Metadata.UUID] = &res[id]
 			}
 		}
 	}
@@ -132,9 +133,11 @@ func (c *funcController) routine() {
 func (c *funcController) ComplareTwoFunc(old *apiObject.Function, new *apiObject.Function) bool {
 	// 【TODO】
 	if old.Spec.UserUploadFilePath != new.Spec.UserUploadFilePath {
+		fmt.Println("old.Spec.UserUploadFilePath != new.Spec.UserUploadFilePath")
 		return false
 	}
 	if len(old.Spec.UserUploadFile) != len(new.Spec.UserUploadFile) {
+		fmt.Println("len(old.Spec.UserUploadFile) != len(new.Spec.UserUploadFile)")
 		return false
 	}
 	return true
@@ -167,7 +170,7 @@ func (c *funcController) AddCallRecord(funcName, funcNamespace string) error {
 func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
 	fmt.Println("scale down start")
 	// 【TODO】
-	url := config.GetAPIServerURLPrefix() + config.FunctionSpecURL
+	url := config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 
@@ -206,7 +209,7 @@ func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
 func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error {
 	fmt.Println("scale up start")
 	// 【TODO】
-	url := config.GetAPIServerURLPrefix() + config.FunctionSpecURL
+	url := config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 
@@ -221,7 +224,7 @@ func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error 
 		return errors.New("get function from apiserver failed, not 200")
 	}
 
-	if replica.Spec.Replicas > 0 {
+	if num > 0 {
 		replica.Spec.Replicas = num
 	}
 

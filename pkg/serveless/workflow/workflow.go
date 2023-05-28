@@ -55,6 +55,10 @@ func (w *workflowController) routine() {
 		if flow.Status.Result != "" {
 			continue
 		}
+
+		w.WriteBackResultToServer("running", flow.GetNamespace(), flow.GetName())
+		// 先更新workflow的status为running
+
 		go w.executeWorkflow(flow)
 	}
 }
@@ -71,6 +75,8 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 	lastStepResult := workflow.Spec.EntryParams
 
 	for {
+		fmt.Println("curNodeName is ", curNodeName)
+		fmt.Println("lastStepResult is ", lastStepResult)
 		// 如果当前节点是空的，说明已经执行完了，就退出
 		if curNodeName == "" {
 			break
@@ -118,12 +124,17 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 		}
 	}
 
+	w.WriteBackResultToServer(lastStepResult, workflow.GetNamespace(), workflow.GetName())
+
+}
+
+func (w *workflowController) WriteBackResultToServer(result string, namespace string, name string) {
 	statusURL := config.GetAPIServerURLPrefix() + config.WorkflowSpecStatusURL
-	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, workflow.GetNamespace())
-	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, workflow.GetName())
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, namespace)
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, name)
 
 	writeBackStatus := &apiObject.WorkflowStatus{
-		Result: lastStepResult,
+		Result: result,
 	}
 
 	code, _, err := netrequest.PutRequestByTarget(statusURL, writeBackStatus)
@@ -137,7 +148,6 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 		fmt.Println("put request failed + ", err.Error())
 		return
 	}
-
 }
 
 func (w *workflowController) Run() {

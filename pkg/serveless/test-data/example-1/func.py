@@ -1,8 +1,10 @@
 def main(params):
     x = params["x"]
     y = params["y"]
-    x = x + y
+    xx = x - y
+    yy = y - x
     resp = {
-        "sum": x
+        "x": xx
+        "y": yy
     }
     return resp

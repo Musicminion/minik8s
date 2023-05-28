@@ -56,6 +56,11 @@ func (w *workflowController) routine() {
 			continue
 		}
 
+		// 如果workflow的某个func node无实例，进行创建，等待下一次的routine执行
+		if !(w.checkWorkflowNode(flow)){
+			continue
+		}
+
 		w.WriteBackResultToServer(apiObject.WorkflowRunning, "", flow.GetNamespace(), flow.GetName())
 		// 先更新workflow的phase为running
 
@@ -133,7 +138,6 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 	}
 
 	w.WriteBackResultToServer(apiObject.WorkflowCompleted, lastStepResult, workflow.GetNamespace(), workflow.GetName())
-
 }
 
 func (w *workflowController) WriteBackResultToServer(phase string, result string, namespace string, name string) {
@@ -157,6 +161,27 @@ func (w *workflowController) WriteBackResultToServer(phase string, result string
 		fmt.Println("put request failed expected code 200, get " + strconv.Itoa(code))
 		return
 	}
+}
+
+// 检查当前的workflow的每个func node是否都存在pod实例，若不存在则创建并返回false
+func (w *workflowController) checkWorkflowNode(workflow apiObject.WorkflowStore) bool {
+	// 遍历workflow的所有node
+	var ret = true
+	for _, node := range workflow.Spec.WorkflowNodes {
+		// 对于类型为func的node，检查node对应的function是否存在pod实例
+		if node.Type == apiObject.WorkflowNodeTypeFunc {
+			// 构造url
+			url := config.GetServelessServerURLPrefix() + "/" + node.FuncData.FuncNamespace + "/" + node.FuncData.FuncName
+			
+			// 发送get请求
+			var flag bool  // 标记是否存在pod实例
+			code, err := netrequest.GetRequestByTarget(url, &flag, "data")
+			if err != nil || code != http.StatusOK || !flag {
+				ret = false
+			}
+		}
+	}
+	return ret
 }
 
 func (w *workflowController) Run() {

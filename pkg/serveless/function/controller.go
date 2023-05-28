@@ -1,6 +1,7 @@
 package function
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"miniK8s/pkg/apiObject"
@@ -78,7 +79,7 @@ func (c *funcController) routine() {
 				FuncName:      f.Metadata.Name,
 				FuncNamespace: f.Metadata.Namespace,
 				StartTime:     time.Now(),
-				EndTime:       time.Now().Add(time.Duration(5) * time.Minute),
+				EndTime:       time.Now().Add(time.Duration(1) * time.Minute),
 			}
 			c.CreateFunction(&res[id])
 
@@ -99,7 +100,7 @@ func (c *funcController) routine() {
 					// 过期了，需要重置
 					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime = 0
 					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].StartTime = time.Now()
-					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].EndTime = time.Now().Add(time.Duration(5) * time.Minute)
+					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].EndTime = time.Now().Add(time.Duration(1) * time.Minute)
 				}
 			}
 
@@ -107,7 +108,7 @@ func (c *funcController) routine() {
 			// 【TODO】
 			if !c.ComplareTwoFunc(c.cache[f.Metadata.UUID], &res[id]) {
 				c.cache[f.Metadata.UUID] = &res[id]
-				// c.UpdateFunction(&f)
+				c.UpdateFunction(&res[id])
 				fmt.Println("update function")
 			} else {
 				c.cache[f.Metadata.UUID] = &res[id]
@@ -140,6 +141,10 @@ func (c *funcController) ComplareTwoFunc(old *apiObject.Function, new *apiObject
 		fmt.Println("len(old.Spec.UserUploadFile) != len(new.Spec.UserUploadFile)")
 		return false
 	}
+	if !bytes.Equal(old.Spec.UserUploadFile, new.Spec.UserUploadFile) {
+		fmt.Println("file content is not the same")
+		return false
+	}
 	return true
 }
 
@@ -160,7 +165,7 @@ func (c *funcController) AddCallRecord(funcName, funcNamespace string) error {
 			FuncName:      funcName,
 			FuncNamespace: funcNamespace,
 			StartTime:     time.Now(),
-			EndTime:       time.Now().Add(time.Duration(5) * time.Minute),
+			EndTime:       time.Now().Add(time.Duration(1) * time.Minute),
 			FuncCallTime:  1,
 		}
 	}

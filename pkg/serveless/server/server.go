@@ -2,10 +2,12 @@ package server
 
 import (
 	"fmt"
+	"miniK8s/pkg/config"
 	minik8stypes "miniK8s/pkg/minik8sTypes"
 	"miniK8s/pkg/serveless/function"
 	"miniK8s/pkg/serveless/workflow"
 	"miniK8s/util/executor"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -136,5 +138,6 @@ func (s *server) Run() {
 
 	// 初始化服务器
 	s.httpServer.POST("/:funcNamespace/:funcName", s.handleFuncRequest)
-	s.httpServer.Run(":28080")
+	s.httpServer.GET("/:funcNamespace/:funcName", s.checkFunction)
+	s.httpServer.Run(":" + strconv.Itoa(config.Serveless_Server_Port))
 }

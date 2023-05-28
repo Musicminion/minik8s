@@ -19,7 +19,7 @@ spec:
     choiceData:
       trueNextNodeName: node3
       falseNextNodeName: node4
-      checkType: numGreaterThen   # if checkVar > 0, goto node3, else goto node4
+      checkType: numGreaterThan   # if checkVar > 0, goto node3, else goto node4
       checkVarName: y
       compareValue: 0
   - name: node3

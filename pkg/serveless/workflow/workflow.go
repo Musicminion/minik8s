@@ -55,9 +55,9 @@ func (w *workflowController) routine() {
 		if flow.Status.Result != "" {
 			continue
 		}
-		
+
 		// 先更新workflow的phase为running
-		if (flow.Status.Phase == "") {
+		if flow.Status.Phase == "" {
 			w.WriteBackResultToServer(apiObject.WorkflowRunning, "", flow.GetNamespace(), flow.GetName())
 		}
 
@@ -204,158 +204,71 @@ func (w *workflowController) CompareCheck(checkType apiObject.ChoiceCheckType, l
 	}
 
 	fmt.Println("varValue is ", varValue)
+	var varValueFloat, CompareValueFloat float64
+	var varValueString string
+
+	if stringutil.ContainsString(apiObject.ChoiceCheckNumTypeList, string(checkType)) {
+		// 如果type在ChoiceCheckNumTypeList之中
+		// 把varValue转化为float，如果varValue不是float64，就报错
+		if varValueFloat, ok = varValue.(float64); !ok {
+			return false, errors.New("varValue is not float64")
+		}
+		// 把CompareValue转化为float64
+		CompareValueFloat, err = strconv.ParseFloat(CompareValue, 64)
+		if err != nil {
+			return false, err
+		}
+	} else if stringutil.ContainsString(apiObject.ChoiceCheckStrTypeList, string(checkType)) {
+		// 如果type在ChoiceCheckStringTypeList之中
+		// 把varValue转化为string，如果varValue不是string，就报错
+		varValueString, ok = varValue.(string)
+		if !ok {
+			return false, errors.New("varValue is not string")
+		}
+	} else {
+		// 不存在的type
+		return false, errors.New("checkType not exist")
+	}
 
 	switch checkType {
-	case apiObject.ChoiceCheckTypeEqual:
-		// 把varValue转化为float，然后和curNode.ChoiceData.CheckValue比较
-		// 如果相等，就执行curNode.ChoiceData.EqualNodeName
-		varValueInt := varValue.(float64)
-		// CompareValue转float64
-		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
+	// 以下为对num的比较
+	case apiObject.ChoiceCheckTypeNumEqual:
+		return varValueFloat == CompareValueFloat, nil
 
-		if err != nil {
-			return false, err
-		}
+	case apiObject.ChoiceCheckTypeNumNotEqual:
+		return varValueFloat != CompareValueFloat, nil
 
-		// CompareValue也转化为float64
-		if varValueInt == CompareValueFloat {
-			return true, nil
-		} else {
-			return false, nil
-		}
+	case apiObject.ChoiceCheckTypeNumGreaterThan:
+		return varValueFloat > CompareValueFloat, nil
 
-	case apiObject.ChoiceCheckTypeNotEqual:
-		varValueInt := varValue.(float64)
-		// CompareValue转float64
-		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
-		if err != nil {
-			return false, err
-		}
+	case apiObject.ChoiceCheckTypeNumLessThan:
+		return varValueFloat < CompareValueFloat, nil
 
-		// CompareValue也转化为int
-		if varValueInt != CompareValueFloat {
-			return true, nil
-		} else {
-			return false, nil
-		}
+	case apiObject.ChoiceCheckTypeNumGreaterAndEqualThan:
+		return varValueFloat >= CompareValueFloat, nil
 
-	case apiObject.ChoiceCheckTypeNumGreaterThen:
-		varValueInt := varValue.(float64)
-		// CompareValue转float64
-		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
+	case apiObject.ChoiceCheckTypeNumLessAndEqualThan:
+		return varValueFloat <= CompareValueFloat, nil
 
-		if err != nil {
-			return false, err
-		}
+	// 以下为对string的比较
+	case apiObject.ChoiceCheckTypeStrEqual:
+		return varValueString == CompareValue, nil
+	
+	case apiObject.ChoiceCheckTypeStrNotEqual:
+		return varValueString != CompareValue, nil
 
-		// CompareValue也转化为int
-		if varValueInt > CompareValueFloat {
-			return true, nil
-		} else {
-			return false, nil
-		}
+	case apiObject.ChoiceCheckTypeStrGreaterThan:
+		return varValueString > CompareValue, nil
 
-	case apiObject.ChoiceCheckTypeNumLessThen:
+	case apiObject.ChoiceCheckTypeStrLessThan:
+		return varValueString < CompareValue, nil
 
-		varValueInt := varValue.(float64)
-		// CompareValue转float64
-		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
+	case apiObject.ChoiceCheckTypeStrGreaterAndEqualThan:
+		return varValueString >= CompareValue, nil
 
-		if err != nil {
-			return false, err
-		}
-
-		// CompareValue也转化为int
-		if varValueInt < CompareValueFloat {
-			return true, nil
-		} else {
-			return false, nil
-		}
-
-	case apiObject.ChoiceCheckTypeNumGreaterAndEqualThen:
-		varValueInt := varValue.(float64)
-		// CompareValue转float64
-		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
-
-		if err != nil {
-			return false, err
-		}
-
-		// CompareValue也转化为int
-		if varValueInt >= CompareValueFloat {
-			return true, nil
-		} else {
-			return false, nil
-		}
-
-	case apiObject.ChoiceCheckTypeNumLessAndEqualThen:
-		varValueInt := varValue.(float64)
-		// CompareValue转float64
-		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
-
-		if err != nil {
-			return false, err
-		}
-
-		// CompareValue也转化为int
-		if varValueInt <= CompareValueFloat {
-			return true, nil
-		} else {
-			return false, nil
-		}
-
-	case apiObject.ChoiceCheckTypeStrGreaterThen:
-		varValueInt := varValue.(string)
-
-		// CompareValue也转化为int
-		if varValueInt > CompareValue {
-			return true, nil
-		} else {
-			return false, nil
-		}
-
-	case apiObject.ChoiceCheckTypeStrLessThen:
-
-		varValueInt := varValue.(string)
-
-		// CompareValue也转化为int
-		if varValueInt < CompareValue {
-			return true, nil
-		} else {
-			return false, nil
-		}
-
-	case apiObject.ChoiceCheckTypeStrGreaterAndEqualThen:
-		varValueInt := varValue.(string)
-
-		// CompareValue也转化为int
-		if varValueInt >= CompareValue {
-			return true, nil
-		} else {
-			return false, nil
-		}
-	case apiObject.ChoiceCheckTypeStrLessAndEqualThen:
-		varValueInt := varValue.(string)
-
-		// CompareValue也转化为int
-		if varValueInt <= CompareValue {
-			return true, nil
-		} else {
-			return false, nil
-		}
+	case apiObject.ChoiceCheckTypeStrLessAndEqualThan:
+		return varValueString <= CompareValue, nil
 	}
 
 	return false, errors.New("unknow checkType")
 }
-
-// ChoiceCheckTypeEqual                  ChoiceCheckType = "equal"
-// ChoiceCheckTypeNotEqual               ChoiceCheckType = "notEqual"
-// ChoiceCheckTypeNumGreaterThen         ChoiceCheckType = "numGreaterThen"
-// ChoiceCheckTypeNumLessThen            ChoiceCheckType = "numLessThen"
-// ChoiceCheckTypeNumGreaterAndEqualThen ChoiceCheckType = "numGreaterAndEqualThen"
-// ChoiceCheckTypeNumLessAndEqualThen    ChoiceCheckType = "numLessAndEqualThen"
-
-// ChoiceCheckTypeStrGreaterThen         ChoiceCheckType = "strGreaterThen"
-// ChoiceCheckTypeStrLessThen            ChoiceCheckType = "strLessThen"
-// ChoiceCheckTypeStrGreaterAndEqualThen ChoiceCheckType = "strGreaterAndEqualThen"
-// ChoiceCheckTypeStrLessAndEqualThen    ChoiceCheckType = "strLessAndEqualThen"

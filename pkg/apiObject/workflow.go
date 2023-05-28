@@ -11,8 +11,8 @@ const (
 	WorkflowNodeTypeFunc   WorkflowNodeType = "func"
 	WorkflowNodeTypeChoice WorkflowNodeType = "choice"
 
-	WorkflowRunning string = "running"
-	WorkflowCompleted       string = "completed"
+	WorkflowRunning   string = "running"
+	WorkflowCompleted string = "completed"
 )
 
 type WorkflowFuncData struct {
@@ -24,18 +24,38 @@ type WorkflowFuncData struct {
 type ChoiceCheckType string
 
 const (
-	ChoiceCheckTypeEqual                  ChoiceCheckType = "equal"
-	ChoiceCheckTypeNotEqual               ChoiceCheckType = "notEqual"
-	ChoiceCheckTypeNumGreaterThen         ChoiceCheckType = "numGreaterThen"
-	ChoiceCheckTypeNumLessThen            ChoiceCheckType = "numLessThen"
-	ChoiceCheckTypeNumGreaterAndEqualThen ChoiceCheckType = "numGreaterAndEqualThen"
-	ChoiceCheckTypeNumLessAndEqualThen    ChoiceCheckType = "numLessAndEqualThen"
+	ChoiceCheckTypeNumEqual               ChoiceCheckType = "numEqual"
+	ChoiceCheckTypeNumNotEqual            ChoiceCheckType = "numNotEqual"
+	ChoiceCheckTypeNumGreaterThan         ChoiceCheckType = "numGreaterThan"
+	ChoiceCheckTypeNumLessThan            ChoiceCheckType = "numLessThan"
+	ChoiceCheckTypeNumGreaterAndEqualThan ChoiceCheckType = "numGreaterAndEqualThan"
+	ChoiceCheckTypeNumLessAndEqualThan    ChoiceCheckType = "numLessAndEqualThan"
 
-	ChoiceCheckTypeStrGreaterThen         ChoiceCheckType = "strGreaterThen"
-	ChoiceCheckTypeStrLessThen            ChoiceCheckType = "strLessThen"
-	ChoiceCheckTypeStrGreaterAndEqualThen ChoiceCheckType = "strGreaterAndEqualThen"
-	ChoiceCheckTypeStrLessAndEqualThen    ChoiceCheckType = "strLessAndEqualThen"
+	ChoiceCheckTypeStrEqual               ChoiceCheckType = "strEqual"
+	ChoiceCheckTypeStrNotEqual            ChoiceCheckType = "strNotEqual"
+	ChoiceCheckTypeStrGreaterThan         ChoiceCheckType = "strGreaterThan"
+	ChoiceCheckTypeStrLessThan            ChoiceCheckType = "strLessThan"
+	ChoiceCheckTypeStrGreaterAndEqualThan ChoiceCheckType = "strGreaterAndEqualThan"
+	ChoiceCheckTypeStrLessAndEqualThan    ChoiceCheckType = "strLessAndEqualThan"
 )
+
+var ChoiceCheckNumTypeList = []string{
+	string(ChoiceCheckTypeNumEqual),
+	string(ChoiceCheckTypeNumNotEqual),
+	string(ChoiceCheckTypeNumGreaterThan),
+	string(ChoiceCheckTypeNumLessThan),
+	string(ChoiceCheckTypeNumGreaterAndEqualThan),
+	string(ChoiceCheckTypeNumLessAndEqualThan),
+}
+
+var ChoiceCheckStrTypeList = []string{
+	string(ChoiceCheckTypeStrEqual),
+	string(ChoiceCheckTypeStrNotEqual),
+	string(ChoiceCheckTypeStrGreaterThan),
+	string(ChoiceCheckTypeStrLessThan),
+	string(ChoiceCheckTypeStrGreaterAndEqualThan),
+	string(ChoiceCheckTypeStrLessAndEqualThan),
+}
 
 type WorkflowChoiceData struct {
 	TrueNextNodeName  string `json:"trueNextNodeName" yaml:"trueNextNodeName"`
@@ -99,7 +119,6 @@ func (w *WorkflowStore) GetName() string {
 func (w *WorkflowStore) GetNamespace() string {
 	return w.Metadata.Namespace
 }
-
 
 // 以下函数用来是实现apiObject.Object接口
 func (wf *Workflow) GetObjectKind() string {

@@ -58,7 +58,11 @@
 项目一共包含主要分支包括
 - Master分支：项目的发行分支，**只有通过了测试**,才能通过PR合并到Master分支。
 - Development分支：开发分支，用于合并多个Feature的中间分支，
-- Feature/*分支：功能特定分支，包含相关功能的开发分支
+- Feature/* 分支：功能特定分支，包含相关功能的开发分支
+
+如下图所示，是我们开发时候的Pr合并的情况。所有的Pr都带有相关的Label，便于合并的时候审查。
+
+<img width="1500" alt="截屏2023-05-28 23 29 27" src="https://github.com/Musicminion/minik8s/assets/84625273/30f6241a-46d1-4ff6-9643-1ad3b641f2fc">
 
 
 

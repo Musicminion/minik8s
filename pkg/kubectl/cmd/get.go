@@ -39,6 +39,7 @@ func init() {
 	getNamespaceObjectFuncMap[string(Get_Kind_Hpa)] = getNamespaceHpas
 	getNamespaceObjectFuncMap[string(Get_Kind_Function)] = getNamespaceFunctions
 	getNamespaceObjectFuncMap[string(Get_Kind_Dns)] = getNamespaceDns
+	getNamespaceObjectFuncMap[string(Get_Kind_Workflow)] = getNamespaceWorkflows
 
 	getSpecificObjectFunMap[string(Get_Kind_Pod)] = getSpecificPod
 	getSpecificObjectFunMap[string(Get_Kind_Service)] = getSpecificService
@@ -47,6 +48,7 @@ func init() {
 	getSpecificObjectFunMap[string(Get_Kind_Hpa)] = getSpecificHpa
 	getSpecificObjectFunMap[string(Get_Kind_Function)] = getSpecificFunction
 	getSpecificObjectFunMap[string(Get_Kind_Dns)] = getSpecificDns
+	getSpecificObjectFunMap[string(Get_Kind_Workflow)] = getSpecificWorkflow
 }
 
 type GetObject string
@@ -59,6 +61,7 @@ const (
 	Get_Kind_Dns        GetObject = "dns"
 	Get_Kind_Hpa        GetObject = "hpa"
 	Get_Kind_Function   GetObject = "function"
+	Get_Kind_Workflow   GetObject = "workflow"
 )
 
 func getObjectHandler(cmd *cobra.Command, args []string) {
@@ -485,6 +488,54 @@ func getNamespaceFunctions(namespace string) {
 }
 
 // ==============================================
+// get Workflow handler
+// ==============================================
+
+func getSpecificWorkflow(namespace, name string) {
+	url := stringutil.Replace(config.WorkflowSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
+	url = config.GetAPIServerURLPrefix() + url
+
+	workflow := &apiObject.WorkflowStore{}
+	code, err := netrequest.GetRequestByTarget(url, workflow, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getSpecificService: code:", code)
+		return
+	}
+
+	workflows := []apiObject.WorkflowStore{*workflow}
+	printWorkflowsResult(workflows)
+
+}
+
+func getNamespaceWorkflows(namespace string) {
+	url := stringutil.Replace(config.WorkflowURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url = config.GetAPIServerURLPrefix() + url
+
+	workflows := []apiObject.WorkflowStore{}
+
+	code, err := netrequest.GetRequestByTarget(url, &workflows, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getNamespaceWorkflows: code:", code)
+		return
+	}
+
+	printWorkflowsResult(workflows)
+}
+
+// ==============================================
 
 // 打印get的结果和报错信息，尽可能对用户友好
 // ==============================================
@@ -816,6 +867,32 @@ func printFunctionResult(function *apiObject.Function, t table.Writer) {
 			color.HiCyanString(function.GetObjectNamespace()),
 			color.HiCyanString(function.GetObjectName()),
 			color.GreenString(function.Spec.UserUploadFilePath),
+		},
+	})
+}
+
+func printWorkflowsResult(workflows []apiObject.WorkflowStore) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Phase", "Result"})
+
+	// 遍历所有的DnsStore
+	for _, workflow := range workflows {
+		printWorkflowResult(&workflow, t)
+	}
+
+	t.Render()
+}
+
+func printWorkflowResult(workflow *apiObject.WorkflowStore, t table.Writer) {
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.BlueString(string(Get_Kind_Function)),
+			color.HiCyanString(workflow.ToWorkflow().ToWorkflowStore().GetNamespace()),
+			color.HiCyanString(workflow.ToWorkflow().GetObjectName()),
+			color.GreenString(workflow.Status.Phase),
+			color.GreenString(workflow.Status.Result),
 		},
 	})
 }

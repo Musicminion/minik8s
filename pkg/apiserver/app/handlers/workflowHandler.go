@@ -431,6 +431,9 @@ func GetGlobalWorkFlows(c *gin.Context) {
 }
 
 func selectiveUpdateFlowStatus(oldStatus *apiObject.WorkflowStore, newStatus *apiObject.WorkflowStatus) {
+	if newStatus.Phase != "" {
+		oldStatus.Status.Phase = newStatus.Phase
+	}
 	if newStatus.Result != "" {
 		oldStatus.Status.Result = newStatus.Result
 	}

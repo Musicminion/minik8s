@@ -170,7 +170,7 @@ func (c *funcController) AddCallRecord(funcName, funcNamespace string) error {
 func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
 	fmt.Println("scale down start")
 	// 【TODO】
-	url := config.GetAPIServerURLPrefix() + config.FunctionSpecURL
+	url := config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 
@@ -209,7 +209,7 @@ func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
 func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error {
 	fmt.Println("scale up start")
 	// 【TODO】
-	url := config.GetAPIServerURLPrefix() + config.FunctionSpecURL
+	url := config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, funcName)
 

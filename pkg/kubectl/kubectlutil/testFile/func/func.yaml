@@ -3,4 +3,4 @@ kind: Function
 metadata:
   name: test-function
 spec:
-  userUploadFilePath: "/home/minik8s/minik8s/pkg/serveless/test-data/example-1"
+  userUploadFilePath: "/home/wave/Desktop/miniK8s/pkg/serveless/test-data/example-1"

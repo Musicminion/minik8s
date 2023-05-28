@@ -450,12 +450,12 @@ func getNamespaceReplicaSets(namespace string) {
 // ==============================================
 
 func getSpecificFunction(namespace, name string) {
-	url := stringutil.Replace(config.HPASpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url := stringutil.Replace(config.FunctionSpecURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 	url = config.GetAPIServerURLPrefix() + url
 
-	hpa := &apiObject.HPAStore{}
-	code, err := netrequest.GetRequestByTarget(url, hpa, "data")
+	function := &apiObject.Function{}
+	code, err := netrequest.GetRequestByTarget(url, function, "data")
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -463,20 +463,20 @@ func getSpecificFunction(namespace, name string) {
 	}
 
 	if code != http.StatusOK {
-		fmt.Println("getSpecificDns: code:", code)
+		fmt.Println("getSpecificFunction: code:", code)
 		return
 	}
-	hpaStores := []apiObject.HPAStore{*hpa}
-	printHpasResult(hpaStores)
+	functions := []apiObject.Function{*function}
+	printFunctionsResult(functions)
 }
 
 func getNamespaceFunctions(namespace string) {
 
-	url := stringutil.Replace(config.HPAURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	url := stringutil.Replace(config.FunctionURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = config.GetAPIServerURLPrefix() + url
-	hpaStores := []apiObject.HPAStore{}
+	functions := []apiObject.Function{}
 
-	code, err := netrequest.GetRequestByTarget(url, &hpaStores, "data")
+	code, err := netrequest.GetRequestByTarget(url, &functions, "data")
 
 	if err != nil {
 		fmt.Println(err.Error())
@@ -484,11 +484,11 @@ func getNamespaceFunctions(namespace string) {
 	}
 
 	if code != http.StatusOK {
-		fmt.Println("getNamespaceDnss: code:", code)
+		fmt.Println("getNamespaceFunctions: code:", code)
 		return
 	}
 
-	printHpasResult(hpaStores)
+	printFunctionsResult(functions)
 }
 
 // ==============================================
@@ -798,6 +798,31 @@ func printReplicasetResult(replicaset *apiObject.ReplicaSetStore, t table.Writer
 			color.HiCyanString(replicaset.ToReplicaSet().GetObjectNamespace()),
 			color.HiCyanString(replicaset.ToReplicaSet().GetObjectName()),
 			color.GreenString(fmt.Sprintf("\t\t%d/%d", replicaset.Status.ReadyReplicas, replicaset.Status.Replicas)),
+		},
+	})
+}
+
+func printFunctionsResult(functions []apiObject.Function) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "FilePath"})
+
+	// 遍历所有的DnsStore
+	for _, function := range functions {
+		printFunctionResult(&function, t)
+	}
+
+	t.Render()
+}
+
+func printFunctionResult(function *apiObject.Function, t table.Writer) {
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.BlueString(string(Get_Kind_Function)),
+			color.HiCyanString(function.GetObjectNamespace()),
+			color.HiCyanString(function.GetObjectName()),
+			color.GreenString(function.Spec.UserUploadFilePath),
 		},
 	})
 }

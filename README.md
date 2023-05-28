@@ -62,7 +62,8 @@
 
 如下图所示，是我们开发时候的Pr合并的情况。所有的Pr都带有相关的Label，便于合并的时候审查。
 
-<img width="1500" alt="截屏2023-05-28 23 29 27" src="https://github.com/Musicminion/minik8s/assets/84625273/30f6241a-46d1-4ff6-9643-1ad3b641f2fc">
+![image](https://github.com/Musicminion/minik8s/assets/84625273/e656077e-adb1-4030-ba45-194a791c6d60)
+
 
 
 

@@ -210,6 +210,14 @@ func (s *server) checkFunction(c *gin.Context) {
 		return
 	}
 
+	// 存在，添加callrecord
+	err := s.funcController.AddCallRecord(funcName, funcNamespace)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "add call record error, " + err.Error(),
+		})
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"message": "success",
 		"data":    true,

@@ -4,7 +4,7 @@ def main(params):
     xx = x - y
     yy = y - x
     resp = {
-        "x": xx
+        "x": xx,
         "y": yy
     }
     return resp

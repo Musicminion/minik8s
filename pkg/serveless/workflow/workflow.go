@@ -57,7 +57,7 @@ func (w *workflowController) routine() {
 		}
 
 		// 如果workflow的某个func node无实例，进行创建，等待下一次的routine执行
-		if !(w.checkWorkflowNode(flow)){
+		if !(w.checkWorkflowNode(flow)) {
 			continue
 		}
 
@@ -172,9 +172,9 @@ func (w *workflowController) checkWorkflowNode(workflow apiObject.WorkflowStore)
 		if node.Type == apiObject.WorkflowNodeTypeFunc {
 			// 构造url
 			url := config.GetServelessServerURLPrefix() + "/" + node.FuncData.FuncNamespace + "/" + node.FuncData.FuncName
-			
+
 			// 发送get请求
-			var flag bool  // 标记是否存在pod实例
+			var flag bool // 标记是否存在pod实例
 			code, err := netrequest.GetRequestByTarget(url, &flag, "data")
 			if err != nil || code != http.StatusOK || !flag {
 				ret = false
@@ -201,49 +201,53 @@ func (w *workflowController) CompareCheck(checkType apiObject.ChoiceCheckType, l
 		return false, errors.New("varName not exist")
 	}
 
+	fmt.Println("varValue is ", varValue)
+
 	switch checkType {
 	case apiObject.ChoiceCheckTypeEqual:
-		// 把varValue转化为int，然后和curNode.ChoiceData.CheckValue比较
+		// 把varValue转化为float，然后和curNode.ChoiceData.CheckValue比较
 		// 如果相等，就执行curNode.ChoiceData.EqualNodeName
-		varValueInt := varValue.(int)
-		CompareValueInt, err := strconv.Atoi(CompareValue)
+		varValueInt := varValue.(float64)
+		// CompareValue转float64
+		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
 
 		if err != nil {
 			return false, err
 		}
 
-		// CompareValue也转化为int
-		if varValueInt == CompareValueInt {
+		// CompareValue也转化为float64
+		if varValueInt == CompareValueFloat {
 			return true, nil
 		} else {
 			return false, nil
 		}
 
 	case apiObject.ChoiceCheckTypeNotEqual:
-		varValueInt := varValue.(int)
-		CompareValueInt, err := strconv.Atoi(CompareValue)
-
+		varValueInt := varValue.(float64)
+		// CompareValue转float64
+		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
 		if err != nil {
 			return false, err
 		}
 
 		// CompareValue也转化为int
-		if varValueInt != CompareValueInt {
+		if varValueInt != CompareValueFloat {
 			return true, nil
 		} else {
 			return false, nil
 		}
 
 	case apiObject.ChoiceCheckTypeNumGreaterThen:
-		varValueInt := varValue.(int)
-		CompareValueInt, err := strconv.Atoi(CompareValue)
+		varValueInt := varValue.(float64)
+		// CompareValue转float64
+		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
 
 		if err != nil {
 			return false, err
 		}
 
 		// CompareValue也转化为int
-		if varValueInt > CompareValueInt {
+		if varValueInt > CompareValueFloat {
 			return true, nil
 		} else {
 			return false, nil
@@ -251,45 +255,48 @@ func (w *workflowController) CompareCheck(checkType apiObject.ChoiceCheckType, l
 
 	case apiObject.ChoiceCheckTypeNumLessThen:
 
-		varValueInt := varValue.(int)
-		CompareValueInt, err := strconv.Atoi(CompareValue)
+		varValueInt := varValue.(float64)
+		// CompareValue转float64
+		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
 
 		if err != nil {
 			return false, err
 		}
 
 		// CompareValue也转化为int
-		if varValueInt < CompareValueInt {
+		if varValueInt < CompareValueFloat {
 			return true, nil
 		} else {
 			return false, nil
 		}
 
 	case apiObject.ChoiceCheckTypeNumGreaterAndEqualThen:
-		varValueInt := varValue.(int)
-		CompareValueInt, err := strconv.Atoi(CompareValue)
+		varValueInt := varValue.(float64)
+		// CompareValue转float64
+		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
 
 		if err != nil {
 			return false, err
 		}
 
 		// CompareValue也转化为int
-		if varValueInt >= CompareValueInt {
+		if varValueInt >= CompareValueFloat {
 			return true, nil
 		} else {
 			return false, nil
 		}
 
 	case apiObject.ChoiceCheckTypeNumLessAndEqualThen:
-		varValueInt := varValue.(int)
-		CompareValueInt, err := strconv.Atoi(CompareValue)
+		varValueInt := varValue.(float64)
+		// CompareValue转float64
+		CompareValueFloat, err := strconv.ParseFloat(CompareValue, 64)
 
 		if err != nil {
 			return false, err
 		}
 
 		// CompareValue也转化为int
-		if varValueInt <= CompareValueInt {
+		if varValueInt <= CompareValueFloat {
 			return true, nil
 		} else {
 			return false, nil

@@ -5,7 +5,7 @@ metadata:
   name: workflow-example
   namespace: default
 spec:
-  entryParams: "{'x': 1, 'y': 2}"
+  entryParams: '{"x": 1, "y": 2}'
   entryNodeName: node1
   workflowNodes: 
   - name: node1

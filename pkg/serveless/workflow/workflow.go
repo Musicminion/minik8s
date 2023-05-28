@@ -90,7 +90,7 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 
 		// 如果是函数节点，就执行函数
 		if curNode.Type == apiObject.WorkflowNodeTypeFunc {
-			url := config.GetServelessServerURLPrefix() + curNode.FuncData.FuncNamespace + "/" + curNode.FuncData.FuncName
+			url := config.GetServelessServerURLPrefix() + "/" + curNode.FuncData.FuncNamespace + "/" + curNode.FuncData.FuncName
 			resp, err := netrequest.PostString(url, lastStepResult)
 
 			if err != nil {
@@ -98,9 +98,17 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 				break
 			}
 
-			if data, err := io.ReadAll(resp.Body); err != nil {
+			if data, err := io.ReadAll(resp.Body); err == nil {
 				defer resp.Body.Close()
-				lastStepResult = string(data)
+				// 将data反序列化为map
+				var result map[string]interface{}
+				err := json.Unmarshal(data, &result)
+				if err != nil {
+					fmt.Println("unmarshal failed + ", err.Error())
+					break
+				}
+				lastStepResult = result["data"].(string)
+				
 			} else {
 				fmt.Println("read resp body failed + ", err.Error())
 				break
@@ -130,8 +138,8 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 
 func (w *workflowController) WriteBackResultToServer(result string, namespace string, name string) {
 	statusURL := config.GetAPIServerURLPrefix() + config.WorkflowSpecStatusURL
-	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, namespace)
-	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, name)
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE_PART, namespace)
+	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME_PART, name)
 
 	writeBackStatus := &apiObject.WorkflowStatus{
 		Result: result,
@@ -145,7 +153,7 @@ func (w *workflowController) WriteBackResultToServer(result string, namespace st
 	}
 
 	if code != http.StatusOK {
-		fmt.Println("put request failed + ", err.Error())
+		fmt.Println("put request failed expected code 200, get " + strconv.Itoa(code))
 		return
 	}
 }

@@ -56,7 +56,7 @@ func executeHandler(cmd *cobra.Command, args []string) {
 		return
 	}
 	if code != 200 {
-		fmt.Println("execute function failed, code:", code, "msg: ", res)
+		fmt.Println("execute function failed, code:", code, "msg: ", res.(map[string]interface{})["msg"])
 		return
 	}
 	fmt.Println("execute function success, result:", res)

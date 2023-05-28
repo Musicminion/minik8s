@@ -59,13 +59,6 @@ const (
 	Get_Kind_Dns        GetObject = "dns"
 	Get_Kind_Hpa        GetObject = "hpa"
 	Get_Kind_Function   GetObject = "function"
-
-	Get_Kind_Pods        GetObject = "pods"
-	Get_Kind_Services    GetObject = "services"
-	Get_Kind_Jobs        GetObject = "jobs"
-	Get_Kind_Replicasets GetObject = "replicasets"
-	Get_Kind_Hpas        GetObject = "hpas"
-	Get_Kind_Functions   GetObject = "functions"
 )
 
 func getObjectHandler(cmd *cobra.Command, args []string) {
@@ -433,7 +426,7 @@ func getNamespaceReplicaSets(namespace string) {
 		return
 	}
 
-	if code != http.StatusOK {
+	if code != http.StatusOK && code != http.StatusNoContent {
 		fmt.Println("getNamespaceReplicaSets: code:", code)
 		return
 	}

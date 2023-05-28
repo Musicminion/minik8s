@@ -489,8 +489,6 @@ func applyFuncHandler(fileContent []byte) {
 		return
 	}
 
-	fmt.Println(code)
-
 	if code == http.StatusCreated {
 		printApplyResult(Apply_kind_Func, ApplyResult_Success, "created", msg)
 		fmt.Println()

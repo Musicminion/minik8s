@@ -33,6 +33,7 @@ type dnsController struct {
 	hostList     []string // 通过dns创建的host列表，这些host将被解析为nginx的service ip
 	nginxSvcName string   // nginx service的名称
 	nginxSvcIp   string   // nginx service的ip
+	nodes        []string // 所有的节点
 }
 
 func NewDnsController() (DnsController, error) {
@@ -245,7 +246,7 @@ func (dc *dnsController) UpdateNginxSvcIP() {
 	URL := stringutil.Replace(config.ServiceSpecURL, config.URL_PARAM_NAMESPACE_PART, config.DefaultNamespace)
 	URL = stringutil.Replace(URL, config.URL_PARAM_NAME_PART, dc.nginxSvcName)
 	URL = config.GetAPIServerURLPrefix() + URL
-	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
+
 	code, err := netrequest.GetRequestByTarget(URL, nginxSvc, "data")
 	if err != nil {
 		k8log.ErrorLog("Dns-Controller", "UpdateNginxSvcIP: failed to get nginx service"+err.Error())
@@ -279,7 +280,7 @@ func (dc *dnsController) CreateNginxDns() {
 
 	URL := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, nginxDns.GetDnsNamespace())
 	URL = config.GetAPIServerURLPrefix() + URL
-	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
+
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxDns)
 	if err != nil {
 		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
@@ -293,11 +294,27 @@ func (dc *dnsController) CreateNginxDns() {
 	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx dns")
 }
 
+func (dc *dnsController) GetAllNodes() {
+	nodes := []apiObject.Node{}
+	URL := config.GetAPIServerURLPrefix() + config.NodesURL
+	code, err := netrequest.GetRequestByTarget(URL, nodes, "data")
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "GetAllNodes: failed to get nodes"+err.Error())
+		return
+	}
+	if code != http.StatusOK {
+		k8log.ErrorLog("Dns-Controller", "GetAllNodes: failed to get nodes")
+		return
+	}
+}
+
 func (dc *dnsController) Run() {
 	// 在每个node上创建一个nginx pod
-	// 1. 创建nginx pod  // TODO: 改成relicaSet
+	// 1. 创建nginx pod
 	// 2. 创建nginx service
 	// 3. 创建nginx dns
+
+	// 获取所有的node，并向每个node发送一个创建ningx pod的请求
 	dc.CreateNginxPod()
 	dc.CreateNginxService()
 	// 更新nginxService的ip
@@ -306,3 +323,4 @@ func (dc *dnsController) Run() {
 	// 监听dns的更新
 	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.DnsUpdatehandler, make(chan struct{}))
 }
+    

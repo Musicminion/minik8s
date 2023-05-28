@@ -122,7 +122,7 @@ func applyPodHandler(fileContent []byte) {
 	}
 
 	// 检查Pod的名字是否为空
-	if pod.GetPodName() == "" {
+	if pod.GetObjectName() == "" {
 		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "empty name", "pod name is empty")
 		return
 	}
@@ -130,11 +130,11 @@ func applyPodHandler(fileContent []byte) {
 	// 发请求
 	URL := config.GetAPIServerURLPrefix() + config.PodsURL
 
-	if pod.GetPodNamespace() == "" {
+	if pod.GetObjectNamespace() == "" {
 		pod.Metadata.Namespace = config.DefaultNamespace
 	}
 
-	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetObjectNamespace())
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, pod)
 	if err != nil {
@@ -146,7 +146,7 @@ func applyPodHandler(fileContent []byte) {
 	if code == http.StatusCreated {
 		printApplyResult(Apply_Kind_Pod, ApplyResult_Success, "created", msg)
 		fmt.Println()
-		printApplyObjectInfo(Apply_Kind_Pod, pod.GetPodName(), pod.GetPodNamespace())
+		printApplyObjectInfo(Apply_Kind_Pod, pod.GetObjectName(), pod.GetObjectNamespace())
 	} else {
 		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "failed", msg)
 	}

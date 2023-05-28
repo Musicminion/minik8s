@@ -56,8 +56,8 @@ func (w *workflowController) routine() {
 			continue
 		}
 
-		w.WriteBackResultToServer("running", flow.GetNamespace(), flow.GetName())
-		// 先更新workflow的status为running
+		w.WriteBackResultToServer(apiObject.WorkflowRunning, "", flow.GetNamespace(), flow.GetName())
+		// 先更新workflow的phase为running
 
 		go w.executeWorkflow(flow)
 	}
@@ -108,7 +108,7 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 					break
 				}
 				lastStepResult = result["data"].(string)
-				
+
 			} else {
 				fmt.Println("read resp body failed + ", err.Error())
 				break
@@ -132,16 +132,17 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 		}
 	}
 
-	w.WriteBackResultToServer(lastStepResult, workflow.GetNamespace(), workflow.GetName())
+	w.WriteBackResultToServer(apiObject.WorkflowCompleted, lastStepResult, workflow.GetNamespace(), workflow.GetName())
 
 }
 
-func (w *workflowController) WriteBackResultToServer(result string, namespace string, name string) {
+func (w *workflowController) WriteBackResultToServer(phase string, result string, namespace string, name string) {
 	statusURL := config.GetAPIServerURLPrefix() + config.WorkflowSpecStatusURL
 	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME_PART, name)
 
 	writeBackStatus := &apiObject.WorkflowStatus{
+		Phase:  phase,
 		Result: result,
 	}
 

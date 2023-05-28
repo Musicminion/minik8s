@@ -10,6 +10,9 @@ type WorkflowNodeType string
 const (
 	WorkflowNodeTypeFunc   WorkflowNodeType = "func"
 	WorkflowNodeTypeChoice WorkflowNodeType = "choice"
+
+	WorkflowRunning string = "running"
+	WorkflowCompleted       string = "completed"
 )
 
 type WorkflowFuncData struct {
@@ -59,6 +62,7 @@ type WorkflowSpec struct {
 }
 
 type WorkflowStatus struct {
+	Phase  string `json:"phase" yaml:"phase"`
 	Result string `json:"result" yaml:"result"`
 }
 
@@ -88,19 +92,24 @@ func (w *WorkflowStore) ToWorkflow() *Workflow {
 }
 
 // 定义获取name、namespace的函数
-func (w *Workflow) GetName() string {
-	return w.Metadata.Name
-}
-
-func (w *Workflow) GetNamespace() string {
-	return w.Metadata.Namespace
-}
-
-// 定义获取name、namespace的函数
 func (w *WorkflowStore) GetName() string {
 	return w.Metadata.Name
 }
 
 func (w *WorkflowStore) GetNamespace() string {
 	return w.Metadata.Namespace
+}
+
+
+// 以下函数用来是实现apiObject.Object接口
+func (wf *Workflow) GetObjectKind() string {
+	return wf.Kind
+}
+
+func (wf *Workflow) GetObjectName() string {
+	return wf.Metadata.Name
+}
+
+func (wf *Workflow) GetObjectNamespace() string {
+	return wf.Metadata.Namespace
 }

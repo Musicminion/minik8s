@@ -73,7 +73,7 @@ func (hc *hpaController) AddOneHpaPod(hpa apiObject.HPAStore, podTemplate apiObj
 	k8log.DebugLog("HpaController", fmt.Sprintf("AddOneHpaPod: hpa=%s, pod=%s", hpa.Metadata.Name, podTemplate.Metadata.Name))
 	// 根据podTemplate，创建新的pod
 	newPod := podTemplate
-	newPod.Metadata.Name = podTemplate.GetPodName() + "-" + stringutil.GenerateRandomStr(5)
+	newPod.Metadata.Name = podTemplate.GetObjectName() + "-" + stringutil.GenerateRandomStr(5)
 
 	// 修改container的name
 	for index := range podTemplate.Spec.Containers {

@@ -13,11 +13,12 @@ const (
 	JobKind        = "Job"
 	ReplicaSetKind = "Replicaset"
 	HpaKind        = "Hpa"
-	FunctionKind  = "Function"
+	FunctionKind   = "Function"
+	WorkflowKind   = "Workflow"
 )
 
-var AllResourceKind =  strings.ToLower("[" + PodKind + "/" + ServiceKind + "/" + DnsKind + "/" + NodeKind + "/" + JobKind + 
-						"/" + ReplicaSetKind + "/" + HpaKind + "/" + FunctionKind + "]")
+var AllResourceKind = strings.ToLower("[" + PodKind + "/" + ServiceKind + "/" + DnsKind + "/" + NodeKind + "/" + JobKind +
+	"/" + ReplicaSetKind + "/" + HpaKind + "/" + FunctionKind + "/" + WorkflowKind + "]")
 
 type APIObject interface {
 	// GetObjectName() string
@@ -28,12 +29,13 @@ type APIObject interface {
 
 // kind -> apiObject
 var KindToStructType = map[string]reflect.Type{
-	PodKind:     reflect.TypeOf(&Pod{}).Elem(),
-	ServiceKind: reflect.TypeOf(&Service{}).Elem(),
-	DnsKind:     reflect.TypeOf(&Dns{}).Elem(),
-	JobKind:     reflect.TypeOf(&Job{}).Elem(),
-	NodeKind:    reflect.TypeOf(&Node{}).Elem(),
+	PodKind:        reflect.TypeOf(&Pod{}).Elem(),
+	ServiceKind:    reflect.TypeOf(&Service{}).Elem(),
+	DnsKind:        reflect.TypeOf(&Dns{}).Elem(),
+	JobKind:        reflect.TypeOf(&Job{}).Elem(),
+	NodeKind:       reflect.TypeOf(&Node{}).Elem(),
 	ReplicaSetKind: reflect.TypeOf(&ReplicaSet{}).Elem(),
-	HpaKind: reflect.TypeOf(&HPA{}).Elem(),
-	FunctionKind: reflect.TypeOf(&Function{}).Elem(),
+	HpaKind:        reflect.TypeOf(&HPA{}).Elem(),
+	FunctionKind:   reflect.TypeOf(&Function{}).Elem(),
+	WorkflowKind:   reflect.TypeOf(&Workflow{}).Elem(),
 }

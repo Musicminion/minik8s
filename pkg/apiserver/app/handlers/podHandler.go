@@ -181,12 +181,12 @@ func AddPod(c *gin.Context) {
 	}
 
 	// 判断PodNamespace是否为空
-	if pod.GetPodNamespace() == "" {
+	if pod.GetObjectNamespace() == "" {
 		pod.Basic.Metadata.Namespace = config.DefaultNamespace
 	}
 
 	// 检查name是否重复
-	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
+	key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetObjectNamespace(), newPodName)
 	res, err := etcdclient.EtcdStore.Get(key)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -226,7 +226,7 @@ func AddPod(c *gin.Context) {
 	// 持久化
 	// key = stringutil.Replace(serverconfig.DefaultPod, config.URI_PARAM_NAME_PART, newPodName)
 
-	key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
+	key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetObjectNamespace(), newPodName)
 
 	// 将pod存储到etcd中
 	err = etcdclient.EtcdStore.Put(key, podStoreJson)

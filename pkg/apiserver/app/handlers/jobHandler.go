@@ -148,12 +148,12 @@ func AddJob(c *gin.Context) {
 	}
 
 	// 检查Job的namespace是否存在
-	if job.GetJobNamespace() == "" {
+	if job.GetObjectNamespace() == "" {
 		job.Metadata.Namespace = config.DefaultNamespace
 	}
 
 	// 检查Job是否存在
-	key := fmt.Sprintf(serverconfig.EtcdJobPath+"%s/%s", job.GetJobNamespace(), newJobName)
+	key := fmt.Sprintf(serverconfig.EtcdJobPath+"%s/%s", job.GetObjectNamespace(), newJobName)
 
 	// 从etcd中获取数据
 	res, err := etcdclient.EtcdStore.Get(key)
@@ -191,7 +191,7 @@ func AddJob(c *gin.Context) {
 	}
 
 	// 将JobStore存入etcd
-	key = fmt.Sprintf(serverconfig.EtcdJobPath+"%s/%s", job.GetJobNamespace(), newJobName)
+	key = fmt.Sprintf(serverconfig.EtcdJobPath+"%s/%s", job.GetObjectNamespace(), newJobName)
 
 	// 将JobStore存入etcd
 	err = etcdclient.EtcdStore.Put(key, jobStoreJson)

@@ -122,7 +122,11 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAMESPACE, workflow.GetNamespace())
 	statusURL = stringutil.Replace(statusURL, config.URL_PARAM_NAME, workflow.GetName())
 
-	code, _, err := netrequest.PutRequestByTarget(statusURL, workflow.Status)
+	writeBackStatus := &apiObject.WorkflowStatus{
+		Result: lastStepResult,
+	}
+
+	code, _, err := netrequest.PutRequestByTarget(statusURL, writeBackStatus)
 
 	if err != nil {
 		fmt.Println("put request failed + ", err.Error())

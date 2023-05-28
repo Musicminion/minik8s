@@ -10,7 +10,11 @@
 - 冯逸飞 520030910021
 - 张子谦 520111910121
 
+项目仓库的地址：
+- Github: https://github.com/Musicminion/minik8s/
+- Gitee: https://gitee.com/Musicminion/miniK8s
 
+项目的CI/CD主要在Github上面运行，所以如有需要查看，请移步到Github查看。
 
 ### 架构
 #### 使用到的开源库
@@ -28,6 +32,8 @@
 - [docker/login-action](https://github.com/docker/login-action) CICD自动推送镜像到dockerHub
 - [docker/setup-qemu-action ](https://github.com/docker/setup-qemu-action)CICD交叉编译平台
 - [github.com/google/uuid](https://github.com/google/uuid) API对象UUID的生成
+- [github.com/spf13/cobra](https://github.com/spf13/cobra) Kubectl的命令行工具
+- [github.com/jedib0t/go-pretty/table](https://github.com/jedib0t/go-pretty/table) Kubectl美化输出
 
 #### 架构
 
@@ -43,8 +49,17 @@
 
 运行在WorkerNode上面的主要有下面的几个组件
 
-- kubeproxy：负责DNS、Iptable的修改，维护Service的状态
-- Kubelet：维护Pod的底层创建
+- kubeproxy：负责DNS、Iptable的修改，维护Service的状态等
+- Kubelet：维护Pod的底层创建，Pod生命周期的管理，Pod异常的重启/重建等
+- Redis：作为本地的缓存，哪怕API-Server完全崩溃，因为有本地的Redis，机器重新启动之后，Kubelet也能够恢复之前容器的状态
+
+**项目分支**：我们的开发采用多分支进行。每一个功能点严格对应一个Feature分支，所有的推送都会经过`go test`的测试检验。
+
+项目一共包含主要分支包括
+- Master分支：项目的发行分支，**只有通过了测试**,才能通过PR合并到Master分支。
+- Development分支：开发分支，用于合并多个Feature的中间分支，
+- Feature/*分支：功能特定分支，包含相关功能的开发分支
+
 
 
 ### 记录apiserver的开发流程

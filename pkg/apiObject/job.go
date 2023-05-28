@@ -44,6 +44,17 @@ type JobStore struct {
 	Status JobStatus `yaml:"status" json:"status"`
 }
 
+func (j *Job) GetJobUUID() string {
+	return j.Basic.Metadata.UUID
+}
+
+func (j *Job) ToJobStore() *JobStore {
+	return &JobStore{
+		Basic: j.Basic,
+		Spec:  j.Spec,
+	}
+}
+
 func (js *JobStore) GetJobName() string {
 	return js.Metadata.Name
 }
@@ -54,25 +65,6 @@ func (js *JobStore) GetJobNamespace() string {
 
 func (js *JobStore) GetJobUUID() string {
 	return js.Metadata.UUID
-}
-
-func (j *Job) GetJobName() string {
-	return j.Basic.Metadata.Name
-}
-
-func (j *Job) GetJobNamespace() string {
-	return j.Basic.Metadata.Namespace
-}
-
-func (j *Job) GetJobUUID() string {
-	return j.Basic.Metadata.UUID
-}
-
-func (j *Job) ToJobStore() *JobStore {
-	return &JobStore{
-		Basic: j.Basic,
-		Spec:  j.Spec,
-	}
 }
 
 func (js *JobStore) ToJob() *Job {

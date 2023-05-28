@@ -30,12 +30,17 @@ func CheckIfPodMeetRequirement(pod *apiObject.PodStore, selectors map[string]str
 	// 这里的匹配策略是：只要pod的label中有一个key-value对与selector中的key-value对相同，就认为pod满足要求
 	podLabel := pod.Metadata.Labels
 	for key, value := range selectors {
-		if podLabel[key] == value {
-			return true
+		// if podLabel[key] == value {
+		// 	return true
+		// } else {
+		// 	continue
+		// }
+		if podLabel[key] != value {
+			return false
 		} else {
 			continue
 		}
 	}
 
-	return false
+	return true
 }

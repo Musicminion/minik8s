@@ -115,8 +115,8 @@ func AddPodToEtcd() {
 		}
 
 		// 检查name是否重复
-		newPodName := pod.GetPodName()
-		key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
+		newPodName := pod.GetObjectName()
+		key := fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetObjectNamespace(), newPodName)
 		res, err := etcdclient.EtcdStore.Get(key)
 		if len(res) != 0 {
 			k8log.ErrorLog("APIServer", "AddPod: pod name has exist")
@@ -138,7 +138,7 @@ func AddPodToEtcd() {
 			return
 		}
 
-		key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetPodNamespace(), newPodName)
+		key = fmt.Sprintf(serverconfig.EtcdPodPath+"%s/%s", pod.GetObjectNamespace(), newPodName)
 
 		// 将pod存储到etcd中
 		err = etcdclient.EtcdStore.Put(key, podStoreJson)

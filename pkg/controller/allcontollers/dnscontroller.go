@@ -184,11 +184,11 @@ func (dc *dnsController) CreateNginxPod() {
 	}
 
 	// 判断namespace是否为空
-	if nginxPod.GetPodNamespace() == "" {
+	if nginxPod.GetObjectNamespace() == "" {
 		nginxPod.Metadata.Namespace = config.DefaultNamespace
 	}
 
-	URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetPodNamespace())
+	URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetObjectNamespace())
 	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxPod)
@@ -220,7 +220,7 @@ func (dc *dnsController) CreateNginxService() {
 		return
 	}
 
-	URL := stringutil.Replace(config.ServiceURL, config.URL_PARAM_NAMESPACE_PART, nginxService.GetNamespace())
+	URL := stringutil.Replace(config.ServiceURL, config.URL_PARAM_NAMESPACE_PART, nginxService.GetObjectNamespace())
 	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxService)
@@ -234,7 +234,7 @@ func (dc *dnsController) CreateNginxService() {
 	}
 
 	// 更新nginx service的名称
-	dc.nginxSvcName = nginxService.GetName()
+	dc.nginxSvcName = nginxService.GetObjectName()
 	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx service")
 }
 
@@ -277,7 +277,7 @@ func (dc *dnsController) CreateNginxDns() {
 		return
 	}
 
-	URL := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, nginxDns.GetDnsNamespace())
+	URL := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, nginxDns.GetObjectNamespace())
 	URL = config.GetAPIServerURLPrefix() + URL
 	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
 	code, _, err := netrequest.PostRequestByTarget(URL, nginxDns)

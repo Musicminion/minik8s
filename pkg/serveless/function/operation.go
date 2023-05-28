@@ -209,7 +209,7 @@ func (c *funcController) CreateFuncReplica(f *apiObject.Function) error {
 			},
 			Template: apiObject.PodTemplate{
 				Metadata: apiObject.Metadata{
-					Name:      f.Metadata.Name + stringutil.GenerateRandomStr(10),
+					Name:      f.Metadata.Name + "-" +stringutil.GenerateRandomStr(10),
 					Namespace: f.Metadata.Namespace,
 					Labels: map[string]string{
 						minik8stypes.Pod_Func_Name:      f.Metadata.Name,

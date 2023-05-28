@@ -18,7 +18,7 @@ const (
 	Registry_Server_Password       = "example"
 )
 
-var Registry_Server_IP = config.GetAPIServerIP()
+var Registry_Server_IP = config.GetMasterIP()
 var Registry_Server_Prefix = Registry_Server_IP + ":" + Registry_Server_Port
 
 var (

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"math/rand"
+	"miniK8s/pkg/k8log"
 	netrequest "miniK8s/util/netRequest"
 	"net/http"
 	"time"
@@ -50,6 +51,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	funcNamespace := c.Param("funcNamespace")
 	funcName := c.Param("funcName")
 
+	k8log.InfoLog("serveless", "func: "+funcNamespace+"/"+funcName+" is called")
 	if funcNamespace == "" || funcName == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "funcNamespace or funcName is empty",
@@ -62,10 +64,10 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	podIPs, ok := s.routeTable[key]
 
 	if !ok {
+		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "funcNamespace or funcName is not exist, maybe creating",
+			"message": "The function you call has no pod running, maybe creating, please try again later",
 		})
-
 		return
 	}
 
@@ -73,7 +75,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	if len(podIPs) == 0 {
 		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
-			"message": "funcNamespace or funcName is not exist, maybe creating",
+			"message": "The function you call has no pod running, maybe creating, please try again later",
 		})
 		return
 	}
@@ -146,6 +148,14 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 		})
 	}
 
+	// 对被请求的function，添加callrecord
+	err = s.funcController.AddCallRecord(funcName, funcNamespace)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "add call record error, " + err.Error(),
+		})
+	}
+
 	// code, respBody, err := netrequest.PostRequestByTarget(url, body)
 
 	// if err != nil {
@@ -174,6 +184,36 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	// c.JSON(http.StatusOK, gin.H{
 	// 	"data": string(bodyBytes),
 	// })
+}
+
+func (s *server) checkFunction(c *gin.Context) {
+	// 解析请求参数里面的funcNamespace和funcName
+	funcNamespace := c.Param("funcNamespace")
+	funcName := c.Param("funcName")
+
+	k8log.InfoLog("serveless", "checkout func: "+funcNamespace+"/"+funcName)
+	if funcNamespace == "" || funcName == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "funcNamespace or funcName is empty",
+		})
+		return
+	}
+
+	// 判断function是否存在pod实例
+	if s.routeTable[funcNamespace + "/" + funcName] == nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "function has no pod running",
+			"data": false,
+		})
+		// 不存在，需要创建实例
+		s.funcController.ScaleUp(funcName, funcNamespace, 2)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "success",
+		"data":    true,
+	})
 }
 
 // func checkAndCreate(funcNamespace, funcName string) {

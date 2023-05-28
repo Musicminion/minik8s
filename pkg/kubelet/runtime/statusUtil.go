@@ -241,6 +241,9 @@ func (r *runtimeManager) CalculatePodPhaseByContainerStatus(allContainerStatus *
 }
 
 func (r *runtimeManager) ParseInspectInfoToContainerState(inspectInfo *types.ContainerJSON) *types.ContainerState {
+	if inspectInfo == nil {
+		return &types.ContainerState{}
+	}
 
 	containerState := types.ContainerState{
 		Status:     inspectInfo.State.Status,

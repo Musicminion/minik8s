@@ -34,6 +34,7 @@ const (
 	Apply_kind_Dns        ApplyObject = "Dns"
 	Apply_kind_Hpa        ApplyObject = "Hpa"
 	Apply_kind_Func       ApplyObject = "Function"
+	Apply_kind_Workflow   ApplyObject = "Workflow"
 )
 
 // Apply的Result
@@ -96,6 +97,8 @@ func applyHandler(cmd *cobra.Command, args []string) {
 		applyHpaHandler(fileContent)
 	case string(Apply_kind_Func):
 		applyFuncHandler(fileContent)
+	case string(Apply_kind_Workflow):
+		applyWorkflowHandler(fileContent)
 	default:
 		fmt.Println("default")
 	}
@@ -119,7 +122,7 @@ func applyPodHandler(fileContent []byte) {
 	}
 
 	// 检查Pod的名字是否为空
-	if pod.GetPodName() == "" {
+	if pod.GetObjectName() == "" {
 		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "empty name", "pod name is empty")
 		return
 	}
@@ -127,11 +130,11 @@ func applyPodHandler(fileContent []byte) {
 	// 发请求
 	URL := config.GetAPIServerURLPrefix() + config.PodsURL
 
-	if pod.GetPodNamespace() == "" {
+	if pod.GetObjectNamespace() == "" {
 		pod.Metadata.Namespace = config.DefaultNamespace
 	}
 
-	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, pod.GetObjectNamespace())
 
 	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, pod)
 	if err != nil {
@@ -143,7 +146,7 @@ func applyPodHandler(fileContent []byte) {
 	if code == http.StatusCreated {
 		printApplyResult(Apply_Kind_Pod, ApplyResult_Success, "created", msg)
 		fmt.Println()
-		printApplyObjectInfo(Apply_Kind_Pod, pod.GetPodName(), pod.GetPodNamespace())
+		printApplyObjectInfo(Apply_Kind_Pod, pod.GetObjectName(), pod.GetObjectNamespace())
 	} else {
 		printApplyResult(Apply_Kind_Pod, ApplyResult_Failed, "failed", msg)
 	}
@@ -486,8 +489,6 @@ func applyFuncHandler(fileContent []byte) {
 		return
 	}
 
-	fmt.Println(code)
-
 	if code == http.StatusCreated {
 		printApplyResult(Apply_kind_Func, ApplyResult_Success, "created", msg)
 		fmt.Println()
@@ -542,6 +543,53 @@ func applyHpaHandler(fileContent []byte) {
 	} else {
 		printApplyResult(Apply_kind_Hpa, ApplyResult_Failed, "failed", msg)
 	}
+}
+
+// ==============================================
+//
+// 处理Workflow的Apply
+//
+//
+// ==============================================
+
+func applyWorkflowHandler(fileContent []byte) {
+	var workflow apiObject.Workflow
+	err := kubectlutil.ParseAPIObjectFromYamlfileContent(fileContent, &workflow)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "parse yaml failed", err.Error())
+		return
+	}
+
+	// 检查Workflow的名字是否为空
+	if workflow.Metadata.Name == "" {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "empty name", "workflow name is empty")
+		return
+	}
+
+	URL := config.GetAPIServerURLPrefix() + config.WorkflowURL
+
+	if workflow.Metadata.Namespace == "" {
+		workflow.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	URL = stringutil.Replace(URL, config.URL_PARAM_NAMESPACE_PART, workflow.Metadata.Namespace)
+
+	code, err, msg := kubectlutil.PostAPIObjectToServer(URL, workflow)
+
+	if err != nil {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "post obj failed", err.Error())
+		return
+	}
+
+	if code == http.StatusCreated {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Success, "created", msg)
+		fmt.Println()
+		printApplyObjectInfo(Apply_kind_Workflow, workflow.Metadata.Name, workflow.Metadata.Namespace)
+	} else {
+		printApplyResult(Apply_kind_Workflow, ApplyResult_Failed, "failed", msg)
+	}
+
 }
 
 // ==============================================

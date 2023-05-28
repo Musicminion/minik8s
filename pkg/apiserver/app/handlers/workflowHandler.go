@@ -322,7 +322,7 @@ func UpdateWorkFlowStatus(c *gin.Context) {
 		return
 	}
 
-	logStr := fmt.Sprintf("UpdateWorkFlowStatus: name=%s, namespace=%s", name, namespace)
+	logStr := fmt.Sprintf("UpdateWorkFlowStatus: namespace=%s, name=%s", namespace, name)
 	k8log.InfoLog("APIServer", logStr)
 
 	key := fmt.Sprintf(serverconfig.EtcdWorkflowPath+"%s/%s", namespace, name)
@@ -431,6 +431,9 @@ func GetGlobalWorkFlows(c *gin.Context) {
 }
 
 func selectiveUpdateFlowStatus(oldStatus *apiObject.WorkflowStore, newStatus *apiObject.WorkflowStatus) {
+	if newStatus.Phase != "" {
+		oldStatus.Status.Phase = newStatus.Phase
+	}
 	if newStatus.Result != "" {
 		oldStatus.Status.Result = newStatus.Result
 	}

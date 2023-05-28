@@ -49,13 +49,13 @@ func TestPublishRequestNodeScheduleMsg(t *testing.T) {
 	if err != nil {
 		t.Errorf("unmarshal pod failed")
 	}
-	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, pod.GetPodName())
-	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetPodNamespace())
+	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, pod.GetObjectName())
+	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetObjectNamespace())
 	message := message.Message{
 		Type:         message.RequestSchedule,
-		Content:      pod.GetPodName(),
+		Content:      pod.GetObjectName(),
 		ResourceURI:  resourceURI,
-		ResourceName: pod.GetPodName(),
+		ResourceName: pod.GetObjectName(),
 	}
 
 	jsonMsg, err := json.Marshal(message)

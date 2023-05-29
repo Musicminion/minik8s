@@ -103,7 +103,7 @@ Etcd存储API对象的路径都是`registry/pods/<namespace>/<name>`，而API的
 
 <img width="1226" alt="截屏2023-05-29 08 48 24" src="https://github.com/Musicminion/minik8s/assets/84625273/352821f7-a9a3-4151-8fac-89a5e753184a">
 
-具体来说，各个组件之间的行为和关系如下图详细所示。
+具体来说，各个组件之间的行为和关系如下图详细所示。Runtime Manager会负责收集底层正在运行的所有的容器的信息，并把容器的信息组装为Pod的状态信息。同时还会收集当前机器的CPU/内存状态，把相关的信息回传到API Server，及时更新。同时Status Manager还会定期的从API Server拉取当前节点上所有的Pod，以便于比较和对齐，产生相关的容器生命周期事件(Pleg)，当出现Pod不一致的时候，以远端的API-Server的数据为主，并清除掉不必要的Pod。
 <img width="584" alt="截屏2023-05-29 08 50 13" src="https://github.com/Musicminion/minik8s/assets/84625273/92b2e789-8f23-4314-a388-be011e08af21">
 
 ### 已完成

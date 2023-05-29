@@ -131,10 +131,16 @@ minik8s需要controller对一些抽象的对象实施管理。Controller是运�
 - HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，如果出现了异常，就会出发扩容或者缩容。所有的扩容、所有都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/单位Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
 - DNS Controller：TODO
 
+#### Kubectl
 
+Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。
+![image](https://github.com/Musicminion/minik8s/assets/84625273/7b7fe250-0999-4c68-ae3a-e1f481028769)
 
-
-
+支持的命令如下所示：
+- `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口
+- `Kubectl delete ./path/to/your.yaml` 根据文件删除一个API对象，会自动识别文件中对象的name和namespace，发送给对应的接口(删除不会校验其他字段是否完全一致)
+- `kubectl get [APIObject] [Namespace/Name]` 获取一个API对象的状态(显示经过简化的信息，要查看详细的结果，请使用Describe命令)
+- `kubectl describe [APIObject] [Namespace/Name]` 获取一个API对象的详细的json信息(显示完整的经过优化的json字段)
 
 ### 已完成
 

@@ -28,3 +28,12 @@ func StringSliceToJsonArray(data []string) string {
 	jsonDatas := strings.Join(data, ",")
 	return fmt.Sprint("[", jsonDatas, "]")
 }
+
+func ContainsString(list []string, target string) bool {
+    for _, str := range list {
+        if strings.Contains(str, target) {
+            return true
+        }
+    }
+    return false
+}

@@ -22,6 +22,8 @@ SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 cd $PROJECT_ROOT
 
+mkdir -p log
+
 # 定义启动的程序列表，每个元素对应一个 main.go 文件和日志文件路径
 programs=(
     "./pkg/apiserver/main/main.go:./log/apiserver.log"

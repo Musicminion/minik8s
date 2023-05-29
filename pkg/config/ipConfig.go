@@ -5,11 +5,11 @@ import "strconv"
 const (
 	IP_PREFIX_LENGTH      = 32
 	Local_Server_IP       = "127.0.0.1"
-	Cluster_Master_IP     = ""
+	Cluster_Master_IP     = "192.168.1.5"
 	API_Server_Port       = 8090
 	Serveless_Server_Port = 28080
 	API_Server_Scheme     = "http://"
-	clusterMode           = false // 是否是集群模式
+	clusterMode           = true // 是否是集群模式
 )
 
 var SERVICE_IP_PREFIX = [2]int{192, 168}

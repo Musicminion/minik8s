@@ -2,10 +2,7 @@
 
 SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
-# 删除 etcd 中所有内容
-. "$SCRIPTS_ROOT/etcd_clear.sh" /
-
-# 清空Reids
+# 清空Redis
 . "$SCRIPTS_ROOT/redis_clear.sh"
 
 # 删除除了weave之外的所有容器

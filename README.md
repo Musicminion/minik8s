@@ -174,3 +174,8 @@ Scheduler完成调度之后，会通过消息队列通知API-Server，API-Server
 Pod创建之后，Kubelet的Status Manager会不断监视Pod的运行状态，并将状态更新写回到API-Server(通过Pod的Status的接口)。如果Pod中的容器发⽣崩溃或⾃⾏终⽌，首先PlegManager会通过StatusManager捕捉到Pod的异常状态，然后会产生Pod生命周期时间，通过PlegChan发送需要重启Pod的命令。然后WorkerManager收到之后会执行重启的操作。
 
 pod内需要能运⾏多个容器，它们可以通过localhost互相访问。这一点我们是通过Pause容器实现的。将Pod相关的容器都加入pause容器的网络名字空间，这样就能实现同一个Pod里面的容器的通讯。至于PodIP的分配，我们使用了Weave网络插件，保证多机之间PodIP唯一的分配。
+
+特别感谢[这篇文章的](https://k8s.iswbm.com/c02/p02_learn-kubernetes-pod-via-pause-container.html)精彩讲解，让我们了解了实现Pod内部容器的通讯。
+
+
+#### GPU Job

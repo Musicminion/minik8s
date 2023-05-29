@@ -3,7 +3,6 @@ package scheduler
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
@@ -154,7 +153,7 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 		return schLeastMem(nodes)
 	default:
 	}
-	// TODO
+	// TODO:
 	return "ubuntu"
 }
 
@@ -230,7 +229,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		PodTarget: *podStore,
 		Node:      scheduledNode,
 	}
-	msgutil.PublishUpdatePod(podUpdate)
+	message.PublishUpdatePod(podUpdate)
 }
 
 // 调度器的消息处理函数,分发给不同的消息处理函数
@@ -257,6 +256,6 @@ func (sch *Scheduler) Run() {
 	// 监听队列
 	for {
 		// 监听队列
-		sch.lw.WatchQueue_Block(msgutil.NodeScheduleTopic, sch.MsgHandler, make(chan struct{}))
+		sch.lw.WatchQueue_Block(message.NodeScheduleTopic, sch.MsgHandler, make(chan struct{}))
 	}
 }

@@ -2,7 +2,6 @@ package kubelet
 
 import (
 	"encoding/json"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubeletconfig"
@@ -110,7 +109,7 @@ func (k *Kubelet) Run() {
 
 	// 监听 podUpdate 的消息队列
 
-	listenTopic := msgutil.PodUpdateWithNode(k.statusManager.GetNodeName())
+	listenTopic := message.PodUpdateWithNode(k.statusManager.GetNodeName())
 	k8log.InfoLog("Kubelet", "Start to listen on "+listenTopic+" queue")
 	go k.lw.WatchQueue_Block(listenTopic, k.HandlePodUpdate, make(chan struct{}))
 	go k.SyncLoopIterationWrap()

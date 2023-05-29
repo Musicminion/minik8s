@@ -1,4 +1,4 @@
-package msgutil
+package message
 
 import (
 	"encoding/json"
@@ -6,19 +6,18 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
-	"miniK8s/pkg/message"
 	"miniK8s/util/stringutil"
 )
 
 type MsgUtil struct {
-	Publisher *message.Publisher
+	Publisher *Publisher
 }
 
 var ServerMsgUtil *MsgUtil
 
 func init() {
 	// 初始化消息队列
-	newPublisher, err := message.NewPublisher(message.DefaultMsgConfig())
+	newPublisher, err := NewPublisher(DefaultMsgConfig())
 	if err != nil {
 		panic(err)
 	}
@@ -29,7 +28,7 @@ func init() {
 
 // 发布消息的组件
 func PublishMsg(queueName string, msg []byte) error {
-	return ServerMsgUtil.Publisher.Publish(queueName, message.ContentTypeJson, msg)
+	return ServerMsgUtil.Publisher.Publish(queueName, ContentTypeJson, msg)
 }
 
 // 发布消息的组件函数
@@ -41,8 +40,8 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 		k8log.ErrorLog("msgutil", "json marshal pod failed")
 		return err
 	}
-	message := message.Message{
-		Type:         message.RequestSchedule,
+	message := Message{
+		Type:         RequestSchedule,
 		Content:      string(podJson),
 		ResourceURI:  resourceURI,
 		ResourceName: pod.GetPodName(),
@@ -66,8 +65,8 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 		return err
 	}
 
-	message := message.Message{
-		Type:         message.UPDATE,
+	message := Message{
+		Type:         UPDATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: serviceUpdate.ServiceTarget.GetName(),
@@ -91,8 +90,8 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 		return err
 	}
 
-	message := message.Message{
-		Type:         message.CREATE,
+	message := Message{
+		Type:         CREATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: endpointUpdate.ServiceTarget.Service.GetName(),
@@ -116,7 +115,7 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 		return err
 	}
 
-	message := message.Message{
+	message := Message{
 		Type:         podUpdate.Action,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
@@ -142,8 +141,8 @@ func PublishDeletePod(pod *apiObject.PodStore) error {
 		return err
 	}
 
-	message := message.Message{
-		Type:         message.DELETE,
+	message := Message{
+		Type:         DELETE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: pod.GetPodName(),
@@ -173,8 +172,8 @@ func PublishUpdateJobFile(jobMeta *apiObject.Basic) error {
 		return err
 	}
 
-	message := message.Message{
-		Type:         message.UPDATE,
+	message := Message{
+		Type:         UPDATE,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
 		ResourceName: jobMeta.Metadata.Name,
@@ -200,7 +199,7 @@ func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
 		return err
 	}
 
-	message := message.Message{
+	message := Message{
 		Type:         dnsUpdate.Action,
 		Content:      string(jsonBytes),
 		ResourceURI:  resourceURI,
@@ -227,7 +226,7 @@ func PubelishUpdateHost(hostUpdate *entity.HostUpdate) error {
 
 	// 创建一个空字符串
 
-	message := message.Message{
+	message := Message{
 		Type:         hostUpdate.Action,
 		Content:      string(jsonBytes),
 		ResourceURI:  "",
@@ -243,4 +242,3 @@ func PubelishUpdateHost(hostUpdate *entity.HostUpdate) error {
 
 	return PublishMsg(HostUpdateTopic, jsonMsg)
 }
-

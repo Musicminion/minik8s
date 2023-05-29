@@ -3,6 +3,7 @@ package message
 import (
 	"fmt"
 	"miniK8s/pkg/k8log"
+	"miniK8s/util/stringutil"
 	"time"
 
 	"github.com/streadway/amqp"
@@ -108,18 +109,29 @@ func (s *Subscriber) Subscribe(queueName string, handleFunc func(amqp.Delivery),
 		return err
 	}
 
-	// 确保交换机和queueName按照名字的关系绑定在一起
-	err = ch.QueueBind(
-		queueName,   // queue name
-		queueName,   // routing key
-		K8sExchange, // exchange
-		false,
-		nil,
-	)
+	// 绑定exchange和queue
+	if stringutil.ContainsString(FanoutQueue, queueName) {
+		err = ch.QueueBind(
+			queueName,         // queue name
+			queueName,         // routing key
+			FanoutK8sExchange, // exchange
+			false,
+			nil,
+		)
+	} else {
+		err = ch.QueueBind(
+			queueName,         // queue name
+			queueName,         // routing key
+			DirectK8sExchange, // exchange
+			false,
+			nil,
+		)
+	}
 
 	if err != nil {
 		return err
 	}
+
 	msgs, err := ch.Consume(
 		queueName, // queue
 		"",        // consumer

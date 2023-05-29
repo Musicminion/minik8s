@@ -17,3 +17,9 @@ echo "清空iptables"
 
 # 删除相关进程
 . "$SCRIPTS_ROOT/process_clear.sh" /
+
+# 重启rabbitmq
+echo "重启rabbitmq"
+rabbitmqctl stop_app
+rabbitmqctl reset
+rabbitmqctl start_app

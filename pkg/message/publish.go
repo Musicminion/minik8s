@@ -67,13 +67,13 @@ func (p *Publisher) Publish(key string, contentType string, msg []byte) error {
 		return err
 	}
 	// 如果没有绑定队列，就尝试绑定队列
-	err = ch.QueueBind(key, key, K8sExchange, false, nil)
+	err = ch.QueueBind(key, key, DirectK8sExchange, false, nil)
 	if err != nil {
 		return err
 	}
 
 	// 发布消息
-	err = ch.Publish(K8sExchange, key, false, false, amqp.Publishing{
+	err = ch.Publish(DirectK8sExchange, key, false, false, amqp.Publishing{
 		ContentType: contentType,
 		Body:        msg,
 	})

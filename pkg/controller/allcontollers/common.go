@@ -44,3 +44,21 @@ func CheckIfPodMeetRequirement(pod *apiObject.PodStore, selectors map[string]str
 
 	return true
 }
+
+func GetAllNodesName() []string {
+	URL := config.GetAPIServerURLPrefix() + config.NodesURL
+	allNodes := make([]apiObject.NodeStore, 0)
+	code, err := netrequest.GetRequestByTarget(URL, &allNodes, "data")
+	if err != nil {
+		return nil
+	}
+	if code != http.StatusOK {
+		return nil
+	}
+	allNodesName := make([]string, 0)
+	for _, node := range allNodes {
+		allNodesName = append(allNodesName, node.GetName())
+	}
+
+	return allNodesName
+}

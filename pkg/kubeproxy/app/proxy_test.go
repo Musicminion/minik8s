@@ -5,7 +5,6 @@ import (
 	"io"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/apiserver/app/etcdclient"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
@@ -89,7 +88,7 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 	}
 
 	// 向消息队列发送消息
-	msgutil.PublishUpdateService(serviceUpdate)
+	message.PublishUpdateService(serviceUpdate)
 
 	// assert.Equal(t, "syncLoopIteration: create Service action", k8log.LastLog())
 	// assert.True(t, proxy.iptableManager.(*MockIptableManager).CreateServiceCalled)
@@ -103,7 +102,7 @@ func TestSyncLoopIteration_CreateService(t *testing.T) {
 // 	time.Sleep(3 * time.Second)
 
 // 	hostList := []string{"192.168.0.1 example.com"}
-// 	msgutil.PubelishUpdateHost(hostList)
+// 	message.PubelishUpdateHost(hostList)
 
 // 	time.Sleep(1 * time.Second)
 // 	// 检查 hosts 文件是否正确生成

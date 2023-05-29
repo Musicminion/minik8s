@@ -7,7 +7,7 @@ SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 # 初始化测试环境
 # 删除 etcd 中所有内容
-. "$SCRIPTS_ROOT/remake.sh" /
+. "$SCRIPTS_ROOT/worker_remake.sh" /
 
 
 cd $PROJECT_ROOT

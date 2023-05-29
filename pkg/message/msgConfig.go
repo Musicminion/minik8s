@@ -1,7 +1,5 @@
 package message
 
-// K8s消息交换机名字
-const K8sExchange = "K8sExchange"
 
 // 可能使用到的ContentType
 const ContentTypeJson = "application/json"

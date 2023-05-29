@@ -1,4 +1,4 @@
-package msgutil
+package message
 
 const (
 	// RequestSchedule 请求调度

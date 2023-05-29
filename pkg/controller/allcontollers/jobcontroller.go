@@ -3,7 +3,6 @@ package allcontollers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
@@ -58,12 +57,12 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 	code, err := netrequest.GetRequestByTarget(targetURI, job, "data")
 
 	if err != nil {
-		k8log.ErrorLog("Job-Controller", "HandleServiceUpdate: failed to get job"+err.Error())
+		k8log.ErrorLog("Job-Controller", "HandleJobCreate: failed to get job"+err.Error())
 		return
 	}
 
 	if code != http.StatusOK {
-		k8log.ErrorLog("Job-Controller", "HandleServiceUpdate: failed to get job [Not 200]")
+		k8log.ErrorLog("Job-Controller", "HandleJobCreate: failed to get job [Not 200]")
 		return
 	}
 
@@ -76,7 +75,7 @@ func (jc *jobController) JobCreateHandler(parsedMsg *message.Message) {
 		"/bin/job-server",
 		"--jobName=" + job.Metadata.Name,
 		"--jobNamespace=" + job.Metadata.Namespace,
-		"--apiServerAddr=" + "http://192.168.126.130:8090",
+		"--apiServerAddr=" + config.GetAPIServerURLPrefix(),
 	}
 
 	// 创建一个pod
@@ -142,5 +141,5 @@ func (jc *jobController) MsgHandler(msg amqp.Delivery) {
 }
 
 func (jc *jobController) Run() {
-	jc.lw.WatchQueue_Block(msgutil.JobUpdateTopic, jc.MsgHandler, make(chan struct{}))
+	jc.lw.WatchQueue_Block(message.JobUpdateTopic, jc.MsgHandler, make(chan struct{}))
 }

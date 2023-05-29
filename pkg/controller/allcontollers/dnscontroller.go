@@ -3,7 +3,6 @@ package allcontollers
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
@@ -86,7 +85,7 @@ func (dc *dnsController) DnsCreateHandler(parsedMsg *message.Message) {
 
 	// TODO: 通知所有的节点进行hosts的修改
 	k8log.DebugLog("Dns-Controller", "DnsCreateHandler: publish hostUpdate")
-	msgutil.PubelishUpdateHost(hostUpdate)
+	message.PubelishUpdateHost(hostUpdate)
 }
 
 func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
@@ -134,7 +133,7 @@ func (dc *dnsController) DnsDeleteHandler(parsedMsg *message.Message) {
 
 	// TODO: 通知所有的节点进行hosts的修改
 	k8log.DebugLog("Dns-Controller", "DnsCreateHandler: publish hostUpdate")
-	msgutil.PubelishUpdateHost(hostUpdate)
+	message.PubelishUpdateHost(hostUpdate)
 }
 
 func (dc *dnsController) DnsUpdatehandler(msg amqp.Delivery) {
@@ -164,44 +163,6 @@ func (dc *dnsController) DeleteNginxConf(dns *apiObject.Dns) error {
 		return err
 	}
 	return nil
-}
-
-func (dc *dnsController) CreateNginxPod() {
-	k8log.DebugLog("Dns-Controller", "Run: start to create nginx pod")
-	path := NginxPodYamlPath
-	fileContent, err := file.ReadFile(path)
-	if err != nil {
-		k8log.ErrorLog("Dns-Controller", "Run: failed to read file"+err.Error())
-		return
-	}
-
-	// 将文件内容转换为Pod对象
-	nginxPod := &apiObject.Pod{}
-	err = yaml.Unmarshal(fileContent, nginxPod)
-	if err != nil {
-		k8log.ErrorLog("Dns-Controller", "Run: failed to unmarshal"+err.Error())
-		return
-	}
-
-	// 判断namespace是否为空
-	if nginxPod.GetObjectNamespace() == "" {
-		nginxPod.Metadata.Namespace = config.DefaultNamespace
-	}
-
-	URL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetObjectNamespace())
-	URL = config.GetAPIServerURLPrefix() + URL
-	k8log.DebugLog("Dns-Controller", "Run: URL is "+URL)
-	code, _, err := netrequest.PostRequestByTarget(URL, nginxPod)
-	if err != nil {
-		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
-		return
-	}
-	if code != http.StatusCreated {
-		k8log.ErrorLog("Dns-Controller", "Run: failed to create pod")
-		return
-	}
-
-	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx pod")
 }
 
 func (dc *dnsController) CreateNginxService() {
@@ -294,15 +255,11 @@ func (dc *dnsController) CreateNginxDns() {
 }
 
 func (dc *dnsController) Run() {
-	// 在每个node上创建一个nginx pod
-	// 1. 创建nginx pod  // TODO: 改成relicaSet
-	// 2. 创建nginx service
-	// 3. 创建nginx dns
-	dc.CreateNginxPod()
+	// 创建nginx service
 	dc.CreateNginxService()
 	// 更新nginxService的ip
 	dc.UpdateNginxSvcIP()
 
 	// 监听dns的更新
-	dc.lw.WatchQueue_Block(msgutil.DnsUpdateTopic, dc.DnsUpdatehandler, make(chan struct{}))
+	dc.lw.WatchQueue_Block(message.DnsUpdateTopic, dc.DnsUpdatehandler, make(chan struct{}))
 }

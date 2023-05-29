@@ -134,7 +134,9 @@ minik8s需要controller对一些抽象的对象实施管理。Controller是运�
 #### Kubectl
 
 Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。
-![image](https://github.com/Musicminion/minik8s/assets/84625273/7b7fe250-0999-4c68-ae3a-e1f481028769)
+
+<img width="300" alt="截屏2023-05-29 09 00 41" src="https://github.com/Musicminion/minik8s/assets/84625273/7b7fe250-0999-4c68-ae3a-e1f481028769">
+
 
 支持的命令如下所示：
 - `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口

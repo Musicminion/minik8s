@@ -133,35 +133,42 @@ minik8s需要controller对一些抽象的对象实施管理。Controller是运�
 
 #### Kubectl
 
-Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。
+Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。我们使用了Cobra的命令行解析工具，大大提高了命令解析的效率。
 
 <img width="300" alt="截屏2023-05-29 09 00 41" src="https://github.com/Musicminion/minik8s/assets/84625273/7b7fe250-0999-4c68-ae3a-e1f481028769">
-
 
 支持的命令如下所示：
 - `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口
 - `Kubectl delete ./path/to/your.yaml` 根据文件删除一个API对象，会自动识别文件中对象的name和namespace，发送给对应的接口(删除不会校验其他字段是否完全一致)
 - `kubectl get [APIObject] [Namespace/Name]` 获取一个API对象的状态(显示经过简化的信息，要查看详细的结果，请使用Describe命令)
 - `kubectl describe [APIObject] [Namespace/Name]` 获取一个API对象的详细的json信息(显示完整的经过优化的json字段)
+- `kubectl execute [namespace]/[name] [parameters]` 出发一个Serveless的函数，并传递相关的参数
 
-### 已完成
+#### Scheduler
+Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Scheduler和API-Server通过RabbitMQ消息队列实现通讯。当有Pod创建的请求的时候，API-Server会给Scheduler发送调度请求，Scheduler会主动拉取所有Node，根据最新的Node Status来安排调度。
 
-### 对etcd的接口封装
-- put
-- get
-- del
-- watch
-- prefix_related
+目前我们的Scheduler支持多种调度策略：
+- RoundRobin：轮询调度策略
+- Random：随机调度策略
+- LeastPod：选择Pod数量最少的节点
+- LeastCpu：选择CPU使用率最低的作为调度目标
+- LeastMem：选择Mem使用率最低的作为调度的目标
 
-### naive apiserver
-- 支持基本的http请求
-- 配置了server的一些默认配置
-- 设置了用于测试的handle
+这些调度策略可以通过启动时候的参数传递，以便于Scheduler知道以哪一种调度策略运行。
 
-## TODOz
-###  apiObject
-- 设计pod的数据结构
-- 设计pod的handler 
 
-###  解析yaml
-- 通过go-yaml解析yaml文件
+#### Kuberproxy
+
+### 需求实现详解
+
+#### Pod抽象
+
+Pod的演示视频请参考：
+
+Pod是k8s(minik8s)调度的最小单位。用户可以通过`Kubectl apply Podfile.yaml`的声明式的方法创建一个Pod。当用户执行该命令后，Kubectl会将创建Pod的请求发送给API-Server。API-Server检查新创建的Pod在格式、字段是否存在问题，如果没有异常，就会写入Etcd，并给Scheduler发送消息。
+
+Scheduler完成调度之后，会通过消息队列通知API-Server，API-Server收到调度结果，将对应的Pod的nodename字段写入调度结果，然后保存回Etcd。然后主动给相关的Kubelet发送Pod的创建请求。
+
+之前已经介绍到Kubelet创建Pod可以有两条途径，一条是长期拉取自己节点所有的Pod，另外一条途径是收到消息队列的创建请求之后主动创建。这两条途径**不会冲突**，因为在WorkManager底层是每一个Pod对应一个Worker，一旦收到了创建请求，再次收到创建请求的时候就会被忽略。Kubelet收到创建Pod请求之后，会把Pod的配置信息写入到本地的Redis里面，这样即使是API-Server崩溃，Kubelet出现重启，也能够保证Pod的信息可以读取到。
+
+Pod创建之后，Kubelet会不断监视Pod的运行状态，并将状态更新写回到API-Server(通过Pod的Status的接口)

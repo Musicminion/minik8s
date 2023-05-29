@@ -101,7 +101,10 @@ Etcd存储API对象的路径都是`registry/pods/<namespace>/<name>`，而API的
 ##### kubelet架构
 **kubelet**：Kubelet是和容器底层运行打交道的组件，确保每一个Pod能够正常运行。目前kubelet架构设计如下(参考了k8s的反馈路径设计并做了一定的微调)
 
-<img width="1021" alt="截屏2023-05-03 23 32 05" src="https://user-images.githubusercontent.com/84625273/235964773-d77faaec-c39d-4778-859f-1387bfdf24d3.png">
+<img width="1226" alt="截屏2023-05-29 08 48 24" src="https://github.com/Musicminion/minik8s/assets/84625273/352821f7-a9a3-4151-8fac-89a5e753184a">
+
+具体来说，各个组件之间的行为和关系如下图详细所示。
+<img width="584" alt="截屏2023-05-29 08 50 13" src="https://github.com/Musicminion/minik8s/assets/84625273/92b2e789-8f23-4314-a388-be011e08af21">
 
 ### 已完成
 

@@ -53,7 +53,7 @@ func PublishRequestNodeScheduleMsg(pod *apiObject.PodStore) error {
 		return err
 	}
 
-	return PublishMsg(NodeScheduleTopic, jsonMsg)
+	return PublishMsg(NodeScheduleQueue, jsonMsg)
 }
 
 func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
@@ -78,7 +78,7 @@ func PublishUpdateService(serviceUpdate *entity.ServiceUpdate) error {
 		return err
 	}
 
-	return PublishMsg(ServiceUpdateTopic, jsonMsg)
+	return PublishMsg(ServiceUpdateQueue, jsonMsg)
 }
 
 func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
@@ -103,7 +103,7 @@ func PublishUpdateEndpoints(endpointUpdate *entity.EndpointUpdate) error {
 		return err
 	}
 
-	return PublishMsg(EndpointUpdateTopic, jsonMsg)
+	return PublishMsg(EndpointUpdateQueue, jsonMsg)
 }
 
 func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
@@ -185,7 +185,7 @@ func PublishUpdateJobFile(jobMeta *apiObject.Basic) error {
 		return err
 	}
 
-	return PublishMsg(JobUpdateTopic, jsonMsg)
+	return PublishMsg(JobUpdateQueue, jsonMsg)
 }
 
 func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
@@ -213,7 +213,7 @@ func PublishUpdateDns(dnsUpdate *entity.DnsUpdate) error {
 		return err
 	}
 
-	return PublishMsg(DnsUpdateTopic, jsonMsg)
+	return PublishMsg(DnsUpdateQueue, jsonMsg)
 }
 
 func PubelishUpdateHost(hostUpdate *entity.HostUpdate) error {
@@ -240,5 +240,5 @@ func PubelishUpdateHost(hostUpdate *entity.HostUpdate) error {
 		return err
 	}
 
-	return PublishMsg(HostUpdateTopic, jsonMsg)
+	return PublishMsg(HostUpdateQueue, jsonMsg)
 }

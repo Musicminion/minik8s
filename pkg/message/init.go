@@ -45,16 +45,3 @@ func init() {
 		k8log.FatalLog("message", "Failed to declare an exchange:"+err.Error())
 	}
 }
-
-// K8s消息交换机名字
-const DirectK8sExchange = "DirectK8sExchange"
-const FanoutK8sExchange = "FanoutK8sExchange"
-
-// fanout模式的队列
-const (
-	HostUpdateQueue = HostUpdateTopic
-)
-
-var FanoutQueue = []string{
-	HostUpdateQueue,
-}

@@ -141,5 +141,5 @@ func (jc *jobController) MsgHandler(msg amqp.Delivery) {
 }
 
 func (jc *jobController) Run() {
-	jc.lw.WatchQueue_Block(message.JobUpdateTopic, jc.MsgHandler, make(chan struct{}))
+	jc.lw.WatchQueue_Block(message.JobUpdateQueue, jc.MsgHandler, make(chan struct{}))
 }

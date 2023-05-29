@@ -240,15 +240,8 @@ func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
 		k8log.ErrorLog("Scheduler", "消息格式错误,无法转换为Message")
 	}
 
-	switch parsedMsg.Type {
-	case message.RequestSchedule:
-		// TODO
-		sch.RequestSchedule(parsedMsg)
-	default:
-
-		// TODO
-	}
-
+	// 处理调度请求的消息
+	sch.RequestSchedule(parsedMsg)
 }
 
 func (sch *Scheduler) Run() {
@@ -256,6 +249,6 @@ func (sch *Scheduler) Run() {
 	// 监听队列
 	for {
 		// 监听队列
-		sch.lw.WatchQueue_Block(message.NodeScheduleTopic, sch.MsgHandler, make(chan struct{}))
+		sch.lw.WatchQueue_Block(message.NodeScheduleQueue, sch.MsgHandler, make(chan struct{}))
 	}
 }

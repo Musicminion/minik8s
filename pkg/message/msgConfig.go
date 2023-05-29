@@ -1,5 +1,7 @@
 package message
 
+// 这个文件是消息组件的配置文件，包括了消息组件的配置和消息组件的一些常量
+
 
 // 可能使用到的ContentType
 const ContentTypeJson = "application/json"
@@ -30,4 +32,35 @@ func DefaultMsgConfig() *MsgConfig {
 		VHost:    "/",
 	}
 	return &config
+}
+
+// 消息队列
+const (
+	NodeScheduleQueue = "nodeSchedule"
+
+	EndpointUpdateQueue = "endpointUpdate"
+
+	PodUpdateQueue = "podUpdate"
+
+	ServiceUpdateQueue = "serviceUpdate"
+
+	JobUpdateQueue = "jobUpdate"
+
+	DnsUpdateQueue = "dnsUpdate"
+
+	HostUpdateQueue = "hostUpdate"
+)
+
+// 根据node来路由消息到不同的队列
+func PodUpdateWithNode(node string) string {
+	return PodUpdateQueue + "-" + node
+}
+
+// K8s消息交换机名字
+const DirectK8sExchange = "DirectK8sExchange"
+const FanoutK8sExchange = "FanoutK8sExchange"
+
+// Fanout类型的队列
+var FanoutQueue = []string{
+	HostUpdateQueue,
 }

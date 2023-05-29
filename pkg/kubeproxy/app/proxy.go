@@ -244,10 +244,10 @@ func (proxy *KubeProxy) Run() {
 	// 创建nginx的pod
 	proxy.CreateNginxPod()
 	// serviceUpdate
-	go proxy.lw.WatchQueue_Block(message.ServiceUpdateTopic, proxy.HandleServiceUpdate, make(chan struct{}))
+	go proxy.lw.WatchQueue_Block(message.ServiceUpdateQueue, proxy.HandleServiceUpdate, make(chan struct{}))
 
 	// hostUpdate, 来自dnsController
-	go proxy.lw.WatchQueue_Block(message.HostUpdateTopic, proxy.HandleHostUpdate, make(chan struct{}))
+	go proxy.lw.WatchQueue_Block(message.HostUpdateQueue, proxy.HandleHostUpdate, make(chan struct{}))
 
 	// 持续监听serviceUpdates和dnsUpdates的channel
 	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.dnsUpdates) {

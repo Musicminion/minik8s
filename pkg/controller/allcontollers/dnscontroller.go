@@ -261,5 +261,5 @@ func (dc *dnsController) Run() {
 	dc.UpdateNginxSvcIP()
 
 	// 监听dns的更新
-	dc.lw.WatchQueue_Block(message.DnsUpdateTopic, dc.DnsUpdatehandler, make(chan struct{}))
+	dc.lw.WatchQueue_Block(message.DnsUpdateQueue, dc.DnsUpdatehandler, make(chan struct{}))
 }

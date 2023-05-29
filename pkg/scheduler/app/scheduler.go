@@ -54,14 +54,7 @@ func NewScheduler() (*Scheduler, error) {
 	}
 	schedulerConfig := DefaultSchedulerConfig()
 
-	messageConfig := message.MsgConfig{
-		User:     "guest",
-		Password: "guest",
-		Host:     "localhost",
-		Port:     5672,
-		VHost:    "/",
-	}
-	newPublisher, err := message.NewPublisher(&messageConfig)
+	newPublisher, err := message.NewPublisher(message.DefaultMsgConfig())
 	if err != nil {
 		return nil, err
 	}

@@ -3,7 +3,7 @@ package message
 import (
 	"fmt"
 	"miniK8s/pkg/k8log"
-	"miniK8s/util/stringutil"
+	"strings"
 	"time"
 
 	"github.com/streadway/amqp"
@@ -109,27 +109,37 @@ func (s *Subscriber) Subscribe(queueName string, handleFunc func(amqp.Delivery),
 		return err
 	}
 
-	// 绑定exchange和queue
-	if stringutil.ContainsString(FanoutQueue, queueName) {
-		err = ch.QueueBind(
-			queueName,         // queue name
-			queueName,         // routing key
-			FanoutK8sExchange, // exchange
-			false,
-			nil,
-		)
-	} else {
-		err = ch.QueueBind(
-			queueName,         // queue name
-			queueName,         // routing key
-			DirectK8sExchange, // exchange
-			false,
-			nil,
-		)
+	var isFanoutExchangeQueue bool = false
+	// 如果是fanoutExchange的队列，就绑定到fanoutExchange上, 注意需要判断queueName是否包含fanoutExchange的前缀
+	for _, feq := range FanoutExchangeQueues {
+		if strings.Contains(queueName, feq) {
+			err = ch.QueueBind(
+				queueName,                  // queue name
+				queueName,                  // routing key
+				queueToExchange[feq], // exchange
+				false,
+				nil,
+			)
+			if err != nil {
+				return err
+			}
+			isFanoutExchangeQueue = true
+			continue
+		}
 	}
-
-	if err != nil {
-		return err
+	
+	// 如果不是fanoutExchange的队列，就绑定到directExchange上
+	if !isFanoutExchangeQueue {
+		err = ch.QueueBind(
+			queueName,                  // queue name
+			queueName,                  // routing key
+			queueToExchange[queueName], // exchange
+			false,
+			nil,
+		)
+		if err != nil {
+			return err
+		}
 	}
 
 	msgs, err := ch.Consume(

@@ -33,15 +33,51 @@ func init() {
 	}
 	defer ch.Close()
 
-	// 声明一个交换机，存在的话会检查类型，不存在new一个，
-	// 假如你要发送给kublet消息，那么key就是kubelet
-	err = ch.ExchangeDeclare(DirectK8sExchange, "direct", true, false, false, false, nil)
-	if err != nil {
-		k8log.FatalLog("message", "Failed to declare an exchange:"+err.Error())
+	// DirectExchange
+	for _, fe := range DirectExchange {
+		err = ch.ExchangeDeclare(fe, "direct", true, false, false, false, nil)
+		if err != nil {
+			k8log.FatalLog("message", "Failed to declare an exchange:"+err.Error())
+		}
 	}
+	
+	// FanoutExchange
+	for _, fe := range FanoutExchange {
+		err = ch.ExchangeDeclare(fe, "fanout", true, false, false, false, nil)
+		if err != nil {
+			k8log.FatalLog("message", "Failed to declare an exchange:"+err.Error())
+		}
+	}
+}
 
-	err = ch.ExchangeDeclare(FanoutK8sExchange, "fanout", true, false, false, false, nil)
+// 绑定node的相关queue到所有的fanout队列
+func BindFinoutQueue(nodename string) {
+	conf := DefaultMsgConfig()
+	url := "amqp://" + conf.User + ":" + conf.Password + "@" + conf.Host + ":" + fmt.Sprint(conf.Port)
+	connection, err := amqp.Dial(url)
 	if err != nil {
-		k8log.FatalLog("message", "Failed to declare an exchange:"+err.Error())
+		k8log.FatalLog("message", "Failed to connect to RabbitMQ:"+err.Error())
+	}
+	defer connection.Close()
+
+	// 打开一个channel
+	ch, err := connection.Channel()
+	if err != nil {
+		k8log.FatalLog("message", "Failed to open a channel:"+err.Error())
+	}
+	defer ch.Close()
+
+	for _, feq := range FanoutExchangeQueues {
+		// 声明一个队列，存在的话会检查属性，不存在new一个
+		_, err = ch.QueueDeclare(feq+"-"+nodename, true, false, false, false, nil)
+		if err != nil {
+			k8log.FatalLog("message", "Failed to declare a queue:"+err.Error())
+		}
+
+		// 绑定队列到fanout交换机
+		err = ch.QueueBind(feq+"-"+nodename, feq, queueToExchange[feq], false, nil)
+		if err != nil {
+			k8log.FatalLog("message", "Failed to bind a queue:"+err.Error())
+		}
 	}
 }

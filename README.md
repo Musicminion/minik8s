@@ -1,4 +1,4 @@
-## Minik8s
+# Minik8s
 
 <img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
@@ -16,8 +16,8 @@
 
 项目的CI/CD主要在Github上面运行，所以如有需要查看，请移步到Github查看。
 
-### 架构
-#### 使用到的开源库
+## 架构
+### 使用到的开源库
 
 - [github.com/docker/docker](https://github.com/moby/moby) 底层容器运行时的操作
 - [github.com/pallets/flask](https://github.com/pallets/flask) Serveless容器内的运行的程序
@@ -35,7 +35,7 @@
 - [github.com/spf13/cobra](https://github.com/spf13/cobra) Kubectl的命令行工具
 - [github.com/jedib0t/go-pretty/table](https://github.com/jedib0t/go-pretty/table) Kubectl美化输出
 
-#### 架构
+### 架构
 
 **开发语言**：Golang。我们项目主要采用go语言(版本1.20)进行开发。之所以选择go语言，因为docker、k8s也是基于go开发的，并且docker提供了go相关的sdk，让我们轻松就能将项目接入，实现通过go语言来操作底层的容器运行、获取运行状态等信息。
 
@@ -84,9 +84,9 @@
 
 <img width="865" alt="截屏2023-05-29 00 14 54" src="https://github.com/Musicminion/minik8s/assets/84625273/13a63fac-58de-4747-905c-e932f0a830f9">
 
-#### 组件详解
+### 组件详解
 
-##### API Server
+#### API Server
 
 **API-Server**：API Server是minik8s控制平面的核心。主要负责和ETCD存贮打交道，并提供一些核心的APIObject的API，供其他组件使用。在设计API Server的时候，我们主要考虑了两个特性，一个是状态和期望分离的情况，另外一个是Etcd的路径和API分离。
 
@@ -98,7 +98,7 @@ Etcd存储API对象的路径都是`registry/pods/<namespace>/<name>`，而API的
 
 更多有关API-Server的内容，请移步到`/pkg/apiserver`下的Readme查看。
 
-##### kubelet架构
+#### kubelet架构
 **kubelet**：Kubelet是和容器底层运行打交道的组件，确保每一个Pod能够正常运行。目前kubelet架构设计如下(参考了k8s的反馈路径设计并做了一定的微调)
 
 <img width="1226" alt="截屏2023-05-29 08 48 24" src="https://github.com/Musicminion/minik8s/assets/84625273/352821f7-a9a3-4151-8fac-89a5e753184a">

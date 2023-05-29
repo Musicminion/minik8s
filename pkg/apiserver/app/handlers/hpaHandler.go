@@ -327,7 +327,7 @@ func UpdateHPAStatus(c *gin.Context) {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": "marshal hpa err, " + err.Error(),
 		})
-		return 
+		return
 	}
 
 	// 更新etcd中的hpa

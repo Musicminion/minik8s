@@ -1,14 +1,14 @@
 # minik8s APIServer
 
-API Server是minik8s控制平面的核心。主要负责和ETCD存贮打交道，并提供一些核心的APIObject的API，供其他组件使用。在设计API的时候，我们严格考虑到了状态和期望分离的情况。
+API Server是minik8s控制平面的核心。主要负责和ETCD存贮打交道，并提供一些核心的APIObject的API，供其他组件使用。在设计API Server的时候，我们主要考虑了两个特性，一个是状态和期望分离的情况，另外一个是Etcd的路径和API分离。
 
-因为如果没有分离，我们考虑下面的情景：当一个Kubelet想要更新某一个Pod的状态的时候，试图Post或者Put请求写入一个完整的Pod对象，在此之前假如用户刚刚通过`kubectl apply`更新了一个Pod的信息，如果按照上面我所叙述的时间线，就会出现用户的apply的更新的Pod被覆盖了。
-
-同样的道理，如果用户删除了一个Pod，按照上面的设计，Kubelet在回传的时候写入了一个完整的Pod，相当于没有做任何的删除。
+因为如果没有分离，我们考虑下面的情景：当一个Kubelet想要更新某一个Pod的状态的时候，试图Post或者Put请求写入一个完整的Pod对象，在此之前假如用户刚刚通过`kubectl apply`更新了一个Pod的信息，如果按照上面我所叙述的时间线，就会出现用户的apply的更新的Pod被覆盖了。同样的道理，如果用户删除了一个Pod，按照上面的设计，Kubelet在回传的时候写入了一个完整的Pod，相当于没有做任何的删除。
 
 虽然说上面的例子是因为期望和状态没有分离，但是本质是kubelet的权限太大，能够写入一个完整的Pod。所以为了解决这种问题，我们对于一个对象，往往设计了更新对象接口(更新整个对象)，更新对象的状态接口(仅仅更新Status，如果找不到对象那么久不更新。)
 
+Etcd存储API对象的路径都是`registry/pods/<namespace>/<name>`，而API的格式大多都是`/api/v1/pods/namespaces/:namespace/name/:name`,可以看到两者的差别还是比较明显的，这是因为API版本看发生动态变化(在实际的k8s中也是这样)，但是存储的路径保证兼容原来的。所以在我们的minik8s中，我们同样借鉴了这样的思路。
 
+最后，特别感谢[github.com/gin-gonic/gin](https://github.com/gin-gonic/gin) 为我们提供了简洁易实现的go语言的Web Server框架。更多详细的接口问题，请查看下面的表格。
 
 
 #### API接口表

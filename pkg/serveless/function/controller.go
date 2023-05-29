@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/config"
+	"miniK8s/pkg/k8log"
 	"miniK8s/util/executor"
 	netrequest "miniK8s/util/netRequest"
 	"miniK8s/util/stringutil"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -160,6 +162,7 @@ func (c *funcController) AddCallRecord(funcName, funcNamespace string) error {
 
 	if c.CallRecord[funcNamespace+"/"+funcName] != nil {
 		c.CallRecord[funcNamespace+"/"+funcName].FuncCallTime++
+		k8log.DebugLog("func call time: ", strconv.Itoa(c.CallRecord[funcNamespace+"/"+funcName].FuncCallTime))
 	} else {
 		c.CallRecord[funcNamespace+"/"+funcName] = &LaunchRecord{
 			FuncName:      funcName,
@@ -212,7 +215,7 @@ func (c *funcController) ScaleDown(funcName, funcNamespace string) error {
 
 // 【TODO】
 func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error {
-	fmt.Println("scale up start")
+	fmt.Println("funcName scale up to ", num)
 	// 【TODO】
 	url := config.GetAPIServerURLPrefix() + config.ReplicaSetSpecURL
 	url = stringutil.Replace(url, config.URL_PARAM_NAMESPACE_PART, funcNamespace)
@@ -243,6 +246,5 @@ func (c *funcController) ScaleUp(funcName, funcNamespace string, num int) error 
 		return errors.New("put function from apiserver failed, not 200")
 	}
 
-	fmt.Println("scale up end")
 	return nil
 }

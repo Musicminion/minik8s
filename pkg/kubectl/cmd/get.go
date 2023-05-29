@@ -838,7 +838,7 @@ func printReplicasetResult(replicaset *apiObject.ReplicaSetStore, t table.Writer
 	// HiCyan
 	t.AppendRows([]table.Row{
 		{
-			color.BlueString(string(Get_Kind_Dns)),
+			color.BlueString(string(Get_Kind_Replicaset)),
 			color.HiCyanString(replicaset.ToReplicaSet().GetObjectNamespace()),
 			color.HiCyanString(replicaset.ToReplicaSet().GetObjectName()),
 			color.GreenString(fmt.Sprintf("\t\t%d/%d", replicaset.Status.ReadyReplicas, replicaset.Status.Replicas)),

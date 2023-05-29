@@ -200,7 +200,8 @@ func (s *server) checkFunction(c *gin.Context) {
 	}
 
 	// 判断function是否存在pod实例
-	if s.routeTable[funcNamespace + "/" + funcName] == nil {
+	ips := s.routeTable[funcNamespace + "/" + funcName]
+	if  len(ips) == 0{
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "function has no pod running",
 			"data": false,
@@ -208,6 +209,14 @@ func (s *server) checkFunction(c *gin.Context) {
 		// 不存在，需要创建实例
 		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		return
+	}
+
+	// 存在，添加callrecord
+	err := s.funcController.AddCallRecord(funcName, funcNamespace)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "add call record error, " + err.Error(),
+		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{

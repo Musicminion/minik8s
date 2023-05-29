@@ -124,6 +124,17 @@
 
 <img width="1017" alt="截屏2023-05-29 09 00 41" src="https://github.com/Musicminion/minik8s/assets/84625273/add8f63b-b90e-46d7-9971-2d78e7ef1c59">
 
+#### controller架构
+minik8s需要controller对一些抽象的对象实施管理。Controller是运行在控制平面的一个组件，具体包括DNS Controller、HPA Controller、Job Controller、Replica Controller。之所以需要Controller来对于这些API对象进行管理，是因为这些对象都是比较高度抽象的对象，需要维护已有的基础对象和他们之间的关系，或者需要对整个系统运行状态分析之后再才能做出决策。具体的逻辑如下：
+- Replica Controller：维护Replica的数量和期望的数量一直，如果出现数量不一致，当通过标签匹配到的Pod数量较多的时候，会随机的杀掉若干Pod，直到数量和期望一致；当通过标签匹配到的Pod数量偏少的时候，会根据template创建相关的Pod
+- Job Controller：维护GPU Job的运行，当一个新的任务出现的时候，会被GPU JobController捕捉到（因为这个任务没有被执行，状态是空的），然后Controller会创建一个新的Pod，让该Pod执行相关的GPU任务。
+- HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，如果出现了异常，就会出发扩容或者缩容。所有的扩容、所有都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/单位Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
+- DNS Controller：TODO
+
+
+
+
+
 
 ### 已完成
 

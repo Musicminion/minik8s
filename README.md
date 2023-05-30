@@ -201,6 +201,9 @@ GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Se
 
 ![image](https://github.com/Musicminion/minik8s/assets/84625273/0299b79f-9be1-4016-b642-66c85c597d80)
 
+最终输出的效果如下所示：
+![image](https://github.com/Musicminion/minik8s/assets/84625273/0fdf67f8-ec98-493e-b7a0-50d1d97267fb)
+
 
 #### Serveless
 

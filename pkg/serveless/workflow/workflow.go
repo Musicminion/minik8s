@@ -114,6 +114,11 @@ func (w *workflowController) executeWorkflow(workflow apiObject.WorkflowStore) {
 					fmt.Println("unmarshal failed + ", err.Error())
 					break
 				}
+				// 这里有可能在请求过程中pod被删除了，所以需要重新创建，workflow执行失败
+				if result["data"] == nil {
+					fmt.Println("result data is nil")
+					break
+				}
 				lastStepResult = result["data"].(string)
 
 			} else {

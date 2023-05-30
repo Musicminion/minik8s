@@ -6,9 +6,9 @@ import (
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/app/helper"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/message"
 	"net/http"
 	"path"
 	"time"
@@ -250,7 +250,7 @@ func AddPod(c *gin.Context) {
 		注意，只有当nodeName为空的时候，才会进行调度
 	*/
 
-	msgutil.PublishRequestNodeScheduleMsg(podStore)
+	message.PublishRequestNodeScheduleMsg(podStore)
 
 }
 
@@ -301,7 +301,7 @@ func DeletePod(c *gin.Context) {
 		"message": "delete pod success",
 	})
 
-	msgutil.PublishDeletePod(&pod)
+	message.PublishDeletePod(&pod)
 
 }
 

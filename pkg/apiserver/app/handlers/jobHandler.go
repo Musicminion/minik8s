@@ -6,10 +6,10 @@ import (
 	"io"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/message"
 	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"net/http"
@@ -592,7 +592,7 @@ func AddJobFile(c *gin.Context) {
 	/*
 		首次创建了JobFile，需要给消息队列发送消息
 	*/
-	msgutil.PublishUpdateJobFile(&jobFile.Basic)
+	message.PublishUpdateJobFile(&jobFile.Basic)
 
 }
 

@@ -8,9 +8,7 @@ import (
 	config "miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
-
 	"github.com/gin-gonic/gin"
-	// "net/http"
 )
 
 type ApiServer interface {
@@ -46,10 +44,6 @@ type ResponseData struct {
 }
 
 func (s *apiServer) Run() {
-	k8log.InfoLog("APIServer", "Watcher try to connect to RabbitMQ")
-	go s.lw.WatchQueue_Block("apiServer", handlers.MessageHandler, make(chan struct{}))
-	k8log.InfoLog("APIServer", "Bind MessageHandler To RabbitMQ Success")
-
 	k8log.InfoLog("APIServer", "Starting api server")
 	if s.ifDebug {
 		gin.SetMode(gin.DebugMode)
@@ -62,7 +56,7 @@ func (s *apiServer) Run() {
 	s.bind()
 	runAddr := s.listenIP + ":" + fmt.Sprint(s.port)
 	k8log.InfoLog("APIServer", "Listening on "+runAddr)
-	s.router.Run("0.0.0.0:8090")
+	s.router.Run("0.0.0.0:" + fmt.Sprint(s.port))
 }
 
 func (s *apiServer) bind() {

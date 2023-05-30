@@ -3,7 +3,6 @@ package scheduler
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
@@ -55,14 +54,7 @@ func NewScheduler() (*Scheduler, error) {
 	}
 	schedulerConfig := DefaultSchedulerConfig()
 
-	messageConfig := message.MsgConfig{
-		User:     "guest",
-		Password: "guest",
-		Host:     "localhost",
-		Port:     5672,
-		VHost:    "/",
-	}
-	newPublisher, err := message.NewPublisher(&messageConfig)
+	newPublisher, err := message.NewPublisher(message.DefaultMsgConfig())
 	if err != nil {
 		return nil, err
 	}
@@ -154,7 +146,7 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 		return schLeastMem(nodes)
 	default:
 	}
-	// TODO
+	// TODO:
 	return "ubuntu"
 }
 
@@ -230,7 +222,7 @@ func (sch *Scheduler) RequestSchedule(parsedMsg *message.Message) {
 		PodTarget: *podStore,
 		Node:      scheduledNode,
 	}
-	msgutil.PublishUpdatePod(podUpdate)
+	message.PublishUpdatePod(podUpdate)
 }
 
 // 调度器的消息处理函数,分发给不同的消息处理函数
@@ -241,15 +233,8 @@ func (sch *Scheduler) MsgHandler(msg amqp.Delivery) {
 		k8log.ErrorLog("Scheduler", "消息格式错误,无法转换为Message")
 	}
 
-	switch parsedMsg.Type {
-	case message.RequestSchedule:
-		// TODO
-		sch.RequestSchedule(parsedMsg)
-	default:
-
-		// TODO
-	}
-
+	// 处理调度请求的消息
+	sch.RequestSchedule(parsedMsg)
 }
 
 func (sch *Scheduler) Run() {
@@ -257,6 +242,6 @@ func (sch *Scheduler) Run() {
 	// 监听队列
 	for {
 		// 监听队列
-		sch.lw.WatchQueue_Block(msgutil.NodeScheduleTopic, sch.MsgHandler, make(chan struct{}))
+		sch.lw.WatchQueue_Block(message.NodeScheduleQueue, sch.MsgHandler, make(chan struct{}))
 	}
 }

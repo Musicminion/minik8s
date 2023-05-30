@@ -7,18 +7,7 @@ SCRIPTS_ROOT="$(cd "$(dirname "$0")" && pwd)"
 
 # 初始化测试环境
 # 删除 etcd 中所有内容
-. "$SCRIPTS_ROOT/remake.sh" /
-
-
-# 重启weave
-# echo "重启weave"
-# weave stop
-# weave launch
-# weave expose
-
-# # 重启docker
-# echo "重启docker"
-# systemctl restart docker
+. "$SCRIPTS_ROOT/master_remake.sh" /
 
 cd $PROJECT_ROOT
 

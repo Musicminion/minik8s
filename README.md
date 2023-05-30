@@ -185,5 +185,5 @@ GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Se
 
 我们编写了简易的并行矩阵乘法、矩阵加法来验证我们的GPU任务是否可以成功执行，时序图如下所示，具体的演示的效果请参考演示视频。
 
-![image](https://github.com/Musicminion/minik8s/assets/84625273/4a7dbce1-8254-4664-a7b5-0d15e99de818)
+![image](https://github.com/Musicminion/minik8s/assets/84625273/0299b79f-9be1-4016-b642-66c85c597d80)
 

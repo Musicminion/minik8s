@@ -188,8 +188,15 @@ GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Se
 我们编写了简易的并行矩阵乘法、矩阵加法来验证我们的GPU任务是否可以成功执行，时序图如下所示。矩阵乘法的执行原理是TODO(DYP)
 
 
-
 具体的演示的效果请参考演示视频。
 
 ![image](https://github.com/Musicminion/minik8s/assets/84625273/0299b79f-9be1-4016-b642-66c85c597d80)
+
+
+#### ReplicaSet抽象
+
+ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过ReplicaSet Controller。通常来说创建的ReplicaSet都会带有自己的ReplicaSetSelector，用来选择Pod。ReplicaSet Controller会定期的从API-Server抓取全局的Pod和Replica数据，然后针对每一个Replica，检查符合状态的Pod的数量。如果数量发现小于预期值，就会根据Replica中的Template创建若干个新的Pod，如果发现数量大于预期值，就会将找到符合标签的Pod删去若干个(以达到预期的要求)
+
+至于容错，我们放在了底层的Kubelet来实现。Pleg会定期检查运行在该节点的所有的Pod的状态，如果发现Pod异常，会自动重启Pod，保证Pod的正常运转。
+
 

@@ -179,3 +179,8 @@ pod内需要能运⾏多个容器，它们可以通过localhost互相访问。�
 
 
 #### GPU Job
+GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Server](https://hub.docker.com/r/musicminion/minik8s-gpu)，并发布了arch64和arm64版本的镜像到Dockerhub。GPU-Job-Pod启动的时候，会被传递Job的namespace和name，该内置的服务器会主动找API-Server下载任务相关的文件和配置信息，根据用户指定的命令来生成脚本文件。
+
+然后，GPU-Job-Server会使用用户提供的用户名、密码登录到交大的HPC平台，通过slurm脚本提交任务，然后进入等待轮寻的状态。当任务完成之后，会将任务的执行的结果从HPC超算平台下载，然后上传给API-Server，到此为止一个GPU的Job全部完成。
+
+我们编写了简易的并行矩阵乘法、矩阵加法来验证我们的GPU任务是否可以成功执行，具体的演示的效果请参考演示视频。

@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: Dns
+metadata:
+  name: test-dns
+spec:
+  host: test.com
+  paths:
+  - subPath: /api/v2
+    svcName: service-example
+    svcPort: 88

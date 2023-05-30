@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: pod-for-volume
+  namespace: default
+spec:
+  nodeName: ubuntu
+  containers:
+    - image: docker.io/library/redis
+      name: volumeContainer-1
+      volumeMounts:
+      - name: share
+        mountPath: /shared_dir/
+      ports:
+        - containerPort: 10180
+    - image: docker.io/library/nginx
+      name: volumeContainer-2
+      ports:
+        - containerPort: 80
+      volumeMounts:
+      - name: share
+        mountPath: /shared_dir/
+  volumes:
+  - name: share
+    hostPath:
+      path: /home/shared_dir/

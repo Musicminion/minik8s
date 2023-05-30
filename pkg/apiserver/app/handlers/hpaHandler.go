@@ -90,13 +90,6 @@ func GetHPAs(c *gin.Context) {
 		return
 	}
 
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "GetHPA: not found",
-		})
-		return
-	}
-
 	targetHPAs := make([]string, 0)
 	for _, hpa := range res {
 		targetHPAs = append(targetHPAs, string(hpa.Value))

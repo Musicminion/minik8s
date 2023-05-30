@@ -101,13 +101,6 @@ func GetPods(c *gin.Context) {
 		return
 	}
 
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "get pods err, not find pods",
-		})
-		return
-	}
-
 	// 遍历res，返回对应的Node信息
 	targetPods := make([]string, 0)
 	for _, pod := range res {

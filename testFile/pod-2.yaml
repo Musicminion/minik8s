@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: service
+  name: pod-example2
+  namespace: default
+spec:
+  containers:
+    - image: docker.io/library/nginx
+      name: nettest
+      ports:
+        - containerPort: 80
+

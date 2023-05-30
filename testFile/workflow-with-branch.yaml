@@ -1,0 +1,35 @@
+kind: Workflow
+apiVersion: v1
+metadata:
+  # Unique key of the Service instance
+  name: workflow-example
+  namespace: default
+spec:
+  entryParams: '{"x": 1, "y": 2}'
+  entryNodeName: node1
+  workflowNodes: 
+  - name: node1
+    type: func
+    funcData:
+      funcName: func2   # x = x + y, y = x - y
+      funcNamespace: default
+      nextNodeName: node2
+  - name: node2
+    type: choice
+    choiceData:
+      trueNextNodeName: node3
+      falseNextNodeName: node4
+      checkType: numGreaterThan   # if checkVar > 0, goto node3, else goto node4
+      checkVarName: y
+      compareValue: 0
+  - name: node3
+    type: func
+    funcData:
+      funcName: func3    # x = x^2, y = y^2
+      funcNamespace: default
+  - name: node4
+    type: func
+    funcData:
+      funcName: func1    # x = x - y, y = y - x
+      funcNamespace: default
+  

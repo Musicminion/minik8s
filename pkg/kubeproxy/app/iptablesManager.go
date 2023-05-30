@@ -119,10 +119,10 @@ func (im *iptableManager) Init_iptables() {
 	im.ipt, _ = iptables.New()
 
 	// 删除旧规则，设置 NAT 表的策略
-	im.ipt.ClearChain("nat", "PREROUTING")
-	im.ipt.ClearChain("nat", "INPUT")
-	im.ipt.ClearChain("nat", "OUTPUT")
-	im.ipt.ClearChain("nat", "POSTROUTING")
+	// im.ipt.ClearChain("nat", "PREROUTING")
+	// im.ipt.ClearChain("nat", "INPUT")
+	// im.ipt.ClearChain("nat", "OUTPUT")
+	// im.ipt.ClearChain("nat", "POSTROUTING")
 	im.ipt.ChangePolicy("nat", "PREROUTING", "ACCEPT")
 	im.ipt.ChangePolicy("nat", "INPUT", "ACCEPT")
 	im.ipt.ChangePolicy("nat", "OUTPUT", "ACCEPT")

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: service
+  name: net_test
+  namespace: default
+spec:
+  containers:
+    - image: registry.cn-hangzhou.aliyuncs.com/tanjunchen/network-multitool:v1
+      name: network

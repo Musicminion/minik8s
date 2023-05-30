@@ -99,13 +99,6 @@ func GetJobs(c *gin.Context) {
 		return
 	}
 
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "get jobs err, not find jobs",
-		})
-		return
-	}
-
 	// 处理Res，如果有多个返回的，报错
 	targetJobs := make([]string, 0)
 

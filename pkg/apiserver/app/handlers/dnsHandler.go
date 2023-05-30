@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
 	etcdclient "miniK8s/pkg/apiserver/app/etcdclient"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
@@ -140,7 +139,7 @@ func AddDns(c *gin.Context) {
 		Action:    message.CREATE,
 		DnsTarget: *dnsStore,
 	}
-	msgutil.PublishUpdateDns(&dnsUpdate)
+	message.PublishUpdateDns(&dnsUpdate)
 
 	// 返回
 	c.JSON(http.StatusCreated, gin.H{
@@ -217,7 +216,7 @@ func DeleteDns(c *gin.Context) {
 			},
 		},
 	}
-	msgutil.PublishUpdateDns(&dnsUpdate)
+	message.PublishUpdateDns(&dnsUpdate)
 
 	k8log.InfoLog("APIServer", "delete dns success")
 	// 返回

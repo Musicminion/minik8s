@@ -7,6 +7,7 @@ import (
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
+	"miniK8s/pkg/message"
 	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"net/http"
@@ -184,6 +185,9 @@ func AddNode(c *gin.Context) {
 	c.JSON(http.StatusCreated, gin.H{
 		"message": "create node success",
 	})
+
+	// 绑定Node name到FinoutQueue
+	message.BindFinoutQueue(node.GetObjectName())
 }
 
 // 更新Node信息

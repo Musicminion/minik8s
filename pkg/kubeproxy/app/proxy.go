@@ -3,17 +3,22 @@ package proxy
 import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/listwatcher"
 	"miniK8s/pkg/message"
+	"miniK8s/util/file"
 	"miniK8s/util/host"
+	netrequest "miniK8s/util/netRequest"
 	"miniK8s/util/nginx"
+	"miniK8s/util/stringutil"
+	"net/http"
 	"os"
+	"strings"
 
 	"github.com/streadway/amqp"
+	"gopkg.in/yaml.v2"
 )
 
 type KubeProxy struct {
@@ -80,7 +85,7 @@ func (proxy *KubeProxy) updateNginxConfig() {
 		Cmd: []string{"nginx", "-s", "reload"},
 	}
 	// 向本机的kubelet发送消息，通知nginx pod更新配置
-	msgutil.PublishUpdatePod(podUpdate)
+	message.PublishUpdatePod(podUpdate)
 }
 
 // 监听到HostUpdate消息后, 并修改本机的host文件
@@ -127,21 +132,20 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 
 	// 以下内容更新nginx的配置文件
 	switch hostUpdate.Action {
-		case message.CREATE:
-			k8log.InfoLog("Kubeproxy", "HandleHostUpdate: create Host action")
-			nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
-		case message.UPDATE:
-			nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
-			nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
-		case message.DELETE:
-			k8log.DebugLog("Kubeproxy", "HandleHostUpdate: delete Host action")
-			nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+	case message.CREATE:
+		k8log.InfoLog("Kubeproxy", "HandleHostUpdate: create Host action")
+		nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+	case message.UPDATE:
+		nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+		nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+	case message.DELETE:
+		k8log.DebugLog("Kubeproxy", "HandleHostUpdate: delete Host action")
+		nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
 	}
 
 	// 更新nginx的配置文件后，reload nginx
 	proxy.updateNginxConfig()
 }
-
 
 // 当管道发生变化时的处理函数
 func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceUpdate, dnsUpdates <-chan *entity.DnsUpdate) bool {
@@ -172,12 +176,79 @@ func (proxy *KubeProxy) syncLoopIteration(serviceUpdates <-chan *entity.ServiceU
 	return true
 }
 
-func (proxy *KubeProxy) Run() {
-	// serviceUpdate
-	go proxy.lw.WatchQueue_Block(msgutil.ServiceUpdateTopic, proxy.HandleServiceUpdate, make(chan struct{}))
+func (proxy *KubeProxy) CreateNginxPod() {
+	k8log.DebugLog("Dns-Controller", "Run: start to create nginx pod")
 
-	// endpointUpdate
-	go proxy.lw.WatchQueue_Block(msgutil.HostUpdateTopic, proxy.HandleHostUpdate, make(chan struct{}))
+	// 检查etcd中是否存在nginx pod
+	URL := stringutil.Replace(config.NodeAllPodsURL, config.URL_PARAM_NAME_PART, host.GetHostName())
+	URL = config.GetAPIServerURLPrefix() + URL
+	k8log.DebugLog("Dns-Controller", "Run: get pods from etcd, URL is "+URL)
+	podsOnNode := []apiObject.PodStore{}
+	code, err := netrequest.GetRequestByTarget(URL, &podsOnNode, "data")
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to get pods from etcd"+err.Error())
+		return
+	}
+	if code != http.StatusOK {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to get pods from etcd, code is not 200")
+		return
+	}
+
+	//  若存在，说明kubeproxy不是第一次启动
+	for _, pod := range podsOnNode {
+		if strings.Contains(pod.GetPodName(), "dns-nginx") {
+			k8log.DebugLog("Dns-Controller", "Run: nginx pod already exists")
+			return
+		}
+	}
+
+	// 不存在，根据pod yaml 创建nginx pod
+	path := NginxPodYamlPath
+	fileContent, err := file.ReadFile(path)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to read file"+err.Error())
+		return
+	}
+	// 将文件内容转换为Pod对象
+	nginxPod := &apiObject.Pod{}
+	err = yaml.Unmarshal(fileContent, nginxPod)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to unmarshal"+err.Error())
+		return
+	}
+
+	// 判断namespace是否为空
+	if nginxPod.GetObjectNamespace() == "" {
+		nginxPod.Metadata.Namespace = config.DefaultNamespace
+	}
+
+	URL = stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetObjectNamespace())
+	URL = config.GetAPIServerURLPrefix() + URL
+
+	nginxPod.Metadata.Name += "-" + stringutil.GenerateRandomStr(5)
+	nginxPod.Spec.NodeName = host.GetHostName()
+
+	code, _, err = netrequest.PostRequestByTarget(URL, nginxPod)
+	if err != nil {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
+		return
+	}
+	if code != http.StatusCreated {
+		k8log.ErrorLog("Dns-Controller", "Run: failed to create pod")
+		return
+	}
+	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx pod")
+}
+
+func (proxy *KubeProxy) Run() {
+	// 创建nginx的pod
+	proxy.CreateNginxPod()
+	// serviceUpdate
+	go proxy.lw.WatchQueue_Block(message.ServiceUpdateWithNode(host.GetHostName()), proxy.HandleServiceUpdate, make(chan struct{}))
+
+	// hostUpdate, 来自dnsController
+	go proxy.lw.WatchQueue_Block(message.HostUpdateWithNode(host.GetHostName()), proxy.HandleHostUpdate, make(chan struct{}))
+
 	// 持续监听serviceUpdates和dnsUpdates的channel
 	for proxy.syncLoopIteration(proxy.serviceUpdates, proxy.dnsUpdates) {
 	}

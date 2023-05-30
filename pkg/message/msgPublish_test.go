@@ -1,4 +1,4 @@
-package msgutil
+package message
 
 import (
 	"encoding/json"
@@ -9,7 +9,6 @@ import (
 	"miniK8s/pkg/config"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
-	"miniK8s/pkg/message"
 	"miniK8s/util/file"
 	"miniK8s/util/stringutil"
 
@@ -32,7 +31,7 @@ func TestPublishUpdateService(t *testing.T) {
 	fmt.Println("service Info:", serviceStore)
 
 	serviceUpdate := &entity.ServiceUpdate{
-		Action:        message.CREATE,
+		Action:        CREATE,
 		ServiceTarget: serviceStore,
 	}
 	PublishUpdateService(serviceUpdate)
@@ -51,8 +50,8 @@ func TestPublishRequestNodeScheduleMsg(t *testing.T) {
 	}
 	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, pod.GetObjectName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, pod.GetObjectNamespace())
-	message := message.Message{
-		Type:         message.RequestSchedule,
+	message := Message{
+		Type:         RequestSchedule,
 		Content:      pod.GetObjectName(),
 		ResourceURI:  resourceURI,
 		ResourceName: pod.GetObjectName(),

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/apiserver/app/etcdclient"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/message"
@@ -137,7 +136,7 @@ func UpdateEndPoints(pod apiObject.PodStore) error {
 
 			// 加入到消息队列中以便kubeproxy更新service
 			k8log.DebugLog("APIServer", "PublishUpdateService")
-			err = msgutil.PublishUpdateService(serviceUpdate)
+			err = message.PublishUpdateService(serviceUpdate)
 			if err != nil {
 				k8log.ErrorLog("APIServer", "publish endpoint update message failed"+err.Error())
 			}
@@ -209,7 +208,7 @@ func DeleteEndpoints(pod apiObject.PodStore) error {
 			}
 
 			// 加入到消息队列中以便kubeproxy更新service
-			err = msgutil.PublishUpdateService(serviceUpdate)
+			err = message.PublishUpdateService(serviceUpdate)
 			if err != nil {
 				k8log.ErrorLog("APIServer", "publish endpoint update message failed"+err.Error())
 			}

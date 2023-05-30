@@ -12,7 +12,6 @@ import (
 
 	"miniK8s/pkg/apiserver/app/etcdclient"
 	"miniK8s/pkg/apiserver/app/helper"
-	msgutil "miniK8s/pkg/apiserver/msgUtil"
 	"miniK8s/pkg/apiserver/serverconfig"
 	"miniK8s/pkg/entity"
 	"miniK8s/pkg/k8log"
@@ -157,7 +156,7 @@ func AddService(c *gin.Context) {
 
 	// publishServiceUpdate(serviceUpdate)
 	k8log.DebugLog("APIServer", "AddService: serviceUpdate")
-	msgutil.PublishUpdateService(serviceUpdate)
+	message.PublishUpdateService(serviceUpdate)
 
 }
 
@@ -304,7 +303,7 @@ func DeleteService(c *gin.Context) {
 		ServiceTarget: service,
 	}
 
-	msgutil.PublishUpdateService(serviceUpdate)
+	message.PublishUpdateService(serviceUpdate)
 
 	c.JSON(http.StatusNoContent, gin.H{
 		"message": "delete service success",

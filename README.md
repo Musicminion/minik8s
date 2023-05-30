@@ -2,7 +2,7 @@
 
 <img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
->  2023年《SE3356 云操作系统设计与实践》课程第一小组项目。
+>  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernates](https://kubernetes.io/zh-cn/)容器编排工具的go语言实现。
 
 小组成员如下：
 

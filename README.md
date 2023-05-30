@@ -1,4 +1,5 @@
 # Minik8s
+# Minik8s
 
 <img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
@@ -53,7 +54,8 @@
 - Kubelet：维护Pod的底层创建，Pod生命周期的管理，Pod异常的重启/重建等
 - Redis：作为本地的缓存Cache，哪怕API-Server完全崩溃，因为有本地的Redis，机器重新启动之后，Kubelet也能够恢复之前容器的状态
 
-<img width="1071" alt="截屏2023-05-29 00 09 32" src="https://github.com/Musicminion/minik8s/assets/84625273/9741e107-dc8d-4bfb-b71f-819c6956c1b5">
+![](https://notes.sjtu.edu.cn/uploads/upload_2684ba3c6f31c714360855ca1387f4eb.png)
+
 
 
 **项目分支**：我们的开发采用多分支进行。每一个功能点对应一个Feature分支(对于比较复杂的功能分支可能会有不同组员自己的Branch)，所有的推送都会经过`go test`的测试检验。并可以在[这里](https://github.com/Musicminion/minik8s/actions)查看详细的情况。
@@ -65,7 +67,8 @@
 
 如下图所示，是我们开发时候的Pr合并的情况。所有的Pr都带有相关的Label，便于合并的时候审查。考虑到后期的合并比较频繁，我们几乎都是每天都需要合并最新的工作代码到Development分支，然后运行单元测试。测试通过之后再合并到Master分支。
 
-![image](https://github.com/Musicminion/minik8s/assets/84625273/e656077e-adb1-4030-ba45-194a791c6d60)
+![](https://notes.sjtu.edu.cn/uploads/upload_4cdfa2fa3c7cb0dbdf7dc47e54444f71.png)
+
 
 
 **CI/CD介绍**：CI/CD作为我们软件质量的重要保证之一。我们通过Git Action添加了自己的Runner，并编写了项目的测试脚本来实现CI/CD。保证每次运行前环境全部初始化。
@@ -82,7 +85,8 @@
 - 功能开发的过程主要是：简要的需求分析->设计API对象->设计API-Server的接口->设计Etcd存储情况->编写该需求的运行逻辑代码->编写Kubectl相关代码->最终测试
 - 具体如下图所示，在整个开发的流程中，我们基本都是在重复下面的流程图。
 
-<img width="865" alt="截屏2023-05-29 00 14 54" src="https://github.com/Musicminion/minik8s/assets/84625273/13a63fac-58de-4747-905c-e932f0a830f9">
+![](https://notes.sjtu.edu.cn/uploads/upload_0b5b07bc10c601f1b907e642dc3c3fa1.png)
+
 
 **开发简介**：
 - 项目代码体量大约2w行代码，开发周期大约1.5月
@@ -112,9 +116,10 @@
 - ListWatcher会监听属于每个Node的消息队列，当收到创建/删除Pod的请求的时候，也会发送给相关的WorkerManager
 - 也就是说创建Pod会有消息队列/StatusManager检测到和远端不一致这样两种路径，前者的效率更高，后者用于维护长期的稳定。两者协同保证Pod的正确运行
 
-<img width="1226" alt="截屏2023-05-29 08 48 24" src="https://github.com/Musicminion/minik8s/assets/84625273/352821f7-a9a3-4151-8fac-89a5e753184a">
+<img width="1226" alt="截屏2023-05-29 08 48 24" src="https://notes.sjtu.edu.cn/uploads/upload_42e4fefaaadd9a0124137aa8eb0a10b1.png">
 
-<img width="320"  align='right'  alt="截屏2023-05-29 08 50 13" src="https://github.com/Musicminion/minik8s/assets/84625273/92b2e789-8f23-4314-a388-be011e08af21">
+
+<img width="320"  align='right'  alt="截屏2023-05-29 08 50 13" src="https://notes.sjtu.edu.cn/uploads/upload_40020794bdea93b81638a916a3968efa.png">
 
 具体来说，各个组件之间的行为和关系如下图详细所示。
 - Runtime Manager会负责收集底层正在运行的所有的容器的信息，并把容器的信息组装为Pod的状态信息。同时收集当前机器的CPU/内存状态，把相关的信息回传到API Server，及时更新。
@@ -122,20 +127,21 @@
 - Status Manager对于所有更新获取到的Pod，都会写入Redis的本地缓存，以便于API-Server完全崩溃和Kubelet完全崩溃重启的时候，Kubelet有Pod的期望信息，能够作为对齐目标
 - 当出现Pod不一致的时候，以远端的API-Server的数据为主，并清除掉不必要的Pod。如下图所示，会清空不必要的Pod，并创建本地没有的Pod，实现和远端数据的对齐。
 
-<img width="1017" alt="截屏2023-05-29 09 00 41" src="https://github.com/Musicminion/minik8s/assets/84625273/add8f63b-b90e-46d7-9971-2d78e7ef1c59">
+![](https://notes.sjtu.edu.cn/uploads/upload_8a3f18b7acf03d7a53d9d6c6c0e854f8.png)
+
 
 #### controller架构
 minik8s需要controller对一些抽象的对象实施管理。Controller是运行在控制平面的一个组件，具体包括DNS Controller、HPA Controller、Job Controller、Replica Controller。之所以需要Controller来对于这些API对象进行管理，是因为这些对象都是比较高度抽象的对象，需要维护已有的基础对象和他们之间的关系，或者需要对整个系统运行状态分析之后再才能做出决策。具体的逻辑如下：
 - Replica Controller：维护Replica的数量和期望的数量一直，如果出现数量不一致，当通过标签匹配到的Pod数量较多的时候，会随机的杀掉若干Pod，直到数量和期望一致；当通过标签匹配到的Pod数量偏少的时候，会根据template创建相关的Pod
 - Job Controller：维护GPU Job的运行，当一个新的任务出现的时候，会被GPU JobController捕捉到（因为这个任务没有被执行，状态是空的），然后Controller会创建一个新的Pod，让该Pod执行相关的GPU任务。
-- HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，如果出现了异常，就会出发扩容或者缩容。所有的扩容、所有都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/单位Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
-- DNS Controller：TODO
+- HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，并计算出期望的副本数（具体算法见[Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)），如果当前副本和期望数量不一致，就会触发扩容或者缩容。所有的扩容、缩容都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
+- DNS Controller：负责nginx service的创建，同时监听Dns对象的变化，当有Dns变化时会向所有的node发送hostUpdate以更新nginx的配置文件和hosts文件
 
 #### Kubectl
 
 Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。我们使用了Cobra的命令行解析工具，大大提高了命令解析的效率。
 
-<img width="300" alt="截屏2023-05-29 09 00 41" src="https://github.com/Musicminion/minik8s/assets/84625273/7b7fe250-0999-4c68-ae3a-e1f481028769">
+<img width="300" alt="截屏2023-05-29 09 00 41" src="https://notes.sjtu.edu.cn/uploads/upload_835fc46a324cd6f7e31ac466bac4c99f.png">
 
 支持的命令如下所示：
 - `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口
@@ -145,7 +151,7 @@ Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubern
 - `kubectl execute [namespace]/[name] [parameters]` 出发一个Serveless的函数，并传递相关的参数
 
 #### Scheduler
-Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Scheduler和API-Server通过RabbitMQ消息队列实现通讯。当有Pod创建的请求的时候，API-Server会给Scheduler发送调度请求，Scheduler会主动拉取所有Node，根据最新的Node Status来安排调度。
+Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Scheduler和API-Server通过RabbitMQ消息队列实现通讯。当有Pod创建的请求的时候，API-Server会给Scheduler发送调度请求，Scheduler会主动拉取所有Node，根据最新的Node Status和调度策略来安排调度。
 
 目前我们的Scheduler支持多种调度策略：
 - RoundRobin：轮询调度策略
@@ -158,6 +164,15 @@ Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Schedul
 
 
 #### Kuberproxy
+
+Kubeproxy运行在每个Worker节点上，主要是为了支持service抽象，以实现根据Service ClusterIP访问Pod服务的功能，同时提供了一定负载均衡功能，例如可以通过随机或者轮询的策略进行流量的转发。同时Kubeproxy还承担了DNS和转发的功能。
+
+目前Kuberproxy设计如下：
+
+- Kuberproxy主要由IptableManager、DnsManager两个核心组件和serviceUpdateChan、DnsUpdateChan的通道组成。
+- 当Kubeproxy启动后会向API-Server发送创建nginx pod的请求，并在之后通过nginx pod来进行反向代理
+- IptableManager用于处理serviceUpdate, 根据service的具体内容对本机上的iptables进行更新，以实现ClusterIP到Pod的路由。
+- DnsManager用于处理hostUpdate，这是来自DnsController的消息，目的是通知节点进行nginx配置文件和hosts文件的更新，以实现DNS和转发功能
 
 ### 需求实现详解
 
@@ -199,10 +214,12 @@ GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Se
 
 具体的演示的效果请参考演示视频。
 
-![image](https://github.com/Musicminion/minik8s/assets/84625273/0299b79f-9be1-4016-b642-66c85c597d80)
+![](https://notes.sjtu.edu.cn/uploads/upload_902c6eb289d8bca30ba2c57a3ae797c5.png)
+
 
 最终输出的效果如下所示：
-![image](https://github.com/Musicminion/minik8s/assets/84625273/0fdf67f8-ec98-493e-b7a0-50d1d97267fb)
+![](https://notes.sjtu.edu.cn/uploads/upload_d0f674c49bc33f69066713c6396d8993.png)
+
 
 
 #### Serveless
@@ -219,4 +236,4 @@ Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Func
 
 我们的工作流里面有两类节点，一个对应的是funcNode，也就是说这个节点对应的一个function，这时候Workflow Controller就会将上一步的执行结果(如果是第一个节点那就是工作流的入口参数)发送给对应namespace/name下的function来执行。另外一个类型节点对应的是optionNode，这个节点只会单纯对于上一步的执行结果进行判断。如果判断的结果是真，就会进入到TrueNextNodeName，如果判断的结果是假，就会进入到FalseNextNodeName。
 
-![image](https://github.com/Musicminion/minik8s/assets/84625273/b75d1e74-ffe7-42d8-9553-f88f2efcfb12)
+

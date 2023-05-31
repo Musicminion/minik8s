@@ -13,6 +13,7 @@ import (
 	"miniK8s/util/stringutil"
 	"miniK8s/util/uuid"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -172,6 +173,24 @@ func AddJob(c *gin.Context) {
 
 	// 将Job转化为JobStore
 	jobStore := job.ToJobStore()
+	randomSuffix := "-" + stringutil.GenerateRandomStr(6)
+	// 在文件名的文件类型前加入随机字符串，防止文件名重复
+	re := regexp.MustCompile(`(.*)(\.[^.]+)`)
+	match := re.FindStringSubmatch(jobStore.Spec.OutputFile)
+
+	if len(match) >= 3 {
+		jobStore.Spec.OutputFile = match[1] + randomSuffix + match[2]
+	} else {
+		fmt.Println("无法解析文件名")
+	}
+
+	match = re.FindStringSubmatch(jobStore.Spec.ErrorFile)
+
+	if len(match) >= 3 {
+		jobStore.Spec.ErrorFile = match[1] + randomSuffix + match[2]
+	} else {
+		fmt.Println("无法解析文件名")
+	}
 
 	// 将JobStore转化为json
 	jobStoreJson, err := json.Marshal(jobStore)

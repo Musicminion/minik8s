@@ -276,6 +276,7 @@ func (js *JobServer) Run() {
 			fmt.Println("Job not complete")
 			return false // 任务未完成，继续循环
 		case 1:
+			time.Sleep(ExecutorJob_Delay)
 			fmt.Println("Job complete")
 			err := js.UploadResult()
 

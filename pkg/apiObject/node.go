@@ -34,7 +34,7 @@ type NodeBasic struct {
 
 type Node struct {
 	NodeBasic `json:",inline" yaml:",inline"`
-	IP        string `json:"ip" yaml:"ip"`
+	 IP       string `json:"ip" yaml:"ip"`
 }
 
 func (n *Node) GetIP() string {

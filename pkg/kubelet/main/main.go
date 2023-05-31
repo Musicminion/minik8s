@@ -1,12 +1,63 @@
 package main
 
 import (
+	"errors"
+	"fmt"
+	"miniK8s/pkg/apiObject"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/kubelet"
 	"miniK8s/pkg/kubelet/kubeletconfig"
+	"miniK8s/util/file"
+	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
+func initNodeFromFile(filepath string) (*apiObject.Node, error) {
+	// 检查参数是否是文件 读取文件
+	fileInfo, err := os.Stat(filepath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+	if fileInfo.IsDir() {
+		fmt.Println("file is a directory")
+		return nil, errors.New("file is a directory")
+	}
+	// 读取文件的内容
+	fileContent, err := file.ReadFile(filepath)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	// 解析API对象的种类
+	var node apiObject.Node
+
+	err = yaml.Unmarshal(fileContent, &node)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	return &node, nil
+}
+
+func parseNodeToKubeletConfig(node *apiObject.Node) (*kubeletconfig.KubeletConfig, error) {
+	return nil, nil
+}
+
 func main() {
+	args := os.Args[1:]
+	if len(args) != 0 {
+		// 参数是一个路径，读取配置文件
+		k8log.DebugLog("Kublet", "main: args is "+args[0])
+		// node, err := initNodeFromFile(args[0])
+		// if err != nil {
+		// 	k8log.FatalLog("Kublet", "main: initNodeFromFile failed, for "+err.Error())
+		// 	return
+		// }
+	}
 	KubeleConfig := kubeletconfig.DefaultKubeletConfig()
 	Kubelet, err := kubelet.NewKubelet(KubeleConfig)
 	if err != nil {

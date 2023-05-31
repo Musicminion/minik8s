@@ -17,6 +17,8 @@ const (
 	WorkflowKind   = "Workflow"
 )
 
+var AllResourceKindSlice = []string{PodKind, ServiceKind, DnsKind, NodeKind, JobKind, ReplicaSetKind, HpaKind, FunctionKind, WorkflowKind}
+
 var AllResourceKind = strings.ToLower("[" + PodKind + "/" + ServiceKind + "/" + DnsKind + "/" + NodeKind + "/" + JobKind +
 	"/" + ReplicaSetKind + "/" + HpaKind + "/" + FunctionKind + "/" + WorkflowKind + "]")
 

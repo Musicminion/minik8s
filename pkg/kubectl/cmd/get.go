@@ -27,6 +27,7 @@ var getCmd = &cobra.Command{
 
 var getNamespaceObjectFuncMap = make(map[string]func(namespace string))
 var getSpecificObjectFunMap = make(map[string]func(namespace string, name string))
+var getNoNamespaceObjectFuncMap = make(map[string]func())
 
 func init() {
 	getCmd.PersistentFlags().StringP("namespace", "n", "", "Namespace")
@@ -40,7 +41,8 @@ func init() {
 	getNamespaceObjectFuncMap[string(Get_Kind_Function)] = getNamespaceFunctions
 	getNamespaceObjectFuncMap[string(Get_Kind_Dns)] = getNamespaceDns
 	getNamespaceObjectFuncMap[string(Get_Kind_Workflow)] = getNamespaceWorkflows
-
+	
+	
 	getSpecificObjectFunMap[string(Get_Kind_Pod)] = getSpecificPod
 	getSpecificObjectFunMap[string(Get_Kind_Service)] = getSpecificService
 	getSpecificObjectFunMap[string(Get_Kind_Job)] = getSpecificJob
@@ -49,11 +51,14 @@ func init() {
 	getSpecificObjectFunMap[string(Get_Kind_Function)] = getSpecificFunction
 	getSpecificObjectFunMap[string(Get_Kind_Dns)] = getSpecificDns
 	getSpecificObjectFunMap[string(Get_Kind_Workflow)] = getSpecificWorkflow
+	
+	getNoNamespaceObjectFuncMap[string(Get_Kind_Node)] = getNodes
 }
 
 type GetObject string
 
 const (
+	Get_Kind_Node       GetObject = "node"
 	Get_Kind_Pod        GetObject = "pod"
 	Get_Kind_Service    GetObject = "service"
 	Get_Kind_Job        GetObject = "job"
@@ -72,12 +77,19 @@ func getObjectHandler(cmd *cobra.Command, args []string) {
 	}
 	kind := args[0]
 	// 判断kind是否在apiObject.AllResourceKind中
-	if !strings.Contains(apiObject.AllResourceKind, kind) {
+	if stringutil.ContainsString(apiObject.AllResourceKindSlice, kind) {
 		fmt.Println("getObjectHandler: args mismatch, please specify " + apiObject.AllResourceKind)
 		fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
 		return
 	}
+
 	if len(args) == 1 {
+		// 如果获取的资源是node，则直接获取node
+		if kind == string(Get_Kind_Node) {
+			getNodes()
+			return 
+		}
+
 		// 尝试获取用户是否指定了namespace
 		namespace, _ := cmd.Flags().GetString("namespace")
 
@@ -85,7 +97,7 @@ func getObjectHandler(cmd *cobra.Command, args []string) {
 		if namespace == "" {
 			namespace = config.DefaultNamespace
 		}
-
+		
 		// 获取default namespace下的所有指定kind的对象
 		getNamespaceObjectFuncMap[kind](namespace)
 
@@ -162,6 +174,26 @@ func getNamespacePods(namespace string) {
 	}
 
 	printPodsResult(pods)
+}
+
+func getNodes(){
+	url := config.GetAPIServerURLPrefix() + config.NodesURL
+
+	nodes := []apiObject.NodeStore{}
+
+	code, err := netrequest.GetRequestByTarget(url, &nodes, "data")
+
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	if code != http.StatusOK {
+		fmt.Println("getNodes: code:", code)
+		return
+	}
+
+	printNodesResult(nodes)
 }
 
 // ==============================================
@@ -893,6 +925,33 @@ func printWorkflowResult(workflow *apiObject.WorkflowStore, t table.Writer) {
 			color.HiCyanString(workflow.ToWorkflow().GetObjectName()),
 			color.GreenString(workflow.Status.Phase),
 			color.GreenString(workflow.Status.Result),
+		},
+	})
+}
+
+func printNodesResult(nodes []apiObject.NodeStore) {
+	t := table.NewWriter()
+	t.SetOutputMirror(os.Stdout)
+	t.AppendHeader(table.Row{"Kind", "Name", "Status", "IP", "CPU", "Memory"})
+
+	// 遍历所有的DnsStore
+	for _, node := range nodes {
+		printNodeResult(&node, t)
+	}
+
+	t.Render()
+}
+
+func printNodeResult(node *apiObject.NodeStore, t table.Writer) {
+	// HiCyan
+	t.AppendRows([]table.Row{
+		{
+			color.BlueString(string(Get_Kind_Node)),
+			color.HiCyanString(node.ToNode().GetObjectName()),
+			color.GreenString(string(node.Status.Condition)),
+			color.GreenString(node.Status.Ip),
+			color.GreenString(strconv.FormatFloat(node.Status.CpuPercent, 'f', 1, 64) + "%"),
+			color.GreenString(strconv.FormatFloat(node.Status.MemPercent, 'f', 1, 64) + "%"),
 		},
 	})
 }

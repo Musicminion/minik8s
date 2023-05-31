@@ -17,7 +17,7 @@ var (
 // push pod status
 var (
 	PodStatusUpdateDelay    = 0 * time.Second
-	PodStatusUpdateInterval = []time.Duration{10 * time.Second}
+	PodStatusUpdateInterval = []time.Duration{5 * time.Second}
 	PodStatusUpdateLoop     = true
 )
 
@@ -30,6 +30,6 @@ var (
 
 var (
 	PodPushDelay    = 0 * time.Second
-	PodPushInterval = []time.Duration{10 * time.Second}
+	PodPushInterval = []time.Duration{5 * time.Second}
 	PodPushIfLoop   = true
 )

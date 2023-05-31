@@ -31,7 +31,7 @@ func StringSliceToJsonArray(data []string) string {
 
 func ContainsString(list []string, target string) bool {
     for _, str := range list {
-        if strings.Contains(str, target) {
+    	if str == target {
             return true
         }
     }

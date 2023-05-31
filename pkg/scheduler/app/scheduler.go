@@ -65,6 +65,7 @@ func NewScheduler() (*Scheduler, error) {
 		apiServerPort: schedulerConfig.ApiServerPort,
 		publisher:     newPublisher,
 	}
+	k8log.InfoLog("scheduler start with config: %s", string(schedulerConfig.Policy))
 	return scheduler, nil
 }
 

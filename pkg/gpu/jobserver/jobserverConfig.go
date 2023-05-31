@@ -40,6 +40,7 @@ const (
 )
 
 var (
+	UploadFileDelay = 10 * time.Second
 	ExecutorJob_Delay  = 0 * time.Second
 	ExecutorJob_Period = []time.Duration{10 * time.Second}
 	ExecutorJob_IfLoop = true

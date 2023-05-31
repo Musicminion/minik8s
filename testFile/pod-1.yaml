@@ -11,13 +11,18 @@ spec:
       name: test1
       ports:
         - containerPort: 80
-    - image: docker.io/library/redis
+      resources:
+        requests:
+          memory: 100000000
+        limits:
+          memory: 200000000
+    - image: musicminion/func-base
       name: test2
       ports:
-        - containerPort: 6379
-    - image: musicminion/func-base
+        - containerPort: 18080
+    - image: docker.io/library/redis
       name: test3
-
+      command: ["sh", "-c", "redis-server --appendonly yes"]
 
 
 #  kubectl apply testFile/pod-1.yaml &&  kubectl apply testFile/pod-2.yaml &&  kubectl apply testFile/pod-for-volume.yaml 

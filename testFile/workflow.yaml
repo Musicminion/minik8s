@@ -1,0 +1,21 @@
+kind: Workflow
+apiVersion: v1
+metadata:
+  # Unique key of the Service instance
+  name: workflow-example
+  namespace: default
+spec:
+  entryParams: '{"x": 1, "y": 2}'
+  entryNodeName: node1
+  workflowNodes: 
+  - name: node1
+    type: func
+    funcData:
+      funcName: func2
+      funcNamespace: default
+      nextNodeName: node2
+  - name: node2
+    type: func
+    funcData:
+      funcName: func3
+      funcNamespace: default

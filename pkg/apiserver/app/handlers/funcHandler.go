@@ -38,13 +38,6 @@ func GetFunctions(c *gin.Context) {
 		return
 	}
 
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "GetFunctions: not found",
-		})
-		return
-	}
-
 	targetFunc := make([]string, 0)
 
 	for _, fun := range res {

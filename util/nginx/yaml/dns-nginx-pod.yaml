@@ -8,7 +8,6 @@ spec:
   containers:
   - name: nginx
     image: nginx
-    command:
     volumeMounts:
     - name: nginx-conf
       mountPath: /etc/nginx/conf.d/

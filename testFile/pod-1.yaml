@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: service
+  name: pod-example1
+  namespace: default
+spec:
+  containers:
+    - image: registry.cn-hangzhou.aliyuncs.com/tanjunchen/network-multitool:v1
+      name: test1
+      ports:
+        - containerPort: 80
+    - image: docker.io/library/redis
+      name: test2
+      ports:
+        - containerPort: 6379
+    - image: musicminion/func-base
+      name: test3
+
+
+
+#  kubectl apply testFile/pod-1.yaml &&  kubectl apply testFile/pod-2.yaml &&  kubectl apply testFile/pod-for-volume.yaml 

@@ -90,13 +90,6 @@ func GetWorkFlows(c *gin.Context) {
 		return
 	}
 
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "GetWorkFlows: not found",
-		})
-		return
-	}
-
 	targetWorkFlows := make([]string, 0)
 
 	for _, v := range res {

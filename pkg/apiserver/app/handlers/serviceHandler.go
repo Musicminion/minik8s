@@ -210,7 +210,12 @@ func GetService(c *gin.Context) {
 // 获取所有Service信息
 func GetServices(c *gin.Context) {
 	// TODO: 根据namespace查出所有的Service
-	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath)
+	namespace := c.Param(config.URL_PARAM_NAMESPACE)
+	if namespace == "" {
+		namespace = config.DefaultNamespace
+	}
+
+	res, err := etcdclient.EtcdStore.PrefixGet(serverconfig.EtcdServicePath + namespace + "/")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": "get services failed " + err.Error(),

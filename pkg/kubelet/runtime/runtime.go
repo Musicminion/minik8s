@@ -32,6 +32,8 @@ type RuntimeManager interface {
 
 	// GetRuntimeNodeIp 获取运行时Node的IP
 	GetRuntimeNodeIP() (string, error)
+
+	CopyFileToContainer(fromPath string, toPath string) error
 }
 
 type runtimeManager struct {
@@ -257,4 +259,24 @@ func (r *runtimeManager) ExecPodContainer(pod *apiObject.PodStore, cmd []string)
 		}
 	}
 	return "", nil
+}
+
+func (r *runtimeManager) CopyFileToContainer(fromPath string, toPath string) error {
+	// 获取所有的containers
+	containers, err := r.containerManager.ListContainers()
+	if err != nil {
+		k8log.ErrorLog("Runtime Manager", err.Error())
+		return err
+	}
+
+	// 将文件拷贝到所有的容器中
+	for _, container := range containers {
+		k8log.DebugLog("Runtime Manager", "copy file to container "+container.Names[0] + "from path is " + fromPath + "to path is " + toPath)
+		err = r.containerManager.CopyFileToContainer(container.ID, fromPath, toPath)
+		if err != nil {
+			k8log.ErrorLog("Runtime Manager", err.Error())
+			return err
+		}
+	}
+	return nil
 }

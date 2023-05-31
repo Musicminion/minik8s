@@ -2,6 +2,7 @@ package status
 
 import (
 	"miniK8s/pkg/apiObject"
+	"miniK8s/pkg/config"
 	"miniK8s/pkg/k8log"
 	"miniK8s/pkg/kubelet/runtime"
 	"miniK8s/util/executor"
@@ -147,6 +148,14 @@ func (s *statusManager) Run() {
 		}
 	}
 
+	containerHostsUpdateWrap := func() {
+		k8log.DebugLog("Kubelet-StatusManager", "Update Container Hosts")
+		res := s.runtimeManager.CopyFileToContainer(config.HostsConfigFilePath, config.HostsConfigFilePath)
+		if res != nil {
+			k8log.ErrorLog("Update Container Hosts Error: ", res.Error())
+		}
+	}
+
 	// Node心跳的协程
 	go executor.Period(NodeHeartBeatDelay, NodeHeartBeatInterval, registerWrap, NodeHeartBeatLoop)
 
@@ -158,6 +167,10 @@ func (s *statusManager) Run() {
 
 	// Pod推送
 	go executor.Period(PodPushDelay, PodPushInterval, pushPodStatusWrap, PodPushIfLoop)
+
+	// 更新/ettc/hosts
+	go executor.Period(ContainerHostsUpdateDelay, ContainerHostsUpdateInterval, containerHostsUpdateWrap, ContainerHostsUpdateIfLoop)
+
 }
 
 func (s *statusManager) GetNodeName() string {

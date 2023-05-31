@@ -11,7 +11,7 @@ var TestContainerURLs = []string{
 
 // 遍历启动所有的容器
 var opt = map[string][]string{
-	"test": {"test"},
+	// "test": {"test"},
 }
 
 // 测试之前执行的方法
@@ -149,25 +149,25 @@ var opt = map[string][]string{
 // 	}
 // }
 
-// // func TestExecContainer(t *testing.T) {
-// // 	// 定义测试用的容器 ID 和命令
-// // 	cmd := []string{"sh", "-c", "touch /testfile"}
-// // 	// cmd := []string{"touch", "new"}
-// // 	// 创建一个 ContainerManager 实例
-// // 	cm := &ContainerManager{}
-// // 	containers, err := cm.ListContainersWithOpt(opt)
-// // 	if err != nil {
-// // 		t.Error(err)
-// // 	}
+// func TestExecContainer(t *testing.T) {
+// 	// 定义测试用的容器 ID 和命令
+// 	cmd := []string{"sh", "-c", "echo  '' > /etc/hosts"}
+// 	// cmd := []string{"touch", "new"}
+// 	// 创建一个 ContainerManager 实例
+// 	cm := &ContainerManager{}
+// 	containers, err := cm.ListContainersWithOpt(opt)
+// 	if err != nil {
+// 		t.Error(err)
+// 	}
 
-// // 	for _, container := range containers {
-// // 		out, err := cm.ExecContainer(container.ID, cmd)
-// // 		if err != nil {
-// // 			t.Error(err)
-// // 		}
-// // 		k8log.DebugLog("Container Manager", "out is "+string(out))
-// // 	}
-// // }
+// 	for _, container := range containers {
+// 		out, err := cm.ExecContainer(container.ID, cmd)
+// 		if err != nil {
+// 			t.Error(err)
+// 		}
+// 		k8log.DebugLog("Container Manager", "out is "+string(out))
+// 	}
+// }
 
 // // 测试删除容器的方法
 // // func TestRemoveContainer(t *testing.T) {

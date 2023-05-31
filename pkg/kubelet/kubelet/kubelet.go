@@ -108,10 +108,10 @@ func (k *Kubelet) Run() {
 	go k.ListenChan()
 
 	// 监听 podUpdate 的消息队列
-
 	listenTopic := message.PodUpdateWithNode(k.statusManager.GetNodeName())
 	k8log.InfoLog("Kubelet", "Start to listen on "+listenTopic+" queue")
 	go k.lw.WatchQueue_Block(listenTopic, k.HandlePodUpdate, make(chan struct{}))
+
 	go k.SyncLoopIterationWrap()
 
 	<-sigs

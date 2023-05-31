@@ -33,3 +33,10 @@ var (
 	PodPushInterval = []time.Duration{5 * time.Second}
 	PodPushIfLoop   = true
 )
+
+
+var (
+	ContainerHostsUpdateDelay    = 0 * time.Second
+	ContainerHostsUpdateInterval = []time.Duration{30 * time.Second}
+	ContainerHostsUpdateIfLoop   = true
+)

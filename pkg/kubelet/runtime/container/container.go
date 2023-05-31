@@ -1,6 +1,7 @@
 package container
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"encoding/json"
@@ -10,6 +11,7 @@ import (
 	dockerclient "miniK8s/pkg/kubelet/dockerClient"
 	"miniK8s/pkg/kubelet/runtime/image"
 	minik8sTypes "miniK8s/pkg/minik8sTypes"
+	"os"
 	"strings"
 
 	"github.com/docker/docker/api/types"
@@ -320,6 +322,77 @@ func (c *ContainerManager) ExecContainer(containerID string, cmd []string) (stri
 	return output, nil
 }
 
+func (c *ContainerManager) CopyFileToContainer(containerID string, fromPath string, toPath string) error {
+	// 以下代码正确但是在操作/etc/hosts时会报错，原因为device or resource busy
+	// ctx := context.Background()
+	// client, err := dockerclient.NewDockerClient()
+	// if err != nil {
+	// 	return err
+	// }
+
+	// file, err := os.Open(fromPath)
+	// if err != nil {
+	// 	return err
+	// }
+	// defer file.Close()
+
+	// // 创建一个 TAR 归档文件
+	// tarBuf := new(bytes.Buffer)
+	// tarWriter := tar.NewWriter(tarBuf)
+	// fileInfo, err := file.Stat()
+	// if err != nil {
+	// 	return err
+	// }
+	// header := &tar.Header{
+	// 	Name: filepath.Base(fromPath),
+	// 	Mode: int64(fileInfo.Mode()),
+	// 	Size: fileInfo.Size(),
+	// }
+	// if err := tarWriter.WriteHeader(header); err != nil {
+	//     return err
+	// }
+	// if _, err := io.Copy(tarWriter, file); err != nil {
+	//     return err
+	// }
+	// if err := tarWriter.Close(); err != nil {
+	//     return err
+	// }
+
+	// // 复制 TAR 归档文件到容器中
+	// options := types.CopyToContainerOptions{
+	//     AllowOverwriteDirWithFile: true,
+	// }
+	// content := bytes.NewReader(tarBuf.Bytes())
+	// err = client.CopyToContainer(ctx, containerID, toPath, content, options)
+	// if err != nil {
+	//     return err
+	// }
+
+	// return nil
+
+	// 不尝试copy文件，直接先clear，再用echo写入
+	cmd := []string{"sh", "-c", "echo  '' > " + toPath}
+	c.ExecContainer(containerID, cmd)
+	// 读取文件内容，一行一行写入
+	file, err := os.Open(fromPath)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		c.ExecContainer(containerID, []string{"sh", "-c", "echo  "+ scanner.Text() + " >> " + toPath})
+	}
+
+	if err := scanner.Err(); err != nil {
+		return err
+	}
+
+	return nil
+
+}
+
 // 创建非标记为k8s的容器，返回容器的ID和错误
 func (c *ContainerManager) CreateHelperContainer(name string, option *minik8sTypes.ContainerConfig) (string, error) {
 	// 获取docker的client
@@ -430,7 +503,7 @@ func calculateMemoryPercentUnix(v *types.StatsJSON) float64 {
 		memLimit   = float64(v.MemoryStats.Limit)
 	)
 	if memLimit > 0.0 {
-		memPercent = memUsage / memLimit 
+		memPercent = memUsage / memLimit
 	}
 	return memPercent
 }

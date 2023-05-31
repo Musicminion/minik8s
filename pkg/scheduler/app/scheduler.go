@@ -84,6 +84,7 @@ func schRoundRobin(nodes []apiObject.NodeStore) string {
 	k8log.DebugLog("Scheduler", "RoundRobin调度策略选择节点"+nodes[idx].GetName())
 	return nodes[idx].GetName()
 }
+
 func schRandom(nodes []apiObject.NodeStore) string {
 	lock.Lock()
 	defer lock.Unlock()
@@ -148,7 +149,7 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 	default:
 	}
 	// TODO:
-	return "ubuntu"
+	return ""
 }
 
 // 处理调度请求的消息

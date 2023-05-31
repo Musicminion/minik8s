@@ -300,8 +300,6 @@ func getNamespaceJobs(namespace string) {
 	url := stringutil.Replace(config.JobsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = config.GetAPIServerURLPrefix() + url
 
-	fmt.Println(url)
-
 	jobs := []apiObject.JobStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &jobs, "data")
@@ -675,11 +673,7 @@ func printAServicePortInfo(service *apiObject.ServiceStore, t table.Writer) {
 	// HiCyan
 	endpointIPAndPort := ""
 	for _, endpoint := range service.Status.Endpoints {
-		for _, port := range endpoint.Ports {
-			if port == strconv.Itoa(service.Spec.Ports[0].TargetPort) {
-				endpointIPAndPort += endpoint.IP + "/" + port + " "
-			}
-		}
+		endpointIPAndPort += endpoint.IP + "/" + strconv.Itoa(service.Spec.Ports[0].TargetPort) + " "
 	}
 	t.AppendRows([]table.Row{
 		{

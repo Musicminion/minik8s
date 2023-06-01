@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/streadway/amqp"
 	"gopkg.in/yaml.v2"
@@ -29,6 +30,7 @@ type KubeProxy struct {
 	iptableManager IptableManager
 	dnsManager     DnsManager
 	hostList       []string
+	nginxPod       *apiObject.Pod
 }
 
 func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
@@ -47,6 +49,7 @@ func NewKubeProxy(lsConfig *listwatcher.ListwatcherConfig) *KubeProxy {
 		serviceUpdates: make(chan *entity.ServiceUpdate, 10),
 		dnsUpdates:     make(chan *entity.DnsUpdate, 10),
 		hostList:       make([]string, 0),
+		nginxPod:       &apiObject.Pod{},
 	}
 	return proxy
 }
@@ -78,12 +81,13 @@ func (proxy *KubeProxy) updateNginxConfig() {
 			},
 			Basic: apiObject.Basic{
 				Metadata: apiObject.Metadata{
-					UUID: proxy.iptableManager.GetPodsBySvcName(nginx.NginxSvcName)[0],
+					UUID: proxy.nginxPod.Metadata.UUID,
 				},
 			},
 		},
-		Cmd: []string{"nginx", "-s", "reload"},
+		Cmd: []string{"sh", "-c", "nginx -s reload"},
 	}
+	k8log.DebugLog("Kubeproxy", "updateNginxConfig: send message to reload nginx config")
 	// 向本机的kubelet发送消息，通知nginx pod更新配置
 	message.PublishUpdatePod(podUpdate)
 }
@@ -134,14 +138,32 @@ func (proxy *KubeProxy) HandleHostUpdate(msg amqp.Delivery) {
 	switch hostUpdate.Action {
 	case message.CREATE:
 		k8log.InfoLog("Kubeproxy", "HandleHostUpdate: create Host action")
-		nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+		err = nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+		if err != nil {
+			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write nginx conf")
+			return
+		}
 	case message.UPDATE:
-		nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
-		nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+		err = nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+		if err != nil {
+			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to delete nginx conf")
+			return
+		}
+		err = nginx.WriteConf(*hostUpdate.DnsTarget.ToDns(), hostUpdate.DnsConfig)
+		if err != nil {
+			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to write nginx conf")
+			return
+		}
 	case message.DELETE:
 		k8log.DebugLog("Kubeproxy", "HandleHostUpdate: delete Host action")
-		nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+		err = nginx.DeleteConf(*hostUpdate.DnsTarget.ToDns())
+		if err != nil {
+			k8log.ErrorLog("Kubeproxy", "HandleHostUpdate: failed to delete nginx conf")
+			return
+		}
 	}
+
+	time.Sleep(3 * time.Second)
 
 	// 更新nginx的配置文件后，reload nginx
 	proxy.updateNginxConfig()
@@ -180,11 +202,12 @@ func (proxy *KubeProxy) CreateNginxPod() {
 	k8log.DebugLog("Dns-Controller", "Run: start to create nginx pod")
 
 	// 检查etcd中是否存在nginx pod
-	URL := stringutil.Replace(config.NodeAllPodsURL, config.URL_PARAM_NAME_PART, host.GetHostName())
-	URL = config.GetAPIServerURLPrefix() + URL
-	k8log.DebugLog("Dns-Controller", "Run: get pods from etcd, URL is "+URL)
+	GetNodePodURL := stringutil.Replace(config.NodeAllPodsURL, config.URL_PARAM_NAME_PART, host.GetHostName())
+	GetNodePodURL = config.GetAPIServerURLPrefix() + GetNodePodURL
+	k8log.DebugLog("Dns-Controller", "Run: get pods from etcd, URL is "+GetNodePodURL)
 	podsOnNode := []apiObject.PodStore{}
-	code, err := netrequest.GetRequestByTarget(URL, &podsOnNode, "data")
+
+	code, err := netrequest.GetRequestByTarget(GetNodePodURL, &podsOnNode, "data")
 	if err != nil {
 		k8log.ErrorLog("Dns-Controller", "Run: failed to get pods from etcd"+err.Error())
 		return
@@ -198,6 +221,7 @@ func (proxy *KubeProxy) CreateNginxPod() {
 	for _, pod := range podsOnNode {
 		if strings.Contains(pod.GetPodName(), "dns-nginx") {
 			k8log.DebugLog("Dns-Controller", "Run: nginx pod already exists")
+			proxy.nginxPod = pod.ToPod()
 			return
 		}
 	}
@@ -209,6 +233,7 @@ func (proxy *KubeProxy) CreateNginxPod() {
 		k8log.ErrorLog("Dns-Controller", "Run: failed to read file"+err.Error())
 		return
 	}
+
 	// 将文件内容转换为Pod对象
 	nginxPod := &apiObject.Pod{}
 	err = yaml.Unmarshal(fileContent, nginxPod)
@@ -222,13 +247,13 @@ func (proxy *KubeProxy) CreateNginxPod() {
 		nginxPod.Metadata.Namespace = config.DefaultNamespace
 	}
 
-	URL = stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetObjectNamespace())
-	URL = config.GetAPIServerURLPrefix() + URL
+	CreateNginxPodURL := stringutil.Replace(config.PodsURL, config.URL_PARAM_NAMESPACE_PART, nginxPod.GetObjectNamespace())
+	CreateNginxPodURL = config.GetAPIServerURLPrefix() + CreateNginxPodURL
 
 	nginxPod.Metadata.Name += "-" + stringutil.GenerateRandomStr(5)
 	nginxPod.Spec.NodeName = host.GetHostName()
 
-	code, _, err = netrequest.PostRequestByTarget(URL, nginxPod)
+	code, _, err = netrequest.PostRequestByTarget(CreateNginxPodURL, nginxPod)
 	if err != nil {
 		k8log.ErrorLog("Dns-Controller", "Run: failed to post request"+err.Error())
 		return
@@ -237,7 +262,28 @@ func (proxy *KubeProxy) CreateNginxPod() {
 		k8log.ErrorLog("Dns-Controller", "Run: failed to create pod")
 		return
 	}
+
 	k8log.InfoLog("Dns-Controller", "HandleServiceUpdate: success to create nginx pod")
+
+	// 读出nginx pod，获取其UUID
+	k8log.DebugLog("Kubeproxy", "updateNginxConfig: get all pods from apiserver")
+	code, err = netrequest.GetRequestByTarget(GetNodePodURL, &podsOnNode, "data")
+	if err != nil {
+		k8log.ErrorLog("Kubeproxy", "updateNginxConfig: failed to get all pods from apiserver")
+	}
+	if code != http.StatusOK {
+		k8log.ErrorLog("Kubeproxy", "updateNginxConfig: failed to get all pods from apiserver")
+	}
+
+	// 筛选出nginx pod, 记录其UUID
+	for _, pod := range podsOnNode {
+		if strings.EqualFold(pod.Metadata.Name, nginxPod.GetObjectName()) {
+			// 更新proxy的nginxPod
+			proxy.nginxPod = pod.ToPod()
+			break
+		}
+	}
+
 }
 
 func (proxy *KubeProxy) Run() {

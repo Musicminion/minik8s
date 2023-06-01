@@ -66,14 +66,19 @@ func (p *Publisher) Publish(key string, contentType string, msg []byte) error {
 	if err != nil {
 		return err
 	}
+
+	bindExchange := queueToExchange[key]
+	if bindExchange == "" {
+		bindExchange = DirectK8sExchange
+	}
 	// 如果没有绑定队列，就尝试绑定队列
-	err = ch.QueueBind(key, key, queueToExchange[key], false, nil)
+	err = ch.QueueBind(key, key, bindExchange, false, nil)
 	if err != nil {
 		return err
 	}
 
 	// 发布消息
-	err = ch.Publish(queueToExchange[key], key, false, false, amqp.Publishing{
+	err = ch.Publish(bindExchange, key, false, false, amqp.Publishing{
 		ContentType: contentType,
 		Body:        msg,
 	})

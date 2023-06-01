@@ -101,7 +101,6 @@ func (k *Kubelet) Run() {
 	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
 	// 启动所有的Manager
-	// TODO: 开启pleg的时候，有时候会把新建的pod给删除，奇怪
 	k.statusManager.Run()
 	k.plegManager.Run()
 

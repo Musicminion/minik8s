@@ -168,7 +168,7 @@ func (s *statusManager) Run() {
 	// Pod推送
 	go executor.Period(PodPushDelay, PodPushInterval, pushPodStatusWrap, PodPushIfLoop)
 
-	// 更新/ettc/hosts
+	// 更新/etc/hosts
 	go executor.Period(ContainerHostsUpdateDelay, ContainerHostsUpdateInterval, containerHostsUpdateWrap, ContainerHostsUpdateIfLoop)
 
 }

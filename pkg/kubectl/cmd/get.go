@@ -41,8 +41,7 @@ func init() {
 	getNamespaceObjectFuncMap[string(Get_Kind_Function)] = getNamespaceFunctions
 	getNamespaceObjectFuncMap[string(Get_Kind_Dns)] = getNamespaceDns
 	getNamespaceObjectFuncMap[string(Get_Kind_Workflow)] = getNamespaceWorkflows
-	
-	
+
 	getSpecificObjectFunMap[string(Get_Kind_Pod)] = getSpecificPod
 	getSpecificObjectFunMap[string(Get_Kind_Service)] = getSpecificService
 	getSpecificObjectFunMap[string(Get_Kind_Job)] = getSpecificJob
@@ -51,7 +50,7 @@ func init() {
 	getSpecificObjectFunMap[string(Get_Kind_Function)] = getSpecificFunction
 	getSpecificObjectFunMap[string(Get_Kind_Dns)] = getSpecificDns
 	getSpecificObjectFunMap[string(Get_Kind_Workflow)] = getSpecificWorkflow
-	
+
 	getNoNamespaceObjectFuncMap[string(Get_Kind_Node)] = getNodes
 }
 
@@ -87,7 +86,7 @@ func getObjectHandler(cmd *cobra.Command, args []string) {
 		// 如果获取的资源是node，则直接获取node
 		if kind == string(Get_Kind_Node) {
 			getNodes()
-			return 
+			return
 		}
 
 		// 尝试获取用户是否指定了namespace
@@ -97,7 +96,7 @@ func getObjectHandler(cmd *cobra.Command, args []string) {
 		if namespace == "" {
 			namespace = config.DefaultNamespace
 		}
-		
+
 		// 获取default namespace下的所有指定kind的对象
 		getNamespaceObjectFuncMap[kind](namespace)
 
@@ -176,7 +175,7 @@ func getNamespacePods(namespace string) {
 	printPodsResult(pods)
 }
 
-func getNodes(){
+func getNodes() {
 	url := config.GetAPIServerURLPrefix() + config.NodesURL
 
 	nodes := []apiObject.NodeStore{}
@@ -330,7 +329,7 @@ func getSpecificDns(namespace, name string) {
 	url = stringutil.Replace(url, config.URL_PARAM_NAME_PART, name)
 	url = config.GetAPIServerURLPrefix() + url
 
-	dns := &apiObject.HpaStore{}
+	dns := &apiObject.DnsStore{}
 	code, err := netrequest.GetRequestByTarget(url, dns, "data")
 
 	if err != nil {
@@ -342,7 +341,7 @@ func getSpecificDns(namespace, name string) {
 		fmt.Println("getSpecificDns: code:", code)
 		return
 	}
-	dnsStores := []apiObject.HpaStore{*dns}
+	dnsStores := []apiObject.DnsStore{*dns}
 	printDnssResult(dnsStores)
 }
 
@@ -350,7 +349,7 @@ func getNamespaceDns(namespace string) {
 
 	url := stringutil.Replace(config.DnsURL, config.URL_PARAM_NAMESPACE_PART, namespace)
 	url = config.GetAPIServerURLPrefix() + url
-	dnsStores := []apiObject.HpaStore{}
+	dnsStores := []apiObject.DnsStore{}
 
 	code, err := netrequest.GetRequestByTarget(url, &dnsStores, "data")
 
@@ -775,10 +774,10 @@ func printJobOutPutResult(jobfile *apiObject.JobFile, t table.Writer) {
 	})
 }
 
-func printDnssResult(dnss []apiObject.HpaStore) {
+func printDnssResult(dnss []apiObject.DnsStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Status"})
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "Host", "path->service"})
 
 	// 遍历所有的DnsStore
 	for _, dnsStore := range dnss {
@@ -788,22 +787,10 @@ func printDnssResult(dnss []apiObject.HpaStore) {
 	t.Render()
 }
 
-func printDnsResult(dns *apiObject.HpaStore, t table.Writer) {
-	var coloredDnsStatus string
-
-	switch dns.Status.Phase {
-	case apiObject.PodPending:
-		coloredDnsStatus = color.YellowString("Pending")
-	case apiObject.PodRunning:
-		coloredDnsStatus = color.GreenString("Running")
-	case apiObject.PodSucceeded:
-		coloredDnsStatus = color.BlueString("Succeeded")
-	case apiObject.PodFailed:
-		coloredDnsStatus = color.RedString("Failed")
-	case apiObject.PodUnknown:
-		coloredDnsStatus = color.YellowString("Unknown")
-	default:
-		coloredDnsStatus = color.YellowString("Unknown")
+func printDnsResult(dns *apiObject.DnsStore, t table.Writer) {
+	var pathToService string
+	for _, path := range dns.ToDns().Spec.Paths {
+		pathToService += path.SubPath + "->" + path.SvcName + " "
 	}
 
 	// HiCyan
@@ -812,7 +799,8 @@ func printDnsResult(dns *apiObject.HpaStore, t table.Writer) {
 			color.BlueString(string(Get_Kind_Dns)),
 			color.HiCyanString(dns.ToDns().GetObjectNamespace()),
 			color.HiCyanString(dns.ToDns().GetObjectName()),
-			coloredDnsStatus,
+			color.GreenString(dns.ToDns().Spec.Host),
+			color.GreenString(pathToService),
 		},
 	})
 }

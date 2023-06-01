@@ -133,7 +133,7 @@ func (s *Subscriber) Subscribe(queueName string, handleFunc func(amqp.Delivery),
 		err = ch.QueueBind(
 			queueName,                  // queue name
 			queueName,                  // routing key
-			queueToExchange[queueName], // exchange
+			DirectK8sExchange, // exchange
 			false,
 			nil,
 		)

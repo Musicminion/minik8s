@@ -2,14 +2,14 @@ kind: Service
 apiVersion: v1
 metadata:
   # Unique key of the Service instance
-  name: service-example
+  name: service-for-replica
   namespace: default
 spec:
   ports:
     # Accept traffic sent to port 80
     - name: http
       port: 88
-      targetPort: 80
+      targetPort: 18080
       protocol: tcp
   selector:
-    app: service
+    map: replica

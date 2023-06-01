@@ -181,7 +181,7 @@ func DeleteDns(c *gin.Context) {
 		return
 	}
 
-	dns := &apiObject.HpaStore{}
+	dns := &apiObject.DnsStore{}
 	err = json.Unmarshal([]byte(dnsLRs[0].Value), dns)
 	if err != nil {
 		k8log.ErrorLog("APIServer", "DeleteDns, err is "+err.Error())
@@ -204,7 +204,7 @@ func DeleteDns(c *gin.Context) {
 	// 发送dnsUpdate
 	dnsUpdate := entity.DnsUpdate{
 		Action: message.DELETE,
-		DnsTarget: apiObject.HpaStore{
+		DnsTarget: apiObject.DnsStore{
 			Spec: apiObject.DnsSpec{
 				Host: dns.Spec.Host,
 			},

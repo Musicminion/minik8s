@@ -34,20 +34,20 @@ type DnsStatus struct {
 	UpdateTime time.Time `yaml:"updateTime" json:"updateTime"`
 }
 
-type HpaStore struct {
+type DnsStore struct {
 	Basic  `yaml:",inline" json:",inline"`
 	Spec   DnsSpec   `yaml:"spec" json:"spec"`
 	Status DnsStatus `yaml:"status" json:"status"`
 }
 
-func (d *Dns) ToDnsStore() *HpaStore {
-	return &HpaStore{
+func (d *Dns) ToDnsStore() *DnsStore {
+	return &DnsStore{
 		Basic: d.Basic,
 		Spec:  d.Spec,
 	}
 }
 
-func (ds *HpaStore) ToDns() *Dns {
+func (ds *DnsStore) ToDns() *Dns {
 	return &Dns{
 		Basic: ds.Basic,
 		Spec:  ds.Spec,
@@ -66,4 +66,3 @@ func (d *Dns) GetObjectName() string {
 func (d *Dns) GetObjectNamespace() string {
 	return d.Metadata.Namespace
 }
-

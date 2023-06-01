@@ -5,6 +5,9 @@ metadata:
 spec:
   host: test.com
   paths:
-  - subPath: /api/v2
+  - subPath: /service1
     svcName: service-example
+    svcPort: 88
+  - subPath: /service2
+    svcName: service-for-replica
     svcPort: 88

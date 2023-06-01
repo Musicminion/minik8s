@@ -110,6 +110,7 @@ func PublishUpdatePod(podUpdate *entity.PodUpdate) error {
 	resourceURI := stringutil.Replace(config.PodSpecURL, config.URL_PARAM_NAME_PART, podUpdate.PodTarget.GetPodName())
 	resourceURI = stringutil.Replace(resourceURI, config.URL_PARAM_NAMESPACE_PART, podUpdate.PodTarget.GetPodNamespace())
 
+	k8log.DebugLog("msgutil", "publish pod update message " +  podUpdate.Action + "to node " + podUpdate.PodTarget.Spec.NodeName + " queue") 
 	jsonBytes, err := json.Marshal(podUpdate)
 	if err != nil {
 		return err

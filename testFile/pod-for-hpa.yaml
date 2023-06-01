@@ -14,8 +14,8 @@ spec:
         - containerPort: 8090
     resources:
       requests:
-        memory: 100000000   #100M
+        memory: 102400000   #100M
         cpu: 1000000000
       limits:
-        memory: 200000000   #200M
+        memory: 204800000   #200M
         cpu: 2000000000

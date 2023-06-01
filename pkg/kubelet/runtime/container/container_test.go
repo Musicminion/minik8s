@@ -1,6 +1,7 @@
 package container
 
 import (
+	"miniK8s/pkg/k8log"
 	"testing"
 )
 
@@ -149,25 +150,25 @@ var opt = map[string][]string{
 // 	}
 // }
 
-// func TestExecContainer(t *testing.T) {
-// 	// 定义测试用的容器 ID 和命令
-// 	cmd := []string{"sh", "-c", "echo  '' > /etc/hosts"}
-// 	// cmd := []string{"touch", "new"}
-// 	// 创建一个 ContainerManager 实例
-// 	cm := &ContainerManager{}
-// 	containers, err := cm.ListContainersWithOpt(opt)
-// 	if err != nil {
-// 		t.Error(err)
-// 	}
+func TestExecContainer(t *testing.T) {
+	// 定义测试用的容器 ID 和命令
+	cmd := []string{"nginx", "-s", "reload"}
+	// cmd := []string{"touch", "new"}
+	// 创建一个 ContainerManager 实例
+	cm := &ContainerManager{}
+	containers, err := cm.ListContainersWithOpt(opt)
+	if err != nil {
+		t.Error(err)
+	}
 
-// 	for _, container := range containers {
-// 		out, err := cm.ExecContainer(container.ID, cmd)
-// 		if err != nil {
-// 			t.Error(err)
-// 		}
-// 		k8log.DebugLog("Container Manager", "out is "+string(out))
-// 	}
-// }
+	for _, container := range containers {
+		out, err := cm.ExecContainer(container.ID, cmd)
+		if err != nil {
+			t.Error(err)
+		}
+		k8log.DebugLog("Container Manager", "out is "+string(out))
+	}
+}
 
 // // 测试删除容器的方法
 // // func TestRemoveContainer(t *testing.T) {

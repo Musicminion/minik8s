@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"miniK8s/pkg/config"
 	netrequest "miniK8s/util/netRequest"
+	"net/http"
 
 	"github.com/spf13/cobra"
 )
@@ -55,8 +56,8 @@ func executeHandler(cmd *cobra.Command, args []string) {
 		fmt.Println(err)
 		return
 	}
-	if code != 200 {
-		fmt.Println("execute function failed, code:", code, "msg: ", res.(map[string]interface{})["msg"])
+	if code != http.StatusOK {
+		fmt.Println("execute function failed, code:", code, "msg: ", res.(map[string]interface{})["message"])
 		return
 	}
 	fmt.Println("execute function success, result:", res)

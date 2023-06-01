@@ -10,5 +10,4 @@ command="kubectl execute default/func1 '{\"x\":1, \"y\": 2}'"
 for ((i=1; i<=$num_executions; i++)); do
     echo "Executing command: $command (Execution $i)"
     eval $command
-    echo "----------------------------------------"
 done

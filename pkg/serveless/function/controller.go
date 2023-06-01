@@ -81,7 +81,7 @@ func (c *funcController) routine() {
 				FuncName:      f.Metadata.Name,
 				FuncNamespace: f.Metadata.Namespace,
 				StartTime:     time.Now(),
-				EndTime:       time.Now().Add(time.Duration(1) * time.Minute),
+				EndTime:       time.Now().Add(time.Duration(40) * time.Second),
 			}
 			c.CreateFunction(&res[id])
 
@@ -102,7 +102,7 @@ func (c *funcController) routine() {
 					// 过期了，需要重置
 					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].FuncCallTime = 0
 					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].StartTime = time.Now()
-					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].EndTime = time.Now().Add(time.Duration(1) * time.Minute)
+					c.CallRecord[f.Metadata.Namespace+"/"+f.Metadata.Name].EndTime = time.Now().Add(time.Duration(40) * time.Second)
 				}
 			}
 

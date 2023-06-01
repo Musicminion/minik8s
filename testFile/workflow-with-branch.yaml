@@ -5,7 +5,7 @@ metadata:
   name: workflow-example
   namespace: default
 spec:
-  entryParams: '{"x": 1, "y": 2}'
+  entryParams: '{"x": 3, "y": 2}'
   entryNodeName: node1
   workflowNodes: 
   - name: node1
@@ -25,7 +25,7 @@ spec:
   - name: node3
     type: func
     funcData:
-      funcName: func3    # x = x^2, y = y^2
+      funcName: func3    # x = x * x, y = y * y
       funcNamespace: default
   - name: node4
     type: func

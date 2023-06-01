@@ -64,6 +64,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	podIPs, ok := s.routeTable[key]
 
 	if !ok {
+		k8log.DebugLog("serveless", "func: "+funcNamespace+"/"+funcName+" has no value")
 		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "The function you call has no pod running, maybe creating, please try again later",
@@ -73,6 +74,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 
 	// 随机选择一个pod的ip地址
 	if len(podIPs) == 0 {
+		k8log.DebugLog("serveless", "podIPs is empty")
 		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "The function you call has no pod running, maybe creating, please try again later",
@@ -105,6 +107,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 	resp, err := http.Post(url, "application/json", c.Request.Body)
 
 	if err != nil {
+		k8log.DebugLog("serveless", "proxy error: "+err.Error())
 		s.funcController.ScaleUp(funcNamespace, funcName, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "forward request to pod error, " + err.Error(),
@@ -142,6 +145,7 @@ func (s *server) handleFuncRequest(c *gin.Context) {
 			})
 		}
 	} else {
+		k8log.DebugLog("serveless", "post pod failed "+err.Error())
 		s.funcController.ScaleUp(funcNamespace, funcName, 2)
 		c.JSON(http.StatusBadRequest, gin.H{
 			"message": "forward request to pod error 2, " + err.Error(),
@@ -207,6 +211,7 @@ func (s *server) checkFunction(c *gin.Context) {
 			"data": false,
 		})
 		// 不存在，需要创建实例
+		k8log.DebugLog("serveless", "check function failed, scale up")
 		s.funcController.ScaleUp(funcName, funcNamespace, 2)
 		return
 	}

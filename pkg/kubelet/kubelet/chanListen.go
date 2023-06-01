@@ -27,7 +27,6 @@ func (k *Kubelet) ListenChan() {
 			k.PlegPodContainerNeedRecreateHandler(event)
 		case pleg.PodSync:
 			k.PlegPodSyncHandler(event)
-
 		}
 	}
 }

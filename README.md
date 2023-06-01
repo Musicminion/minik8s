@@ -192,6 +192,10 @@ pod内需要能运⾏多个容器，它们可以通过localhost互相访问。�
 
 特别感谢[这篇文章](https://k8s.iswbm.com/c02/p02_learn-kubernetes-pod-via-pause-container.html)的精彩讲解，让我们了解了实现Pod内部容器的通讯。
 
+具体创建Pod的时序图如下所示。
+![image](https://github.com/Musicminion/minik8s/assets/84625273/6aaea87c-4887-44fc-b72b-4a7fe4038ae4)
+
+
 #### CNI Plugin
 Minik8s⽀持Pod间通信，我们组选择了Weave网络插件，只需要通过简单的`weave launch`和`weave connect`命令等，就可以将一个节点加入到Weave网络集群里面。Weave插件会将容器与特定的IP绑定关联（`weave attach`命令绑定容器到Weave网络），实现多个Pod之间的通讯。同时Weave具有比较智能的回收功能，一旦某个容器被删除，相关的IP也会被回收，供下次再分配。
 

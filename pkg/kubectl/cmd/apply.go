@@ -39,12 +39,12 @@ const (
 
 // Apply的Result
 
-type ApplyResult string
+type updateResult string
 
 const (
-	ApplyResult_Success ApplyResult = "Success"
-	ApplyResult_Failed  ApplyResult = "Failed"
-	ApplyResult_Unknow  ApplyResult = "Unknow"
+	ApplyResult_Success updateResult = "Success"
+	ApplyResult_Failed  updateResult = "Failed"
+	ApplyResult_Unknow  updateResult = "Unknow"
 )
 
 func applyHandler(cmd *cobra.Command, args []string) {
@@ -601,7 +601,7 @@ func applyWorkflowHandler(fileContent []byte) {
 //
 // ==============================================
 // 带有颜色的表格输出
-func printApplyResult(kind ApplyObject, result ApplyResult, info string, reason string) {
+func printApplyResult(kind ApplyObject, result updateResult, info string, reason string) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
 	t.AppendHeader(table.Row{"Kind", "Result", "Info", "Reason(Msg)"})

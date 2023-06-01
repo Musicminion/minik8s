@@ -14,7 +14,7 @@ spec:
         map: replica
     spec:
       containers:
-        - image: musicminion/func-base
+        - image: registry.cn-shanghai.aliyuncs.com/breaking_wave/hostserver:v1
           name: fun-server
           ports:
-            - containerPort: 18080
+            - containerPort: 8090

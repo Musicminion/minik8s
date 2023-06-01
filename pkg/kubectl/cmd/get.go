@@ -808,7 +808,7 @@ func printDnsResult(dns *apiObject.DnsStore, t table.Writer) {
 func printHpasResult(hpas []apiObject.HPAStore) {
 	t := table.NewWriter()
 	t.SetOutputMirror(os.Stdout)
-	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "CurMem/TargetMem", "CurCpu/TargetCpu"})
+	t.AppendHeader(table.Row{"Kind", "Namespace", "Name", "CurMem/TargetMem", "CurCpu/TargetCpu", "CurPods", "MinPods", "MaxPods"})
 
 	// 遍历所有的DnsStore
 	for _, hpaStore := range hpas {
@@ -826,11 +826,14 @@ func printHpaResult(hpa *apiObject.HPAStore, t table.Writer) {
 	// HiCyan
 	t.AppendRows([]table.Row{
 		{
-			color.BlueString(string(Get_Kind_Dns)),
+			color.BlueString(string(Get_Kind_Hpa)),
 			color.HiCyanString(hpa.ToHPA().GetObjectNamespace()),
 			color.HiCyanString(hpa.ToHPA().GetObjectName()),
 			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curMemPercent*100, targetMemPercent*100)),
 			color.GreenString(fmt.Sprintf("%.1f%%/%.1f%%", curCPUPercent*100, targetCPUPercent*100)),
+			color.GreenString(fmt.Sprintf("%d", hpa.Status.CurrentReplicas)),
+			color.GreenString(fmt.Sprintf("%d", hpa.Spec.MinReplicas)),
+			color.GreenString(fmt.Sprintf("%d", hpa.Spec.MaxReplicas)),
 		},
 	})
 }

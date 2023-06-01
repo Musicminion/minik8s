@@ -73,6 +73,8 @@ func (hc *hpaController) AddOneHpaPod(hpa apiObject.HPAStore, podTemplate apiObj
 	k8log.DebugLog("HpaController", fmt.Sprintf("AddOneHpaPod: hpa=%s, pod=%s", hpa.Metadata.Name, podTemplate.Metadata.Name))
 	// 根据podTemplate，创建新的pod
 	newPod := podTemplate
+	// 修改pod的nodename，避免调度到同一节点
+	newPod.Spec.NodeName = ""
 	newPod.Metadata.Name = podTemplate.GetObjectName() + "-" + stringutil.GenerateRandomStr(5)
 
 	// 修改container的name
@@ -155,7 +157,7 @@ func (hc *hpaController) HandleHPAUpdate(hpa apiObject.HPAStore, pods []apiObjec
 		hc.AddOneHpaPod(hpa, *meetRequirementPods[0].ToPod())
 	}
 	if expectedReplicas < hpa.Status.CurrentReplicas {
-		hc.ReduceOneHpaPod(meetRequirementPods[0])
+		hc.ReduceOneHpaPod(meetRequirementPods[len(meetRequirementPods)-1])
 	}
 
 	// 5. 更新hpa的status, replica的数量不会马上更新，因为需要时间创建或者删除pod
@@ -194,6 +196,9 @@ func (hc *hpaController) Routine() {
 
 	// 遍历所有的hpa，执行update操作
 	for _, hpa := range hpas {
+		if (hpa.Spec.AdjustInterval > HpaControllerUpdateFrequency[0]){
+			time.Sleep(hpa.Spec.AdjustInterval - HpaControllerUpdateFrequency[0])
+		}
 		go hc.HandleHPAUpdate(hpa, pods)
 	}
 

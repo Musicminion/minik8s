@@ -9,7 +9,7 @@ spec:
   restartPolicy: Never
   containers:
   - name: autoscale
-    image: registry.cn-shanghai.aliyuncs.com/breaking_wave/minik8s:v1
+    image: registry.cn-shanghai.aliyuncs.com/breaking_wave/autoscale:v1
     ports:
         - containerPort: 8090
     resources:

@@ -1,0 +1,15 @@
+kind: Service
+apiVersion: v1
+metadata:
+  # Unique key of the Service instance
+  name: service-for-hpa
+  namespace: default
+spec:
+  ports:
+    # Accept traffic sent to port 80
+    - name: http
+      port: 88
+      targetPort: 8090
+      protocol: tcp
+  selector:
+    app: hpa

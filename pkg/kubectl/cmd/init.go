@@ -23,6 +23,7 @@ func init() {
 	commands.AddCommand(applyCmd)
 	commands.AddCommand(deleteCmd)
 	commands.AddCommand(getCmd)
+	commands.AddCommand(updateCmd)
 	commands.AddCommand(describeCmd)
 	commands.AddCommand(executeCmd)
 }

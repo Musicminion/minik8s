@@ -9,7 +9,7 @@ spec:
     # Accept traffic sent to port 80
     - name: http
       port: 88
-      targetPort: 18080
+      targetPort: 8090
       protocol: tcp
   selector:
     map: replica

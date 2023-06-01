@@ -54,6 +54,24 @@ func PostAPIObjectToServer(URL string, obj interface{}) (int, error, string) {
 	return code, nil, string(bodyBytes)
 }
 
+
+func PutAPIObjectToServer(URL string, obj interface{}) (int, error, string) {
+	// k8log.DebugLog("PostAPIObjectToServer", "URL: "+URL)
+	// 发送到服务器
+	code, res, err := netrequest.PutRequestByTarget(URL, obj)
+	if err != nil {
+		// k8log.ErrorLog("Kubectl", "ParseAPIObjectFromYamlfileContent: Unmarshal object failed "+err.Error())
+		return code, err, ""
+	}
+
+	bodyBytes, err := json.Marshal(res)
+	if err != nil {
+		return code, err, ""
+	}
+
+	return code, nil, string(bodyBytes)
+}
+
 // 发送删除API对象的请求到服务器
 func DeleteAPIObjectToServer(URL string) (int, error) {
 	// k8log.DebugLog("DeleteAPIObjectToServer", "URL: "+URL)

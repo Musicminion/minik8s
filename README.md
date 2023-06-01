@@ -1,9 +1,8 @@
 # Minik8s
-# Minik8s
 
 <img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
->  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernates](https://kubernetes.io/zh-cn/)容器编排工具的go语言实现。
+>  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernates](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
 
 小组成员如下：
 
@@ -54,7 +53,7 @@
 - Kubelet：维护Pod的底层创建，Pod生命周期的管理，Pod异常的重启/重建等
 - Redis：作为本地的缓存Cache，哪怕API-Server完全崩溃，因为有本地的Redis，机器重新启动之后，Kubelet也能够恢复之前容器的状态
 
-![](https://notes.sjtu.edu.cn/uploads/upload_2684ba3c6f31c714360855ca1387f4eb.png)
+![](./assets/upload_2684ba3c6f31c714360855ca1387f4eb.png)
 
 
 
@@ -67,7 +66,7 @@
 
 如下图所示，是我们开发时候的Pr合并的情况。所有的Pr都带有相关的Label，便于合并的时候审查。考虑到后期的合并比较频繁，我们几乎都是每天都需要合并最新的工作代码到Development分支，然后运行单元测试。测试通过之后再合并到Master分支。
 
-![](https://notes.sjtu.edu.cn/uploads/upload_4cdfa2fa3c7cb0dbdf7dc47e54444f71.png)
+![](./assets/upload_4cdfa2fa3c7cb0dbdf7dc47e54444f71.png)
 
 
 
@@ -85,10 +84,16 @@
 - 功能开发的过程主要是：简要的需求分析->设计API对象->设计API-Server的接口->设计Etcd存储情况->编写该需求的运行逻辑代码->编写Kubectl相关代码->最终测试
 - 具体如下图所示，在整个开发的流程中，我们基本都是在重复下面的流程图。
 
-![](https://notes.sjtu.edu.cn/uploads/upload_0b5b07bc10c601f1b907e642dc3c3fa1.png)
+![](./assets/upload_0b5b07bc10c601f1b907e642dc3c3fa1.png)
+
+- 当然我们在开发的过程中也在及时更新文档，如下图所示，是我们的API-Server的详细接口文档，便于组员之间了解对方的开发情况
+
+![img](./assets/242516094-fe39291b-d22e-4cf2-a5e7-9ab2efef0b48.png)
+
 
 
 **开发简介**：
+
 - 项目代码体量大约2w行代码，开发周期大约1.5月
 - 完成要求里面的全部功能
 
@@ -116,10 +121,9 @@
 - ListWatcher会监听属于每个Node的消息队列，当收到创建/删除Pod的请求的时候，也会发送给相关的WorkerManager
 - 也就是说创建Pod会有消息队列/StatusManager检测到和远端不一致这样两种路径，前者的效率更高，后者用于维护长期的稳定。两者协同保证Pod的正确运行
 
-<img width="1226" alt="截屏2023-05-29 08 48 24" src="https://notes.sjtu.edu.cn/uploads/upload_42e4fefaaadd9a0124137aa8eb0a10b1.png">
+<img width="1226" alt="截屏2023-05-29 08 48 24" src="./assets/upload_42e4fefaaadd9a0124137aa8eb0a10b1.png">
 
-
-<img width="320"  align='right'  alt="截屏2023-05-29 08 50 13" src="https://notes.sjtu.edu.cn/uploads/upload_40020794bdea93b81638a916a3968efa.png">
+<img width="320"  align='right'  alt="截屏2023-05-29 08 50 13" src="./assets/upload_40020794bdea93b81638a916a3968efa.png">
 
 具体来说，各个组件之间的行为和关系如下图详细所示。
 - Runtime Manager会负责收集底层正在运行的所有的容器的信息，并把容器的信息组装为Pod的状态信息。同时收集当前机器的CPU/内存状态，把相关的信息回传到API Server，及时更新。
@@ -127,7 +131,7 @@
 - Status Manager对于所有更新获取到的Pod，都会写入Redis的本地缓存，以便于API-Server完全崩溃和Kubelet完全崩溃重启的时候，Kubelet有Pod的期望信息，能够作为对齐目标
 - 当出现Pod不一致的时候，以远端的API-Server的数据为主，并清除掉不必要的Pod。如下图所示，会清空不必要的Pod，并创建本地没有的Pod，实现和远端数据的对齐。
 
-![](https://notes.sjtu.edu.cn/uploads/upload_8a3f18b7acf03d7a53d9d6c6c0e854f8.png)
+![](./assets/upload_8a3f18b7acf03d7a53d9d6c6c0e854f8.png)
 
 
 #### controller架构
@@ -141,7 +145,7 @@ minik8s需要controller对一些抽象的对象实施管理。Controller是运�
 
 Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。我们使用了Cobra的命令行解析工具，大大提高了命令解析的效率。
 
-<img width="300" alt="截屏2023-05-29 09 00 41" src="https://notes.sjtu.edu.cn/uploads/upload_835fc46a324cd6f7e31ac466bac4c99f.png">
+<img width="300" alt="截屏2023-05-29 09 00 41" src="./assets/upload_835fc46a324cd6f7e31ac466bac4c99f.png">
 
 支持的命令如下所示：
 - `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口
@@ -192,6 +196,13 @@ pod内需要能运⾏多个容器，它们可以通过localhost互相访问。�
 
 特别感谢[这篇文章](https://k8s.iswbm.com/c02/p02_learn-kubernetes-pod-via-pause-container.html)的精彩讲解，让我们了解了实现Pod内部容器的通讯。
 
+具体创建Pod的时序图如下所示。
+
+![img](./assets/242514737-6aaea87c-4887-44fc-b72b-4a7fe4038ae4.png)
+
+
+
+
 #### CNI Plugin
 Minik8s⽀持Pod间通信，我们组选择了Weave网络插件，只需要通过简单的`weave launch`和`weave connect`命令等，就可以将一个节点加入到Weave网络集群里面。Weave插件会将容器与特定的IP绑定关联（`weave attach`命令绑定容器到Weave网络），实现多个Pod之间的通讯。同时Weave具有比较智能的回收功能，一旦某个容器被删除，相关的IP也会被回收，供下次再分配。
 
@@ -205,7 +216,7 @@ Service的演示视频请参考：
 
 我们选择使用Iptables来实现proxy功能，基于 netfilter 实现。Kubeproxy收到service的更新消息后，会依据service和endpoint的ip信息更新本地的iptables，具体的更新方法参照了[这篇文章](https://www.bookstack.cn/read/source-code-reading-notes/kubernetes-kube_proxy_iptables.md), 出于简化的目的我们删去了一些规则，最终Iptables的设计如下：
 
-![](https://notes.sjtu.edu.cn/uploads/upload_781b8696b7fe8cdc401458d1a07d8d1a.png)
+![](./assets/upload_781b8696b7fe8cdc401458d1a07d8d1a.png)
 
 此时访问service的规则流向为：
 `PREROUTING --> KUBE-SERVICE --> KUBE-SVC-XXX --> KUBE-SEP-XXX`
@@ -233,11 +244,10 @@ GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Se
 
 具体的演示的效果请参考演示视频。
 
-![](https://notes.sjtu.edu.cn/uploads/upload_902c6eb289d8bca30ba2c57a3ae797c5.png)
-
+![](./assets/upload_902c6eb289d8bca30ba2c57a3ae797c5.png)
 
 最终输出的效果如下所示：
-![](https://notes.sjtu.edu.cn/uploads/upload_d0f674c49bc33f69066713c6396d8993.png)
+![](./assets/upload_d0f674c49bc33f69066713c6396d8993.png)
 
 
 
@@ -255,9 +265,4 @@ Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Func
 
 我们的工作流里面有两类节点，一个对应的是funcNode，也就是说这个节点对应的一个function，这时候Workflow Controller就会将上一步的执行结果(如果是第一个节点那就是工作流的入口参数)发送给对应namespace/name下的function来执行。另外一个类型节点对应的是optionNode，这个节点只会单纯对于上一步的执行结果进行判断。如果判断的结果是真，就会进入到TrueNextNodeName，如果判断的结果是假，就会进入到FalseNextNodeName。
 
-
-
-
-
-
-
+![](./assets/2023-06-01-153415.png)

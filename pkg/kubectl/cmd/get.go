@@ -74,9 +74,9 @@ func getObjectHandler(cmd *cobra.Command, args []string) {
 		cmd.Usage()
 		return
 	}
-	kind := args[0]
+	kind := strings.ToLower(args[0])
 	// 判断kind是否在apiObject.AllResourceKind中
-	if stringutil.ContainsString(apiObject.AllResourceKindSlice, kind) {
+	if !stringutil.ContainsStringNoCase(apiObject.AllResourceKindSlice, kind) {
 		fmt.Println("getObjectHandler: args mismatch, please specify " + apiObject.AllResourceKind)
 		fmt.Println("Use like: kubectl get pod [podNamespace]/[podName]")
 		return

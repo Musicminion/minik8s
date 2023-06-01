@@ -37,3 +37,12 @@ func ContainsString(list []string, target string) bool {
     }
     return false
 }
+
+func ContainsStringNoCase(list []string, target string) bool {
+	for _, str := range list {
+		if strings.ToLower(str) == strings.ToLower(target) {
+			return true
+		}
+	}
+	return false
+}

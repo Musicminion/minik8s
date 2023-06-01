@@ -98,13 +98,6 @@ func GetReplicaSets(c *gin.Context) {
 		return
 	}
 
-	if len(res) == 0 {
-		c.JSON(http.StatusNotFound, gin.H{
-			"error": "replicaSets not found",
-		})
-		return
-	}
-
 	targetReplicaseta := make([]string, 0)
 
 	for _, v := range res {

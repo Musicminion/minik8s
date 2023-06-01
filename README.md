@@ -1,5 +1,4 @@
 # Minik8s
-# Minik8s
 
 <img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
@@ -86,6 +85,10 @@
 - 具体如下图所示，在整个开发的流程中，我们基本都是在重复下面的流程图。
 
 ![](https://notes.sjtu.edu.cn/uploads/upload_0b5b07bc10c601f1b907e642dc3c3fa1.png)
+
+- 当然我们在开发的过程中也在及时更新文档，如下图所示，是我们的API-Server的详细接口文档，便于组员之间了解对方的开发情况
+
+![image](https://github.com/Musicminion/minik8s/assets/84625273/fe39291b-d22e-4cf2-a5e7-9ab2efef0b48)
 
 
 **开发简介**：

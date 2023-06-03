@@ -6,9 +6,11 @@
 
 小组成员如下：
 
-- 董云鹏 517021910011 [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu)
-- 冯逸飞 520030910021 [@every-breaking-wave](https://github.com/every-breaking-wave)
-- 张子谦 520111910121 [@Musicminion](https://github.com/Musicminion)
+| 姓名   | 学号         | 邮箱                  | 成员 |
+| ------ | ------------ | --------------------- | ---- |
+| 董云鹏 | 517021910011 | [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu) | 组长 |
+| 冯逸飞   | 520030910021 | [@every-breaking-wave](https://github.com/every-breaking-wave)   | 组员 |
+| 张子谦 | 520111910121 | [@Musicminion](https://github.com/Musicminion)   | 组员 |
 
 项目仓库的地址：
 - Github: https://github.com/Musicminion/minik8s/

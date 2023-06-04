@@ -6,19 +6,21 @@
 
 小组成员如下：
 
-| 姓名   | 学号         | Github主页                  | 成员 |
-| ------ | ------------ | --------------------- | ---- |
-| 董云鹏 | 517021910011 | [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu) | 组长 |
-| 冯逸飞   | 520030910021 | [@every-breaking-wave](https://github.com/every-breaking-wave)   | 组员 |
-| 张子谦 | 520111910121 | [@Musicminion](https://github.com/Musicminion)   | 组员 |
+| 姓名   | 学号         | 邮箱                                                         | 成员 |
+| ------ | ------------ | ------------------------------------------------------------ | ---- |
+| 董云鹏 | 517021910011 | [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu)     | 组长 |
+| 冯逸飞 | 520030910021 | [@every-breaking-wave](https://github.com/every-breaking-wave) | 组员 |
+| 张子谦 | 520111910121 | [@Musicminion](https://github.com/Musicminion)               | 组员 |
 
 项目仓库的地址：
+
 - Github: https://github.com/Musicminion/minik8s/
 - Gitee: https://gitee.com/Musicminion/miniK8s
 
 项目的CI/CD主要在Github上面运行，所以如有需要查看，请移步到Github查看。
 
 ## 架构
+
 ### 使用到的开源库
 
 - [github.com/docker/docker](https://github.com/moby/moby) 底层容器运行时的操作
@@ -36,6 +38,7 @@
 - [github.com/google/uuid](https://github.com/google/uuid) API对象UUID的生成
 - [github.com/spf13/cobra](https://github.com/spf13/cobra) Kubectl的命令行工具
 - [github.com/jedib0t/go-pretty/table](https://github.com/jedib0t/go-pretty/table) Kubectl美化输出
+- [github.com/coreos/go-iptables/iptables](https://github.com/coreos/go-iptables/) 封装了对iptables的修改操作
 
 ### 架构
 
@@ -47,7 +50,7 @@
 - Controller：包括DNS Controller、HPA Controller、Replica Controller、JobController，主要是对于一些抽象级别的API对象的管理，状态的维护。
 - Scheduler：负责从所有的可以使用的节点中，根据一定的调度策略，当收到Pod调度请求时，返回合适的节点
 - Serveless：单独运行的一个服务器，负责维护Serveless的函数相关对象的管理，同时负责转发用户的请求到合适的Pod来处理
-- RabbitMQ：作为消息队列，集群内部的消息的通讯工具
+- RabbitMQ：作为消息队列，集群内部的进程间通讯工具
 
 运行在WorkerNode上面的主要有下面的几个组件
 
@@ -62,6 +65,7 @@
 **项目分支**：我们的开发采用多分支进行。每一个功能点对应一个Feature分支(对于比较复杂的功能分支可能会有不同组员自己的Branch)，所有的推送都会经过`go test`的测试检验。并可以在[这里](https://github.com/Musicminion/minik8s/actions)查看详细的情况。
 
 项目一共包含主要分支包括
+
 - Master分支：项目的发行分支，**只有通过了测试**,才能通过PR合并到Master分支。
 - Development分支：开发分支，用于合并多个Feature的中间分支，
 - Feature/* 分支：功能特定分支，包含相关功能的开发分支
@@ -73,6 +77,7 @@
 
 
 **CI/CD介绍**：CI/CD作为我们软件质量的重要保证之一。我们通过Git Action添加了自己的Runner，并编写了项目的测试脚本来实现CI/CD。保证每次运行前环境全部初始化。
+
 - 所有的日常代码的推送都会被发送到我们自己的服务器，运行单元测试，并直接显示在单次推送的结果后方
 - 当发起Pr时，自动会再一次运行单元测试，测试通过之后才可以合并
 - 运行单元测试通过之后，构建可执行文件，发布到机器的bin目录下
@@ -81,6 +86,7 @@
 **软件测试介绍**：go语言自身支持测试框架。并且鼓励把项目文件和测试文件放在同一个文件夹下面。例如某一个项目的文件是file.go,那么测试的文件的名字就是file_test.go。最终要运行整个项目测试的时候，只需要在项目的根目录运行 `go test ./...` 即可完成整个项目的测试。测试会输出详细的测试通过率，非常方便。
 
 **功能开发流程**：
+
 - 我们的软件开发基于迭代开发、敏捷开发。小组成员每天晚上在软件学院大楼实验室集中进行开发新功能，减少沟通障碍，做到有问题及时解决、沟通，有困难相互请教，这也大大的提高了我们小组的效率。截止15周周末，我们已经完成了所有的功能的开发。基本符合预期进度。
 - 对于新功能开发，我们采用"动态分配"方法，根据进度灵活分配成员的任务。项目框架搭建好之后，基本上在任何时间点小组同时在开发两个或者两个以上的需求。一人开发完成之后，交给另外一个组员完成代码的审查和测试，测试通过之后合并到Master
 - 功能开发的过程主要是：简要的需求分析->设计API对象->设计API-Server的接口->设计Etcd存储情况->编写该需求的运行逻辑代码->编写Kubectl相关代码->最终测试
@@ -103,18 +109,19 @@
 
 #### API Server
 
-**API-Server**：API Server是minik8s控制平面的核心。主要负责和etcd存储打交道，并提供一些核心的APIObject的API，供其他组件使用。在设计API Server的API时候，我们主要考虑了两个特性，一个是状态(Status)和期望(Spec)分离的情况，另外一个是Etcd的路径和API分离。
+**API-Server**：API Server是minik8s控制平面的核心。主要负责和etcd存储交互，并提供一些核心的APIObject的API，供其他组件使用。在设计API Server的API时候，我们主要考虑了两个特性，一个是状态(Status)和期望(Spec)分离的情况，另外一个是Etcd的路径和API分离。
 
 如果没有分离，我们考虑下面的情景：当一个Kubelet想要更新某一个Pod的状态的时候，试图通过Post或者Put请求写入一个完整的Pod对象，在此之前,假如用户刚刚通过`kubectl apply`更新了一个Pod的信息，如果按照上面我所叙述的时间线，就会出现用户的apply的更新的Pod被覆盖了。同样的道理，如果用户删除了一个Pod，按照上面的设计，Kubelet在回传的时候写入了一个完整的Pod，相当于没有做任何的删除。
 
-虽然说上面的例子是因为期望和状态没有分离，但是本质是kubelet的权限太大，能够写入一个完整的Pod。所以为了解决这种问题，我们对于一个对象，往往设计了更新对象接口(更新整个对象)，更新对象的状态接口(仅仅更新Status，如果找不到对象那么就不更新)
+虽然说上面的例子是因为期望和状态没有分离，但是本质是Kubelet的权限太大，能够写入一个完整的Pod。所以为了解决这种问题，我们对于一个对象，往往设计了更新对象接口(更新整个对象)，更新对象的状态接口(仅仅更新Status，如果找不到对象那么就不更新)
 
 第二个设计时分开了API的格式和Etcd存储API对象的路径。Etcd存储API对象的路径都是诸如`registry/pods/<namespace>/<name>`，而API的格式大多都是`/api/v1/pods/namespaces/:namespace/name/:name`,可以看到两者的差别还是比较明显的，这是因为API版本看发生动态变化(在实际的k8s中也是这样)，但是存储的路径保证兼容原来的。所以在我们的minik8s中，我们同样借鉴了这样的思路。
 
 更多有关API-Server的内容以及详细的API文档，请移步到`/pkg/apiserver`下的Readme查看。
 
-#### kubelet架构
-**kubelet**：Kubelet是和容器底层运行打交道的组件，确保每一个Pod能够在该节点正常运行。目前kubelet架构设计如下(我们参考了k8s的反馈路径设计并做了一定的微调，以适应项目)
+#### Kubelet架构
+
+**Kubelet**：Kubelet是和容器底层运行交互的组件，确保每一个Pod能够在该节点正常运行。目前Kubelet架构设计如下(我们参考了k8s的反馈路径设计并做了一定的微调，以适应项目)
 
 - Kubelet主要由：StatusManager、RunTimeManager、PlegManager、WorkerManager几个核心组件和Pleg、MsgChan的通道组成。
 - RunTimeManager和底层的Docker交互，用于创建容器、获取容器运行的状态、管理镜像等操作
@@ -128,6 +135,7 @@
 <img width="320"  align='right'  alt="截屏2023-05-29 08 50 13" src="./assets/upload_40020794bdea93b81638a916a3968efa.png">
 
 具体来说，各个组件之间的行为和关系如下图详细所示。
+
 - Runtime Manager会负责收集底层正在运行的所有的容器的信息，并把容器的信息组装为Pod的状态信息。同时收集当前机器的CPU/内存状态，把相关的信息回传到API Server，及时更新。
 - Status Manager还会定期的从API Server拉取当前节点上所有的Pod，以便于比较和对齐，产生相关的容器生命周期事件(Pleg)，
 - Status Manager对于所有更新获取到的Pod，都会写入Redis的本地缓存，以便于API-Server完全崩溃和Kubelet完全崩溃重启的时候，Kubelet有Pod的期望信息，能够作为对齐目标
@@ -137,29 +145,34 @@
 
 
 #### controller架构
+
 minik8s需要controller对一些抽象的对象实施管理。Controller是运行在控制平面的一个组件，具体包括DNS Controller、HPA Controller、Job Controller、Replica Controller。之所以需要Controller来对于这些API对象进行管理，是因为这些对象都是比较高度抽象的对象，需要维护已有的基础对象和他们之间的关系，或者需要对整个系统运行状态分析之后再才能做出决策。具体的逻辑如下：
+
 - Replica Controller：维护Replica的数量和期望的数量一直，如果出现数量不一致，当通过标签匹配到的Pod数量较多的时候，会随机的杀掉若干Pod，直到数量和期望一致；当通过标签匹配到的Pod数量偏少的时候，会根据template创建相关的Pod
 - Job Controller：维护GPU Job的运行，当一个新的任务出现的时候，会被GPU JobController捕捉到（因为这个任务没有被执行，状态是空的），然后Controller会创建一个新的Pod，让该Pod执行相关的GPU任务。
-- HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，并计算出期望的副本数（具体算法见[Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)），如果当前副本和期望数量不一致，就会触发扩容或者缩容。所有的扩容、缩容都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
+- HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，并计算出期望的副本数，如果当前副本和期望数量不一致，就会触发扩容或者缩容。所有的扩容、缩容都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
 - DNS Controller：负责nginx service的创建，同时监听Dns对象的变化，当有Dns变化时会向所有的node发送hostUpdate以更新nginx的配置文件和hosts文件
 
 #### Kubectl
 
-Kubectl作为minik8s的命令行管理工具，命令的设计基本参考kubernates。我们使用了Cobra的命令行解析工具，大大提高了命令解析的效率。
+Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernates。我们使用了Cobra的命令行解析工具，大大提高了命令解析的效率。
 
 <img width="300" alt="截屏2023-05-29 09 00 41" src="./assets/upload_835fc46a324cd6f7e31ac466bac4c99f.png">
 
 支持的命令如下所示：
+
 - `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口
 - `Kubectl delete ./path/to/your.yaml` 根据文件删除一个API对象，会自动识别文件中对象的name和namespace，发送给对应的接口(删除不会校验其他字段是否完全一致)
 - `kubectl get [APIObject] [Namespace/Name]` 获取一个API对象的状态(显示经过简化的信息，要查看详细的结果，请使用Describe命令)
-- `kubectl describe [APIObject] [Namespace/Name]` 获取一个API对象的详细的json信息(显示完整的经过优化的json字段)
-- `kubectl execute [namespace]/[name] [parameters]` 出发一个Serveless的函数，并传递相关的参数
+- `kubectl describe [APIObject] [Namespace]/[Name]` 获取一个API对象的详细的json信息(显示完整的经过优化的json字段)
+- `kubectl execute [Namespace]/[FunctionName] [parameters]` 触发一个Serveless的函数，并传递相关的参数
 
 #### Scheduler
+
 Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Scheduler和API-Server通过RabbitMQ消息队列实现通讯。当有Pod创建的请求的时候，API-Server会给Scheduler发送调度请求，Scheduler会主动拉取所有Node，根据最新的Node Status和调度策略来安排调度。
 
 目前我们的Scheduler支持多种调度策略：
+
 - RoundRobin：轮询调度策略
 - Random：随机调度策略
 - LeastPod：选择Pod数量最少的节点
@@ -169,7 +182,7 @@ Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Schedul
 这些调度策略可以通过启动时候的参数传递，以便于Scheduler知道以哪一种调度策略运行。
 
 
-#### Kuberproxy
+#### Kubeproxy
 
 Kubeproxy运行在每个Worker节点上，主要是为了支持Service抽象，以实现根据Service ClusterIP访问Pod服务的功能，同时提供了一定负载均衡功能，例如可以通过随机或者轮询的策略进行流量的转发。同时Kubeproxy还通过nginx实现了DNS和转发的功能。
 
@@ -178,7 +191,7 @@ Kubeproxy运行在每个Worker节点上，主要是为了支持Service抽象，�
 - Kuberproxy主要由IptableManager、DnsManager两个核心组件和serviceUpdateChan、DnsUpdateChan的通道组成。
 - 当Kubeproxy启动后会向API-Server发送创建nginx pod的请求，并在之后通过nginx pod来进行反向代理
 - IptableManager用于处理serviceUpdate, 根据service的具体内容对本机上的iptables进行更新，以实现ClusterIP到Pod的路由。
-- DnsManager用于处理hostUpdate，这是来自DnsController的消息，目的是通知节点进行nginx配置文件和hosts文件的更新，以实现DNS和转发功能
+- DnsManager用于处理hostUpdate，这是来自DnsController的消息，目的是通知节点进行nginx配置文件和hosts文件的更新，以实现DNS和转发功能，不过由于实现上的考虑不足，DnsManager的这部分功能直由Kubeproxy直接承担了。
 
 ### 需求实现详解
 
@@ -203,10 +216,9 @@ pod内需要能运⾏多个容器，它们可以通过localhost互相访问。�
 ![img](./assets/242514737-6aaea87c-4887-44fc-b72b-4a7fe4038ae4.png)
 
 
-
-
 #### CNI Plugin
-Minik8s⽀持Pod间通信，我们组选择了Weave网络插件，只需要通过简单的`weave launch`和`weave connect`命令等，就可以将一个节点加入到Weave网络集群里面。Weave插件会将容器与特定的IP绑定关联（`weave attach`命令绑定容器到Weave网络），实现多个Pod之间的通讯。同时Weave具有比较智能的回收功能，一旦某个容器被删除，相关的IP也会被回收，供下次再分配。
+
+Minik8s⽀持Pod间通信，我们组选择了Weave网络插件，只需要通过简单的`weave launch`和`weave connect`等命令，就可以将一个节点加入到Weave网络集群里面。Weave插件会将容器与特定的IP绑定关联（`weave attach`命令绑定容器到Weave网络），实现多个Pod之间的通讯。同时Weave具有比较智能的回收功能，一旦某个容器被删除，相关的IP也会被回收，供下次再分配。
 
 #### Service抽象
 
@@ -216,7 +228,7 @@ Service的演示视频请参考：
 
 在Kubernetes中，部分pod会有属于自己的Label，这些pod创建时，API-Server会基于标签为它们创建对应的endpoint。当我们创建sevice时，会根据service的selector筛选出符合条件的endpoint，并将service和这些endpoint打包在一起作为serviceUpdate消息发送到所有Node的kubeproxy。
 
-我们选择使用Iptables来实现proxy功能，基于 netfilter 实现。Kubeproxy收到service的更新消息后，会依据service和endpoint的ip信息更新本地的iptables，具体的更新方法参照了[这篇文章](https://www.bookstack.cn/read/source-code-reading-notes/kubernetes-kube_proxy_iptables.md), 出于简化的目的我们删去了一些规则，最终Iptables的设计如下：
+我们选择使用Iptables来实现proxy功能。当Kubeproxy收到service的更新消息后，会依据service和endpoint的ip信息更新本地的iptables，具体的更新方法参照了[这篇文章](https://www.bookstack.cn/read/source-code-reading-notes/kubernetes-kube_proxy_iptables.md), 出于简化的目的我们删去了一些规则，最终Iptables的设计如下：
 
 ![](./assets/upload_781b8696b7fe8cdc401458d1a07d8d1a.png)
 
@@ -233,10 +245,19 @@ ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过Replica
 
 #### 动态伸缩
 
-HPA对象声明了对某种Pod的资源期望(在我们的实现中是CPU和Memory), 并根据可以用来创建多个Pod的副本。我们的实现是通过ReplicaSet Controller。
+为了实现对Pod的动态伸缩控制，我们实现了HPA（Horizontal Pod  Autoscaler）对象,  它选择某些Pod作为Workload，并监测这些Pod的资源指标（在我们的实现中是CPU和Memory），当Pod的实际负载大于期望值时，会触发Pod的扩容，反之则会缩容。
+
+我们使用HPAController进行HPA对象与相应Pod的管理，HPAController会定期的从API-Server抓取全局的Pod和HPA数据，然后针对每一个Replica，检查它匹配的Pod的资源指标，并基于特定算法（具体算法见[Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)）计算出Pod的期望数量，然后将Pod的实例数向期望数量调整。
+
+其中我们直接通过docker client提供的接口抓取container的实时指标，并通过StatusManager定期的回传任务将指标写入到etcd的podStatus中，以下为实现动态伸缩的架构图：
+
+![image-20230604180932186](https://wave-pics.oss-cn-shanghai.aliyuncs.com/pics/image-20230604180932186.png)
+
+HPA匹配Pod的容错同样交给了Kubelet来维持，因此HPAController只需要负责监测与调整即可。
 
 
 #### GPU Job
+
 GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Server](https://hub.docker.com/r/musicminion/minik8s-gpu)，并发布了arch64和arm64版本的镜像到Dockerhub。GPU-Job-Pod启动的时候，会被传递Job的namespace和name，该内置的服务器会主动找API-Server下载任务相关的文件和配置信息，根据用户指定的命令来生成脚本文件。
 
 然后，GPU-Job-Server会使用用户提供的用户名、密码登录到交大的HPC平台，通过slurm脚本提交任务，然后进入等待轮寻的状态。当任务完成之后，会将任务的执行的结果从HPC超算平台下载，然后上传给API-Server，到此为止一个GPU的Job全部完成。

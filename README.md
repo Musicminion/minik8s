@@ -168,6 +168,14 @@ Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernate
 - `kubectl describe [APIObject] [Namespace]/[Name]` 获取一个API对象的详细的json信息(显示完整的经过优化的json字段)
 - `kubectl execute [Namespace]/[FunctionName] [parameters]` 触发一个Serveless的函数，并传递相关的参数，返回执行结果
 
+另外，我们对所有指令的输出都进行了美化，并根据API对象的不同对输出内容进行了调整，以下为示例输出：
+
+![image](https://github.com/Musicminion/minik8s/assets/86960423/62adef34-91fe-41c4-a883-49974eb7a17c)
+
+![image](https://github.com/Musicminion/minik8s/assets/86960423/50afada2-90cd-41c8-b308-e541c46268b1)
+
+
+
 #### Scheduler
 
 Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Scheduler和API-Server通过RabbitMQ消息队列实现通讯。当有Pod创建的请求的时候，API-Server会给Scheduler发送调度请求，Scheduler会主动拉取所有Node，根据最新的Node Status和调度策略来安排调度。

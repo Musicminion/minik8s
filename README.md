@@ -6,7 +6,7 @@
 
 小组成员如下：
 
-| 姓名   | 学号         | 邮箱                  | 成员 |
+| 姓名   | 学号         | Github主页                  | 成员 |
 | ------ | ------------ | --------------------- | ---- |
 | 董云鹏 | 517021910011 | [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu) | 组长 |
 | 冯逸飞   | 520030910021 | [@every-breaking-wave](https://github.com/every-breaking-wave)   | 组员 |

@@ -2,7 +2,7 @@
 
 <img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
->  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernates](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
+>  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernetes](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
 
 小组成员如下：
 
@@ -164,8 +164,9 @@ Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernate
 - `Kubectl apply ./path/to/your.yaml` 创建一个API对象，会自动识别文件中对象的Kind，发送给对应的接口
 - `Kubectl delete ./path/to/your.yaml` 根据文件删除一个API对象，会自动识别文件中对象的name和namespace，发送给对应的接口(删除不会校验其他字段是否完全一致)
 - `kubectl get [APIObject] [Namespace/Name]` 获取一个API对象的状态(显示经过简化的信息，要查看详细的结果，请使用Describe命令)
+- `kubectl update [APIObject] ./path/to/your.yaml`, 更新一个API对象，会自动识别文件中对象的name和namespace，发送给对应的接口
 - `kubectl describe [APIObject] [Namespace]/[Name]` 获取一个API对象的详细的json信息(显示完整的经过优化的json字段)
-- `kubectl execute [Namespace]/[FunctionName] [parameters]` 触发一个Serveless的函数，并传递相关的参数
+- `kubectl execute [Namespace]/[FunctionName] [parameters]` 触发一个Serveless的函数，并传递相关的参数，返回执行结果
 
 #### Scheduler
 
@@ -179,7 +180,7 @@ Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Schedul
 - LeastCpu：选择CPU使用率最低的作为调度目标
 - LeastMem：选择Mem使用率最低的作为调度的目标
 
-这些调度策略可以通过启动时候的参数传递，以便于Scheduler知道以哪一种调度策略运行。
+这些调度策略可以通过启动时候的参数进行指定。
 
 
 #### Kubeproxy
@@ -191,7 +192,7 @@ Kubeproxy运行在每个Worker节点上，主要是为了支持Service抽象，�
 - Kuberproxy主要由IptableManager、DnsManager两个核心组件和serviceUpdateChan、DnsUpdateChan的通道组成。
 - 当Kubeproxy启动后会向API-Server发送创建nginx pod的请求，并在之后通过nginx pod来进行反向代理
 - IptableManager用于处理serviceUpdate, 根据service的具体内容对本机上的iptables进行更新，以实现ClusterIP到Pod的路由。
-- DnsManager用于处理hostUpdate，这是来自DnsController的消息，目的是通知节点进行nginx配置文件和hosts文件的更新，以实现DNS和转发功能，不过由于实现上的考虑不足，DnsManager的这部分功能直由Kubeproxy直接承担了。
+- DnsManager用于处理hostUpdate，这是来自DnsController的消息，目的是通知节点进行nginx配置文件和hosts文件的更新，以实现DNS和转发功能，不过由于实现上的考虑不足，DnsManager的这部分功能由Kubeproxy直接承担了。
 
 ### 需求实现详解
 
@@ -237,6 +238,37 @@ Service的演示视频请参考：
 
 Service和Pod的创建没有先后要求。如果先创建Pod，后创建的Service会搜索所有匹配的endpoint。如果先创建Service，后创建的pod创建对应的endpoint后会反向搜索所有匹配的Service。最终将上述对象打包成serviceUpdate对象发送给kubeproxy进行iptables的更新。
 
+#### DNS与转发
+
+为了实现通过域名直接访问minik8s上service的功能，我们需要实现DNS与转发功能。这一部分由DNSController与Kubeproxy协作完成。
+
+当Kubeproxy启动时，会向API-Server发送一个创建nginx pod的请求，当DNSController启动时，会向API-Server发送一个创建nginx service的请求。当用户创建dns对象后，API-Server会通知DNSController，DNSController会根据创建的dns的信息为nginx生成一份配置文件，示例如下：
+
+```
+server {
+        listen 80;
+        server_name test.com;
+        location /service1 {
+                proxy_pass http://192.168.160.168:88/;
+        }
+        location /service2 {
+                proxy_pass http://192.168.121.186:88/;
+        }
+}
+```
+
+此外，DNSController还会维护一个域名到ip的map，域名由dns指定，ip则是nginx的clusterIP。接着，DNSController会将以上信息发送给所有的Kubeproxy，Kubeproxy收到消息后，会进行hosts文件的更新，以便实现DNS功能，同时向nginx pod的挂载目录写入新的配置文件，并让nginx pod执行`nginx -s reload`命令，由此使得配置文件的更新生效。
+
+这样，所有对以上域名的访问都会被变成对nginx service的访问，通过nginx service相关的iptables设置，流量会被转发到nginx pod上，之后nginx pod将会根据配置文件和子路径的匹配，将流量转发到对应的service的clusterIP上，从而实现了DNS与转发功能。
+
+另外，为了实现pod内部也能正常地使用DNS服务，我们必须要使pod的hosts文件与节点上的保持一致，为了实现这一点有以下做法：
+
+- 定期同步node与其上所有pod的hosts文件
+- 在pod创建时或者dns更新时同步hosts文件
+- 使所有的pod均挂载/etc/hosts目录
+
+以上实现均可行，我们选择了第一种做法。
+
 #### ReplicaSet抽象
 
 ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过ReplicaSet Controller。通常来说创建的ReplicaSet都会带有自己的ReplicaSetSelector，用来选择Pod。ReplicaSet Controller会定期的从API-Server抓取全局的Pod和Replica数据，然后针对每一个Replica，检查符合状态的Pod的数量。如果数量发现小于预期值，就会根据Replica中的Template创建若干个新的Pod，如果发现数量大于预期值，就会将找到符合标签的Pod删去若干个(以达到预期的要求)
@@ -245,11 +277,11 @@ ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过Replica
 
 #### 动态伸缩
 
-为了实现对Pod的动态伸缩控制，我们实现了HPA（Horizontal Pod  Autoscaler）对象,  它选择某些Pod作为Workload，并监测这些Pod的资源指标（在我们的实现中是CPU和Memory），当Pod的实际负载大于期望值时，会触发Pod的扩容，反之则会缩容。
+为了实现对Pod的动态伸缩控制，我们实现了HPA（Horizontal Pod  Autoscaler）对象,  它选择Pod作为Workload，通过Selector筛选出对应Pod后，监测这些Pod的资源指标（在我们的实现中是CPU和Memory）并进行动态伸缩。
 
-我们使用HPAController进行HPA对象与相应Pod的管理，HPAController会定期的从API-Server抓取全局的Pod和HPA数据，然后针对每一个Replica，检查它匹配的Pod的资源指标，并基于特定算法（具体算法见[Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)）计算出Pod的期望数量，然后将Pod的实例数向期望数量调整。
+我们使用HPAController进行HPA对象与相应Pod的管理，HPAController会定期的从API-Server抓取全局的Pod和HPA数据，然后针对每一个HPA对象，检查它匹配的Pod的资源指标，并基于特定算法（具体算法见[Horizontal Pod Autoscaling](https://kubernetes.io/docs/tasks/run-application/horizontal-pod-autoscale/)）计算出Pod的期望数量，然后将Pod的实例数向期望数量调整。简单来说，当Pod的平均资源使用量超标时则会扩容以降低平均平均负载，反之则会缩容。另外为了避免副本数变化过快，我们还进行了相应的速度限制。
 
-其中我们直接通过docker client提供的接口抓取container的实时指标，并通过StatusManager定期的回传任务将指标写入到etcd的podStatus中，以下为实现动态伸缩的架构图：
+我们直接通过docker client提供的接口抓取container的实时指标，并通过StatusManager定期的回传任务将指标写入到etcd的podStatus中，以下为实现动态伸缩的架构图：
 
 ![image-20230604180932186](https://wave-pics.oss-cn-shanghai.aliyuncs.com/pics/image-20230604180932186.png)
 

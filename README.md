@@ -175,10 +175,9 @@ Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernate
 
 另外，我们对所有指令的输出都进行了美化，并根据API对象的不同对输出内容进行了调整，以下为示例输出：
 
-![upload_aeff6f582af4c1005f5852b3f480dfd7](README.assets/upload_aeff6f582af4c1005f5852b3f480dfd7.png)
+![image](https://github.com/Musicminion/minik8s/assets/86960423/62adef34-91fe-41c4-a883-49974eb7a17c)
 
-![upload_d0f674c49bc33f69066713c6396d8993](README.assets/upload_d0f674c49bc33f69066713c6396d8993.png)
-
+![image](https://github.com/Musicminion/minik8s/assets/86960423/50afada2-90cd-41c8-b308-e541c46268b1)
 
 
 #### Scheduler

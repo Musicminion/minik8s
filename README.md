@@ -17,6 +17,11 @@
 - Github: https://github.com/Musicminion/minik8s/
 - Gitee: https://gitee.com/Musicminion/miniK8s
 
+项目文档的在线网站
+
+- 文档仓库：https://github.com/minik8s/minik8s-docs
+- 文档地址：https://minik8s.ayaka.space
+ 
 项目的CI/CD主要在Github上面运行，所以如有需要查看，请移步到Github查看。
 
 ## 架构

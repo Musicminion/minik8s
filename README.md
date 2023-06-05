@@ -1,16 +1,20 @@
 # Minik8s
 
-<img src="https://wakatime.com/badge/user/485d951d-d928-4160-b75c-855525f5ae42/project/334b3ff9-9175-48b2-9f54-cc38a9244d7d.svg" alt=""/> <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
+ <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
 
 >  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernetes](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
 
 小组成员如下：
 
-| 姓名   | 学号         | 邮箱                                                         | 成员 |
-| ------ | ------------ | ------------------------------------------------------------ | ---- |
-| 董云鹏 | 517021910011 | [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu)     | 组长 |
-| 冯逸飞 | 520030910021 | [@every-breaking-wave](https://github.com/every-breaking-wave) | 组员 |
-| 张子谦 | 520111910121 | [@Musicminion](https://github.com/Musicminion)               | 组员 |
+| 姓名   | 学号         | 邮箱                                                         | 成员 | 贡献度 |
+| ------ | ------------ | ------------------------------------------------------------ | ---- | ------ |
+| 董云鹏 | 517021910011 | [@dongyunpeng-sjtu](https://github.com/dongyunpeng-sjtu)     | 组长 | 30%    |
+| 冯逸飞 | 520030910021 | [@every-breaking-wave](https://github.com/every-breaking-wave) | 组员 | 35%    |
+| 张子谦 | 520111910121 | [@Musicminion](https://github.com/Musicminion)               | 组员 | 35%    |
+
+详细分工：
+
+![image-20230605224630107](README.assets/image-20230605224630107.png)
 
 项目仓库的地址：
 
@@ -24,7 +28,7 @@
 
 项目的CI/CD主要在Github上面运行，所以如有需要查看，请移步到Github查看。
 
-## 架构
+## 项目管理与开发
 
 ### 使用到的开源库
 
@@ -67,11 +71,13 @@
 
 
 
+### 项目管理
+
 **项目分支**：我们的开发采用多分支进行。每一个功能点对应一个Feature分支(对于比较复杂的功能分支可能会有不同组员自己的Branch)，所有的推送都会经过`go test`的测试检验。并可以在[这里](https://github.com/Musicminion/minik8s/actions)查看详细的情况。
 
 项目一共包含主要分支包括
 
-- Master分支：项目的发行分支，**只有通过了测试**,才能通过PR合并到Master分支。
+- Master分支：项目的发行分支，**只有通过了测试**, 才能通过PR合并到Master分支。
 - Development分支：开发分支，用于合并多个Feature的中间分支，
 - Feature/* 分支：功能特定分支，包含相关功能的开发分支
 
@@ -110,9 +116,9 @@
 - 项目代码体量大约2w行代码，开发周期大约1.5月
 - 完成要求里面的全部功能
 
-### 组件详解
+## 组件详解
 
-#### API Server
+### API Server
 
 **API-Server**：API Server是minik8s控制平面的核心。主要负责和etcd存储交互，并提供一些核心的APIObject的API，供其他组件使用。在设计API Server的API时候，我们主要考虑了两个特性，一个是状态(Status)和期望(Spec)分离的情况，另外一个是Etcd的路径和API分离。
 
@@ -124,7 +130,7 @@
 
 更多有关API-Server的内容以及详细的API文档，请移步到`/pkg/apiserver`下的Readme查看。
 
-#### Kubelet架构
+### Kubelet架构
 
 **Kubelet**：Kubelet是和容器底层运行交互的组件，确保每一个Pod能够在该节点正常运行。目前Kubelet架构设计如下(我们参考了k8s的反馈路径设计并做了一定的微调，以适应项目)
 
@@ -149,7 +155,7 @@
 ![](./assets/upload_8a3f18b7acf03d7a53d9d6c6c0e854f8.png)
 
 
-#### controller架构
+### controller架构
 
 minik8s需要controller对一些抽象的对象实施管理。Controller是运行在控制平面的一个组件，具体包括DNS Controller、HPA Controller、Job Controller、Replica Controller。之所以需要Controller来对于这些API对象进行管理，是因为这些对象都是比较高度抽象的对象，需要维护已有的基础对象和他们之间的关系，或者需要对整个系统运行状态分析之后再才能做出决策。具体的逻辑如下：
 
@@ -158,7 +164,7 @@ minik8s需要controller对一些抽象的对象实施管理。Controller是运�
 - HPA Controller：分析HPA对应的Pod的CPU/Mem的比例，并计算出期望的副本数，如果当前副本和期望数量不一致，就会触发扩容或者缩容。所有的扩容、缩容都是以一个Pod为单位进行的，并且默认的扩容/缩容的速度是15s/Pod。如果用户自己指定了扩缩容的速度，那么遵循用户的规则。
 - DNS Controller：负责nginx service的创建，同时监听Dns对象的变化，当有Dns变化时会向所有的node发送hostUpdate以更新nginx的配置文件和hosts文件
 
-#### Kubectl
+### Kubectl
 
 Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernates。我们使用了Cobra的命令行解析工具，大大提高了命令解析的效率。
 
@@ -179,7 +185,7 @@ Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernate
 
 ![uTools_1685884022659-bbdbfa34069afe49acab73a52b3d7c46](./assets/uTools_1685884022659-bbdbfa34069afe49acab73a52b3d7c46-16859745595222.png)
 
-#### Scheduler
+### Scheduler
 
 Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Scheduler和API-Server通过RabbitMQ消息队列实现通讯。当有Pod创建的请求的时候，API-Server会给Scheduler发送调度请求，Scheduler会主动拉取所有Node，根据最新的Node Status和调度策略来安排调度。
 
@@ -194,7 +200,7 @@ Scheduler是运行在控制平面负责调度Pod到具体Node的组件。Schedul
 这些调度策略可以通过启动时候的参数进行指定。
 
 
-#### Kubeproxy
+### Kubeproxy
 
 Kubeproxy运行在每个Worker节点上，主要是为了支持Service抽象，以实现根据Service ClusterIP访问Pod服务的功能，同时提供了一定负载均衡功能，例如可以通过随机或者轮询的策略进行流量的转发。同时Kubeproxy还通过nginx实现了DNS和转发的功能。
 
@@ -205,9 +211,9 @@ Kubeproxy运行在每个Worker节点上，主要是为了支持Service抽象，�
 - IptableManager用于处理serviceUpdate, 根据service的具体内容对本机上的iptables进行更新，以实现ClusterIP到Pod的路由。
 - DnsManager用于处理hostUpdate，这是来自DnsController的消息，目的是通知节点进行nginx配置文件和hosts文件的更新，以实现DNS和转发功能，不过由于实现上的考虑不足，DnsManager的这部分功能由Kubeproxy直接承担了。
 
-### 需求实现详解
+## 需求实现详解
 
-#### Pod抽象
+### Pod抽象
 
 Pod是k8s(minik8s)调度的最小单位。用户可以通过 `Kubectl apply Podfile.yaml` 的声明式的方法创建一个Pod。当用户执行该命令后，Kubectl会将创建Pod的请求发送给API-Server。API-Server检查新创建的Pod在格式、字段是否存在问题，如果没有异常，就会写入Etcd，并给Scheduler发送消息。
 
@@ -259,11 +265,11 @@ spec:
 
 `kubectl apply pod.yaml`
 
-#### CNI Plugin
+### CNI Plugin
 
 Minik8s⽀持Pod间通信，我们组选择了Weave网络插件，只需要通过简单的`weave launch`和`weave connect`等命令，就可以将一个节点加入到Weave网络集群里面。Weave插件会将容器与特定的IP绑定关联（`weave attach`命令绑定容器到Weave网络），实现多个Pod之间的通讯。同时Weave具有比较智能的回收功能，一旦某个容器被删除，相关的IP也会被回收，供下次再分配。
 
-#### Service抽象
+### Service抽象
 
 在Kubernetes中，应用在集群中作为一个或多个Pod运行, Service则是一种暴露网络应用的方法。在我们的设计里，Service被设计为一个apiObject, 用户可以通过 `Kubectl apply Servicefile.yaml `的声明式的方法创建一个Service。
 
@@ -300,7 +306,7 @@ spec:
 
 `kubectl apply service.yaml`
 
-#### DNS与转发
+### DNS与转发
 
 为了实现通过域名直接访问minik8s上service的功能，我们需要实现DNS与转发功能。这一部分由DNSController与Kubeproxy协作完成。
 
@@ -351,7 +357,7 @@ spec:
 
 `kubectl apply dns.yaml`
 
-#### ReplicaSet抽象
+### ReplicaSet抽象
 
 ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过ReplicaSet Controller。通常来说创建的ReplicaSet都会带有自己的ReplicaSetSelector，用来选择Pod。ReplicaSet Controller会定期的从API-Server抓取全局的Pod和Replica数据，然后针对每一个Replica，检查符合状态的Pod的数量。如果数量发现小于预期值，就会根据Replica中的Template创建若干个新的Pod，如果发现数量大于预期值，就会将找到符合标签的Pod删去若干个(以达到预期的要求)
 
@@ -386,7 +392,7 @@ spec:
 
 `kubectl apply replicaset.yaml`
 
-#### 动态伸缩
+### 动态伸缩
 
 为了实现对Pod的动态伸缩控制，我们实现了HPA（Horizontal Pod  Autoscaler）对象,  它选择Pod作为Workload，通过Selector筛选出对应Pod后，监测这些Pod的资源指标（在我们的实现中是CPU和Memory）并进行动态伸缩。
 
@@ -429,7 +435,7 @@ spec:
 `kubectl apply hpa.yaml`
 
 
-#### GPU Job
+### GPU Job
 
 GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Server](https://hub.docker.com/r/musicminion/minik8s-gpu)，并发布了arch64和arm64版本的镜像到Dockerhub。GPU-Job-Pod启动的时候，会被传递Job的namespace和name，该内置的服务器会主动找API-Server下载任务相关的文件和配置信息，根据用户指定的命令来生成脚本文件。
 
@@ -488,9 +494,9 @@ spec:
 
 `kubectl apply job.yaml`
 
-#### Serveless
+### Serverless
 
-Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Function对应的是用户自己定义的python函数，而Workflow对应的是讲若干个Funcion组合起来，组成的一个工作流。工作流支持判断节点对于输出的结果进行判断，也支持路径的二分叉。
+Serverless功能点主要实现了两个抽象：Function和Workflow抽象，Function对应的是用户自己定义的python函数，而Workflow对应的是讲若干个Funcion组合起来，组成的一个工作流。工作流支持判断节点对于输出的结果进行判断，也支持路径的二分叉。
 
 实现Function抽象我们主要是通过编写了一个自己的[Function-Base镜像](https://hub.docker.com/repository/docker/musicminion/func-base)，该镜像同样支持Arm和X86_64。Function-Base镜像里面是一个简单的Python的Flask的服务器，会实现参数的解析，并传递给用户的自定义的函数。当我们创建一个Function的时候，我们首先需要拉取Function-Base镜像，然后将用户自定义的文件拷贝到镜像里面，再将镜像推送到minik8s内部的镜像中心(该镜像中心是通过docker启动了一个容器实现)，当用户的函数需要创建实例的时候，本质是创建了一个ReplicaSet，用来创建一组Pod，这些Pod的都采用的上述推送到minik8s内部的镜像中心的镜像。
 
@@ -575,9 +581,9 @@ Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Func
 
   `kubectl get workflow [namespace]/[workflowname]`
 
-#### 非功能需求
+### 非功能需求
 
-**容错：**
+#### 容错
 
 我们的容错性体现在以下两个方面：
 
@@ -602,7 +608,7 @@ Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Func
 
      - 重启丢失的container
 
-**鲁棒性：**
+#### 鲁棒性
 
 我们的系统鲁棒性主要体现在可以处理错误输入与错误的文件格式，并设计了十分完善的错误提示，可以处理大小写错误，参数错误，参数丢失等问题，如图所示：
 
@@ -705,7 +711,6 @@ func executeHandler(cmd *cobra.Command, args []string) {
 - 具体的信息请参考下面的截图
 
 ![ed5a0dce98dd975649118e2110a4998](./assets/ed5a0dce98dd975649118e2110a4998.png)
-
 
 ### 问题三
 

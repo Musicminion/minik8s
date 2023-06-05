@@ -502,9 +502,11 @@ Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Func
 
 我们的工作流里面有两类节点，一个对应的是funcNode，也就是说这个节点对应的一个function，这时候Workflow Controller就会将上一步的执行结果(如果是第一个节点那就是工作流的入口参数)发送给对应namespace/name下的function来执行。另外一个类型节点对应的是optionNode，这个节点只会单纯对于上一步的执行结果进行判断。如果判断的结果是真，就会进入到TrueNextNodeName，如果判断的结果是假，就会进入到FalseNextNodeName。
 
+以下为整个serverless的实现框架：
+
 ![](./assets/2023-06-01-153415.png)
 
-示例文件：
+示例yaml文件：
 
 - function.yaml
 

@@ -720,3 +720,10 @@ func executeHandler(cmd *cobra.Command, args []string) {
 - 我们的设计是每一个Function对应一个Replicaset，然后一个Replicaset管理一组相关的Pod。
 - 当用户发送调用函数的请求的时候，我们基于Pod的IP，通过控制平面单独运行的Serveless程序内置的Proxy，把请求转发给相关的Pod。由于和Function相关的Pod的数量可能动态更新，所以Proxy内部维护了一张RouteTable，定期从API-Server更新最新的Pod的IP
 - Scale-to-zero是通过统计每一个时间段内用户调用函数的请求的数量来实现的，如果一段时间没有调用函数，会把Replicaset的Pod的数量设置为0，这样就可以Scale-to-Zero。同样的道理，当有请求的时候，我们将Replicaset的Pod的数量设置为大于0的数值，就可以实现冷启动
+
+### 问题五
+
+> hpa部分是否实现自定义扩缩容时间？
+
+- 我们首先设定了一个默认得到扩缩容间隔时间(15s，可调节), hpaController每隔这样一段时间就会进行hpa的更新，这个过程中可能会进行扩缩容
+- 用户可以在hpa的yaml文件中指定扩缩容间隔时间，实际执行时，如果发现用户的指定时间大于默认时间，则会将该hpa对应的goroutine协程睡眠这个时间差的时间

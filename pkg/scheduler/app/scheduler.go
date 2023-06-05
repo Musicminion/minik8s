@@ -28,9 +28,6 @@ var lock sync.Mutex
 const (
 	RoundRobin SchedulePolicy = "RoundRobin" // 轮询调度策略
 	Random     SchedulePolicy = "Random"     // Random调度,产生一个随机数
-	LeastPod   SchedulePolicy = "LeastPod"   // LeastPod数量调度,选择Pod数量最少的节点
-	LeastCpu   SchedulePolicy = "LeastCpu"   // LeastCpu调度,选择CPU最少的节点
-	LeastMem   SchedulePolicy = "LeastMem"   // LeastMem调度,选择内存最少的节点
 )
 
 type Scheduler struct {
@@ -96,36 +93,7 @@ func schRandom(nodes []apiObject.NodeStore) string {
 	idx := r.Intn(cnt)
 	return nodes[idx].GetName()
 }
-func schLeastPod(nodes []apiObject.NodeStore) string {
-	lock.Lock()
-	defer lock.Unlock()
-	cnt := len(nodes)
-	if cnt == 0 {
-		return ""
-	}
-	//to do
-	return ""
-}
-func schLeastCpu(nodes []apiObject.NodeStore) string {
-	lock.Lock()
-	defer lock.Unlock()
-	cnt := len(nodes)
-	if cnt == 0 {
-		return ""
-	}
-	//to do
-	return ""
-}
-func schLeastMem(nodes []apiObject.NodeStore) string {
-	lock.Lock()
-	defer lock.Unlock()
-	cnt := len(nodes)
-	if cnt == 0 {
-		return ""
-	}
-	//to do
-	return ""
-}
+
 
 /*********************************************************************/
 /*********************************************************************/
@@ -139,16 +107,10 @@ func (sch *Scheduler) ChooseFromNodes(nodes []apiObject.NodeStore) string {
 		return schRoundRobin(nodes)
 	case Random:
 		return schRandom(nodes)
-	case LeastPod:
-		return schLeastPod(nodes)
-	case LeastCpu:
-		return schLeastCpu(nodes)
-	case LeastMem:
-		return schLeastMem(nodes)
 	default:
 	}
 	// TODO:
-	return "ubuntu"
+	return ""
 }
 
 // 处理调度请求的消息

@@ -21,7 +21,7 @@
 
 - 文档仓库：https://github.com/minik8s/minik8s-docs
 - 文档地址：https://minik8s.ayaka.space
- 
+
 项目的CI/CD主要在Github上面运行，所以如有需要查看，请移步到Github查看。
 
 ## 架构
@@ -175,9 +175,9 @@ Kubectl是minik8s的命令行交互工具，命令的设计基本参考kubernate
 
 另外，我们对所有指令的输出都进行了美化，并根据API对象的不同对输出内容进行了调整，以下为示例输出：
 
-![image](https://github.com/Musicminion/minik8s/assets/86960423/62adef34-91fe-41c4-a883-49974eb7a17c)
+![upload_aeff6f582af4c1005f5852b3f480dfd7](README.assets/upload_aeff6f582af4c1005f5852b3f480dfd7.png)
 
-![image](https://github.com/Musicminion/minik8s/assets/86960423/50afada2-90cd-41c8-b308-e541c46268b1)
+![upload_d0f674c49bc33f69066713c6396d8993](README.assets/upload_d0f674c49bc33f69066713c6396d8993.png)
 
 
 
@@ -229,6 +229,39 @@ pod内需要能运⾏多个容器，它们可以通过localhost互相访问。�
 
 ![img](./assets/242514737-6aaea87c-4887-44fc-b72b-4a7fe4038ae4.png)
 
+以下为示例yaml文件：
+
+````yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    app: service
+  name: pod-example1
+  namespace: default
+spec:
+  containers:
+    - image: registry.cn-hangzhou.aliyuncs.com/tanjunchen/network-multitool:v1
+      name: test1
+      ports:
+        - containerPort: 80
+      resources:
+        requests:
+          memory: 100000000      # 单位为byte
+        limits:
+          memory: 200000000
+    - image: musicminion/func-base
+      name: test2
+      ports:
+        - containerPort: 18080
+    - image: docker.io/library/redis
+      name: test3
+      command: ["sh", "-c", "redis-server --appendonly yes"]
+````
+
+使用方法：
+
+`kubectl apply pod.yaml`
 
 #### CNI Plugin
 
@@ -251,6 +284,28 @@ Service的演示视频请参考：
 
 Service和Pod的创建没有先后要求。如果先创建Pod，后创建的Service会搜索所有匹配的endpoint。如果先创建Service，后创建的pod创建对应的endpoint后会反向搜索所有匹配的Service。最终将上述对象打包成serviceUpdate对象发送给kubeproxy进行iptables的更新。
 
+以下为示例yaml文件：
+
+```yaml
+kind: Service
+apiVersion: v1
+metadata:
+  name: service-example
+  namespace: default
+spec:
+  ports:
+    - name: http
+      port: 88	      # service的端口
+      targetPort: 80  # 匹配的pod暴露的端口
+      protocol: tcp
+  selector:
+    app: service
+```
+
+使用方法：
+
+`kubectl apply service.yaml`
+
 #### DNS与转发
 
 为了实现通过域名直接访问minik8s上service的功能，我们需要实现DNS与转发功能。这一部分由DNSController与Kubeproxy协作完成。
@@ -260,9 +315,9 @@ Service和Pod的创建没有先后要求。如果先创建Pod，后创建的Serv
 ```
 server {
         listen 80;
-        server_name test.com;
+        server_name test.com;                             # nginx service的域名
         location /service1 {
-                proxy_pass http://192.168.160.168:88/;
+                proxy_pass http://192.168.160.168:88/;    # 匹配的service的clusterIP
         }
         location /service2 {
                 proxy_pass http://192.168.121.186:88/;
@@ -282,11 +337,60 @@ server {
 
 以上实现均可行，我们选择了第一种做法。
 
+以下为示例yaml文件：
+
+```yaml
+apiVersion: v1
+kind: Dns
+metadata:
+  name: test-dns
+spec:
+  host: test.com
+  paths:
+  - subPath: /api/v2           # 子路径
+    svcName: service-example
+    svcPort: 88
+
+```
+
+使用方法：在nginx pod与nginx service创建好之后，使用以下命令：
+
+`kubectl apply dns.yaml`
+
 #### ReplicaSet抽象
 
 ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过ReplicaSet Controller。通常来说创建的ReplicaSet都会带有自己的ReplicaSetSelector，用来选择Pod。ReplicaSet Controller会定期的从API-Server抓取全局的Pod和Replica数据，然后针对每一个Replica，检查符合状态的Pod的数量。如果数量发现小于预期值，就会根据Replica中的Template创建若干个新的Pod，如果发现数量大于预期值，就会将找到符合标签的Pod删去若干个(以达到预期的要求)
 
 至于容错，我们放在了底层的Kubelet来实现。Pleg会定期检查运行在该节点的所有的Pod的状态，如果发现Pod异常，会自动重启Pod，保证Pod的正常运转。
+
+以下为示例yaml文件：
+
+```yaml
+apiVersion: v1
+kind: Replicaset
+metadata:
+  name: testReplica
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      labelkey1: labelvalue1
+  template:
+    metadata:
+      name: replicaPod
+      labels:
+        labelkey1: labelvalue1
+    spec:
+      containers:
+      - name: testContainer-1
+        image: docker.io/library/nginx
+        ImagePullPolicy: IfNotPresent
+
+```
+
+使用方法:
+
+`kubectl apply replicaset.yaml`
 
 #### 动态伸缩
 
@@ -299,6 +403,36 @@ ReplicaSet可以用来创建多个Pod的副本。我们的实现是通过Replica
 ![image-20230604180932186](https://wave-pics.oss-cn-shanghai.aliyuncs.com/pics/image-20230604180932186.png)
 
 HPA匹配Pod的容错同样交给了Kubelet来维持，因此HPAController只需要负责监测与调整即可。
+
+以下为示例yaml文件：
+
+```yaml
+apiVersion: v1
+kind: Hpa
+metadata:
+  name: test-hpa
+spec:
+  minReplicas: 2
+  maxReplicas: 5
+  workload:       
+    kind: Pod             # hpa作用的的对象：Pod
+    metadata:
+      name: test-pod
+      namespace: test-namespace
+  adjustInterval: 15s     # 扩缩容的速度限制
+  selector:
+    matchLabels: 
+      app: hpa
+  metrics:
+    cpuPercent: 0.35	  # 期望的平均cpu利用率
+    memPercent: 0.5		  # 期望的内存利用率
+```
+
+使用方法：
+
+创建hpa对应的pod之后，执行以下命令：
+
+`kubectl apply hpa.yaml`
 
 
 #### GPU Job
@@ -331,7 +465,36 @@ cudaMemcpy((void *)dev_C, (void *)host_C, sizeof(int *) * M, cudaMemcpyHostToDev
 最终输出的效果如下所示：
 ![](./assets/upload_d0f674c49bc33f69066713c6396d8993.png)
 
+示例yaml文件：
 
+```yaml
+apiVersion: v1
+kind: Job
+metadata:
+  name: job-example1
+  namespace: test-job-namespace
+spec:
+  partition: dgx2
+  nTasks: 1
+  nTasksPerNode: 6
+  submitDirectory: "change-me"
+  runCommands: [
+    "module load cuda/9.2.88-gcc-4.8.5",
+    "nvcc matrix_add.cu -o matrix_add",
+    "nvcc matrix_multiply.cu -o matrix_multiply",
+    "./matrix_add",
+    "./matrix_multiply",
+  ]
+  outputFile: "job-example1.out"
+  errorFile: "job-example1.err"
+  username: "change-me"
+  password: "change-me"
+  gpuNums: 1
+```
+
+使用方法：
+
+`kubectl apply job.yaml`
 
 #### Serveless
 
@@ -348,3 +511,72 @@ Serveless功能点主要实现了两个抽象：Function和Workflow抽象，Func
 我们的工作流里面有两类节点，一个对应的是funcNode，也就是说这个节点对应的一个function，这时候Workflow Controller就会将上一步的执行结果(如果是第一个节点那就是工作流的入口参数)发送给对应namespace/name下的function来执行。另外一个类型节点对应的是optionNode，这个节点只会单纯对于上一步的执行结果进行判断。如果判断的结果是真，就会进入到TrueNextNodeName，如果判断的结果是假，就会进入到FalseNextNodeName。
 
 ![](./assets/2023-06-01-153415.png)
+
+示例文件：
+
+- function.yaml
+
+  ```
+  apiVersion: v1
+  kind: Function
+  metadata:
+    name: func1
+  spec:
+    userUploadFilePath: "/xx/example-1" # 计算任务所在目录
+  ```
+
+- workflow.yaml
+
+  ```
+  kind: Workflow
+  apiVersion: v1
+  metadata:
+    name: workflow-example
+    namespace: default
+  spec:
+    entryParams: '{"x": 1, "y": 2}'
+    entryNodeName: node1
+    workflowNodes: 
+    - name: node1
+      type: func
+      funcData:
+        funcName: func2   # x = x + y, y = x - y
+        funcNamespace: default
+        nextNodeName: node2
+    - name: node2
+      type: choice
+      choiceData:
+        trueNextNodeName: node3
+        falseNextNodeName: node4
+        checkType: numGreaterThan   # if checkVar > 0, goto node3, else goto node4
+        checkVarName: y
+        compareValue: 0
+    - name: node3
+      type: func
+      funcData:
+        funcName: func3    # x = x^2, y = y^2
+        funcNamespace: default
+    - name: node4
+      type: func
+      funcData:
+        funcName: func1    # x = x - y, y = y - x
+        funcNamespace: default
+  ```
+
+使用方法：
+
+- 创建function
+
+  `kubectl apply function.yaml`
+
+- 触发对应function
+
+  `kubectl execute [namespace]/[funcname] {args}`
+
+- 创建对应workflow
+
+  `kubectl apply workflow.yaml`
+
+- 查看执行结果
+
+  `kubectl get workflow [namespace]/[workflowname]`

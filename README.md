@@ -209,8 +209,6 @@ Kubeproxy运行在每个Worker节点上，主要是为了支持Service抽象，�
 
 #### Pod抽象
 
-Pod的演示视频请参考：
-
 Pod是k8s(minik8s)调度的最小单位。用户可以通过 `Kubectl apply Podfile.yaml` 的声明式的方法创建一个Pod。当用户执行该命令后，Kubectl会将创建Pod的请求发送给API-Server。API-Server检查新创建的Pod在格式、字段是否存在问题，如果没有异常，就会写入Etcd，并给Scheduler发送消息。
 
 Scheduler完成调度之后，会通过消息队列通知API-Server，API-Server收到调度结果，将对应的Pod的nodename字段写入调度结果，然后保存回Etcd。然后主动给相关的Kubelet发送Pod的创建请求。
@@ -266,8 +264,6 @@ spec:
 Minik8s⽀持Pod间通信，我们组选择了Weave网络插件，只需要通过简单的`weave launch`和`weave connect`等命令，就可以将一个节点加入到Weave网络集群里面。Weave插件会将容器与特定的IP绑定关联（`weave attach`命令绑定容器到Weave网络），实现多个Pod之间的通讯。同时Weave具有比较智能的回收功能，一旦某个容器被删除，相关的IP也会被回收，供下次再分配。
 
 #### Service抽象
-
-Service的演示视频请参考：
 
 在Kubernetes中，应用在集群中作为一个或多个Pod运行, Service则是一种暴露网络应用的方法。在我们的设计里，Service被设计为一个apiObject, 用户可以通过 `Kubectl apply Servicefile.yaml `的声明式的方法创建一个Service。
 
@@ -441,6 +437,8 @@ GPU任务本质是通过Pod的隔离实现的。我们自己编写了[GPU-Job-Se
 
 我们编写了简易的并行矩阵加法和乘法函数。时序图如下所示。
 
+![](./assets/upload_902c6eb289d8bca30ba2c57a3ae797c5.png)
+
 使用CUDA编程的情况下，我们首先定义了matrix_add和matrix_multiply两个使用__global__标记的核函数，矩阵加法和矩阵乘法使用的是正常的操作。为了显示出区别，A\[i]\[j]和B\[i]\[j]没有初始化成一样的数据，而是初始化成不同的数据，这样得到的C\[ i ][ j ]能够检验我们的工作是否是正确的。
 
 CUDA的风格类C，所以在处理矩阵这样的二维数组时需要两重指针，在进行host内存和device内存之间的数据转移。
@@ -455,10 +453,6 @@ cudaMemcpy((void *)dev_C, (void *)host_C, sizeof(int *) * M, cudaMemcpyHostToDev
 
 这里的cudaMemcpy函数作用是拷贝一段连续的内存，所以无法处理二重指针，需要辅助指针dev_A,dev_B和dev_C，也就是说我们共需要四类指针，host上的二重和一重指针，device上的二重和一重指针。
 
-
-具体的演示的效果请参考演示视频。
-
-![](./assets/upload_902c6eb289d8bca30ba2c57a3ae797c5.png)
 
 最终输出的效果如下所示：
 ![](./assets/upload_d0f674c49bc33f69066713c6396d8993.png)

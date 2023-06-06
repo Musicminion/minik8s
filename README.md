@@ -3,7 +3,7 @@
  
  <p align="center">
     <a href="https://minik8s.ayaka.space" target="_blank" rel="noopener noreferrer">
-        <img width="100" src="" alt="Minik8s logo" />
+        <img width="100" src="https://github.com/kubernetes/kubernetes/raw/master/logo/logo.png" alt="Minik8s logo" />
     </a>
 </p>
 
@@ -18,7 +18,7 @@
 <a href="https://minik8s.ayaka.space">在线文档</a>
 <a href="https://minik8s.ayaka.space">演示视频</a>
 <a href="https://gitee.com/Musicminion/miniK8s">Gitee仓库</a>
-<a href="https://gitee.com/miniK8s">Github组织</a>
+<a href="https://github.com/miniK8s">Github组织</a>
 </p>
  
 >  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernetes](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。

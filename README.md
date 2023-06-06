@@ -1,13 +1,12 @@
 # Minik8s
  <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
  
-![Alt](https://repobeats.axiom.co/api/embed/0e48adb29987cc0bdec7ba5290233f1998b4d9b2.svg "Repobeats analytics image")
-
-
-
-
-
+ 
 >  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernetes](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
+
+## 项目贡献与状态
+ 
+![Alt](https://repobeats.axiom.co/api/embed/0e48adb29987cc0bdec7ba5290233f1998b4d9b2.svg "Repobeats analytics image")
 
 小组成员如下：
 

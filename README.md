@@ -1,13 +1,29 @@
 # Minik8s
- <img src="https://img.shields.io/badge/go-1.20-blue" alt=""/>
  
-![Alt](https://repobeats.axiom.co/api/embed/0e48adb29987cc0bdec7ba5290233f1998b4d9b2.svg "Repobeats analytics image")
+ >  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernetes](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
 
+ <p align="center">
+    <a href="https://minik8s.ayaka.space" target="_blank" rel="noopener noreferrer">
+        <img width="100" src="https://github.com/kubernetes/kubernetes/raw/master/logo/logo.png" alt="Minik8s logo" />
+    </a>
+</p>
 
+<p align="center"><b>minik8s</b> 简易的容器编排工具 </p>
 
+<p align="center">
+<a href="https://github.com/Musicminion/minik8s"><img src="https://img.shields.io/badge/go-1.20-blue" alt=""/></a>
+<a href="https://github.com/Musicminion/minik8s"><img alt="GitHub last commit" src="https://img.shields.io/github/last-commit/Musicminion/minik8s.svg?style=flat-square" /></a>
+<a href="https://github.com/Musicminion/minik8s"><img src="https://img.shields.io/badge/go-1.20-blue" alt=""/></a>
+<a href="https://wakatime.com/badge/github/Musicminion/minik8s"><img src="https://wakatime.com/badge/github/Musicminion/minik8s.svg" alt="wakatime"></a>
+<br />
+<a href="https://minik8s.ayaka.space">在线文档</a>
+<a href="https://minik8s.ayaka.space/docs/%E5%8A%9F%E8%83%BD%E6%BC%94%E7%A4%BA/intro">演示视频</a>
+<a href="https://gitee.com/Musicminion/miniK8s">Gitee镜像仓库</a>
+<a href="https://github.com/miniK8s">Github组织</a>
+</p>
+ 
 
-
->  2023年《SE3356 云操作系统设计与实践》课程第一小组项目，简易的[Kubernetes](https://kubernetes.io/zh-cn/)容器编排工具，通过go语言实现。
+## 项目贡献
 
 小组成员如下：
 

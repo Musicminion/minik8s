@@ -17,7 +17,7 @@
 <a href="https://wakatime.com/badge/github/Musicminion/minik8s"><img src="https://wakatime.com/badge/github/Musicminion/minik8s.svg" alt="wakatime"></a>
 <br />
 <a href="https://minik8s.ayaka.space">在线文档</a>
-<a href="https://minik8s.ayaka.space">演示视频</a>
+<a href="https://minik8s.ayaka.space/docs/%E5%8A%9F%E8%83%BD%E6%BC%94%E7%A4%BA/intro">演示视频</a>
 <a href="https://gitee.com/Musicminion/miniK8s">Gitee镜像仓库</a>
 <a href="https://github.com/miniK8s">Github组织</a>
 </p>
